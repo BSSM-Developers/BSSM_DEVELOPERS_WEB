@@ -1,11 +1,12 @@
 "use client";
 
 import styled from "@emotion/styled";
+import Image from "next/image";
 
 export function TopNav() {
   return (
     <Header>
-      <Logo>BSSM Developers</Logo>
+      <Image src="/BSM_DEV_LOGO.svg" alt="BSSM Developers" width={394} height={79} />
       <Nav>
         <a href="#">API 둘러보기</a>
         <a href="#">API 공유하기</a>

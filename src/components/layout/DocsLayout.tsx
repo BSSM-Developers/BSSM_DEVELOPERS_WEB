@@ -1,7 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
-// import { DocsSidebar } from "./DocsSidebar";
+import { DocsSidebar } from "./DocsSidebar";
 import { TopNav } from "./TopNav";
 
 export function DocsLayout({ children }: { children: React.ReactNode }) {
@@ -9,10 +9,10 @@ export function DocsLayout({ children }: { children: React.ReactNode }) {
     <Wrapper>
       <TopNav />
       <Body>
-        {/* <Sidebar>
+        <Sidebar>
           <DocsSidebar />
         </Sidebar>
-        <Content>{children}</Content> */}
+        <Content>{children}</Content>
       </Body>
     </Wrapper>
   );
@@ -32,8 +32,8 @@ const Body = styled.div`
 
 const Sidebar = styled.aside`
   width: 260px;
-  background: ${({ theme }) => theme.colors.grey[100]};
-  border-right: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  background: ${({ theme }) => theme.colors.background};
+  border-right: 1px solid ${({ theme }) => theme.colors.grey[200]};
   overflow-y: auto;
 `;
 

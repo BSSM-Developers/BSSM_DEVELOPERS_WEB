@@ -3,6 +3,26 @@
   --foreground: #171717;
 }
 
+@import url("https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css");
+
+@font-face {
+  font-family: "Flight Sans Regular";
+  src: url("/fonts/FlightSans-Regular.otf") format("opentype");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Flight Sans Bold";
+  src: url("/fonts/FlightSans-Bold.otf") format("opentype");
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Flight Sans Title";
+  src: url("/fonts/FlightSans-Title.otf") format("opentype");
+  font-style: normal;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

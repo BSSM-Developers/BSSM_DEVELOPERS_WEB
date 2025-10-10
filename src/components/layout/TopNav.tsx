@@ -6,52 +6,69 @@ import Image from "next/image";
 export function TopNav() {
   return (
     <Header>
-      <Image src="/BSM_DEV_LOGO.svg" alt="BSSM Developers" width={394} height={79} />
       <Nav>
+      <LogoWrapper>
+        <Image
+          src="/BSM_DEV_LOGO.svg"
+          alt="BSSM Developers"
+          width={394}
+          height={79}
+          priority
+        />
+      </LogoWrapper>
+
         <a href="#">API 둘러보기</a>
         <a href="#">API 공유하기</a>
         <a href="#">API 사용하기</a>
         <a href="#">가이드</a>
       </Nav>
+
       <LoginButton>로그인</LoginButton>
     </Header>
   );
 }
 
 const Header = styled.header`
-  height: 69px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 32px;
-  border-bottom: 1px solid ${({ theme }) => theme.colors.bssmGrey};
-  background: #ffffff;
+  width: 100%;
+  height: 69px;
+  padding: 0 2rem;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  background: ${({ theme }) => theme.colors.background};
 `;
 
-const Logo = styled.div`
-  font-weight: 700;
-  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+const LogoWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  img {
+    object-fit: contain;
+  }
 `;
 
 const Nav = styled.nav`
   display: flex;
-  gap: 32px;
+  align-items: center;
+  width:1447px;
+  gap: 69px;
 
   a {
-    color: ${({ theme }) => theme.colors.grey[500]};
+    font-size: 16px;
     font-weight: 500;
-    font-size: 15px;
+    color: ${({ theme }) => theme.colors.grey[400]};
     text-decoration: none;
-
-    &:hover {
-      color: ${({ theme }) => theme.colors.bssmBlue};
-    }
   }
 `;
 
 const LoginButton = styled.button`
-  background: none;
   border: none;
+  background: none;
+  width:65px;
+  height:35px;
   color: ${({ theme }) => theme.colors.bssmGrey};
+  font-weight: 500;
+  font-size: 15px;
   cursor: pointer;
 `;

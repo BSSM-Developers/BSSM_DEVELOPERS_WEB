@@ -28,8 +28,8 @@ export function SidebarItem({
 
   return (
     <ItemWrapper module={module} active={active} onClick={onClick}>
-      {hasChevron && (open ? <ChevronDown size={16} /> : <ChevronRight size={16} />)}
       <Label>{label}</Label>
+      {hasChevron && (open ? <ChevronDown size={16} /> : <ChevronRight size={16} />)}
       {module === "api" && method && <MethodTag method={method}>{method}</MethodTag>}
     </ItemWrapper>
   );
@@ -40,7 +40,6 @@ const ItemWrapper = styled.div<{ module: ModuleType; active: boolean }>`
   align-items: center;
   border-radius: 8px;
   padding: 8px 12px;
-  font-size: 15px;
   cursor: pointer;
   transition: all 0.2s ease;
 

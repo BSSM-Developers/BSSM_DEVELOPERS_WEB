@@ -2,7 +2,7 @@ import { remark } from "remark";
 import remarkParse from "remark-parse";
 import { DocsBlock } from "@/types/docs";
 
-export async function convertMDXToBlocks(content: string): Promise<DocsBlock[]> {
+export async function convertMDX(content: string): Promise<DocsBlock[]> {
   const tree = remark().use(remarkParse).parse(content);
   const blocks: DocsBlock[] = [];
 

@@ -1,8 +1,8 @@
 export interface DocsBlock {
-  type: "heading" | "paragraph" | "code" | "list" | "api";
+  module: string;
   content?: string;
-  language?: string;
   listItems?: string[];
+  imageSrc?: string;
   apiData?: ApiDoc;
 }
 

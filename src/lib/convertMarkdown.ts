@@ -1,6 +1,6 @@
 import { DocsBlock } from "@/types/docs";
 
-export function convertMarkdownToBlocks(content: string): DocsBlock[] {
+export function convertMarkdown(content: string): DocsBlock[] {
   const blocks: DocsBlock[] = [];
   const lines = content.split(/\r?\n/);
 

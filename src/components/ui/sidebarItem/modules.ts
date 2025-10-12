@@ -51,6 +51,7 @@ export const sidebarModules = {
   api: {
     base: ({ theme }: any) => css`
       justify-content: space-between;
+      height: 48px;
       color: ${theme.colors.grey[800]};
       &:hover {
         background: ${theme.colors.grey[100]};

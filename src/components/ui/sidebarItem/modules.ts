@@ -4,7 +4,7 @@ import { applyTypography } from "@/lib/themeHelper";
 export const sidebarModules = {
   default: {
     base: ({ theme }: any) => css`
-      height: 51px;
+      height: 48px;
       padding: 16px 13px 15px 15px;
       color: ${theme.colors.text};
       ${applyTypography(theme, "Body_1")}

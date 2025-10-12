@@ -1,4 +1,5 @@
 import { css } from "@emotion/react";
+import { applyTypography } from "@/lib/themeHelper";
 
 export const sidebarModules = {
   default: {
@@ -6,13 +7,13 @@ export const sidebarModules = {
       height: 51px;
       padding: 16px 13px 15px 15px;
       color: ${theme.colors.text};
-      ${theme.typography.Body_1};
+      ${applyTypography(theme, "Body_1")}
       &:hover {
         background: ${theme.colors.grey[100]};
       }
     `,
     active: ({ theme }: any) => css`
-      ${theme.typography.Body_3};
+      ${applyTypography(theme, "Body_3")}
       background: ${theme.colors.grey[100]};
       color: ${theme.colors.bssmDarkBlue};
     `,
@@ -21,14 +22,14 @@ export const sidebarModules = {
     base: ({ theme }: any) => css`
       height: 36px;
       padding: 11px 13px 13px 37px;
-      ${theme.typography.Body_2};
+      ${applyTypography(theme, "Body_2")}
       color: ${theme.colors.text};
       &:hover {
         background: ${theme.colors.grey[100]};
       }
     `,
     active: ({ theme }: any) => css`
-      ${theme.typography.Body_4};
+      ${applyTypography(theme, "Body_4")}
       background: ${theme.colors.grey[100]};
       color: ${theme.colors.bssmDarkBlue};
     `,
@@ -69,7 +70,7 @@ export const sidebarModules = {
       align-items: flex-end;
       padding: 26px 13px 11px 5px;
       font-size: 20px;
-      ${theme.typography.Body_1};
+      ${applyTypography(theme, "Body_1")}
       color: ${theme.colors.bssmGrey}
     `,
     active: () => css``,
@@ -82,7 +83,7 @@ export const sidebarModules = {
       height: 63px;
       padding: 32px 24px;
       color: ${theme.colors.bssmGrey};
-      ${theme.typography.Caption_2};
+      ${applyTypography(theme, "Caption_2")}
     `,
     active: () => css``,
   },

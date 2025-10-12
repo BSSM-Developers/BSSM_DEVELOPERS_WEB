@@ -12,7 +12,7 @@ export default function DocsPage() {
         테스트 환경 주의점, 방화벽 설정, 지원 플랫폼 및 브라우저를 알아보세요.
       </DocsBlock>
       <DocsBlock module="big_space"/>
-      <DocsBlock module="headline_1">테스트 환경</DocsBlock>
+      <DocsBlock module="headline_2">테스트 환경</DocsBlock>
       <DocsBlock module="space"/>
       <DocsBlock module="space"/>
       <DocsBlock module="space"/>

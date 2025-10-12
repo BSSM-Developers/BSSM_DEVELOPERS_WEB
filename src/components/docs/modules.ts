@@ -1,19 +1,20 @@
 /** @jsxImportSource @emotion/react */
 import { css, Theme } from "@emotion/react";
+import { applyTypography } from "@/lib/themeHelper";
 
 export const docsModules = {
   headline_1: (theme: Theme) => css`
-    ${theme.typography.Headline_1}
+    ${applyTypography(theme, "Headline_1")}
     color: ${theme.colors.grey[900]};
   `,
   headline_2: (theme: Theme) => css`
-    ${theme.typography.Headline_2}
+    ${applyTypography(theme, "Headline_2")}
     color: ${theme.colors.grey[900]};
     margin: 64px 0 12px;
   `,
 
   docs_1: (theme: Theme) => css`
-    ${theme.typography.Docs_1}
+    ${applyTypography(theme, "Docs_1")}
     color: ${theme.colors.grey[600]};
     margin-bottom: 12px;
   `,

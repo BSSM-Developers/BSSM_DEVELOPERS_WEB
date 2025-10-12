@@ -1,19 +1,24 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import styled from "@emotion/styled";
-import { css } from "@emotion/react";
 import { sidebarModules } from "./modules";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 type ModuleType = keyof typeof sidebarModules;
+
+interface SidebarChild {
+  label: string;
+  module?: ModuleType;
+  method?: "GET" | "POST" | "DELETE";
+}
 
 interface SidebarItemProps {
   label: string;
   module?: ModuleType;
   method?: "GET" | "POST" | "DELETE";
   active?: boolean;
-  open?: boolean;
-  onClick?: () => void;
+  childrenItems?: SidebarChild[];
 }
 
 export function SidebarItem({
@@ -21,17 +26,42 @@ export function SidebarItem({
   module = "default",
   method,
   active = false,
-  open = false,
-  onClick,
+  childrenItems = [],
 }: SidebarItemProps) {
+
   const hasChevron = module === "collapse";
+  const [open, setOpen] = useState(true);
+
+  const handleToggle = () => {
+    if (hasChevron) setOpen((prev) => !prev);
+  };
 
   return (
-    <ItemWrapper module={module} active={active} onClick={onClick}>
-      <Label>{label}</Label>
-      {hasChevron && (open ? <ChevronDown size={16} /> : <ChevronRight size={16} />)}
-      {module === "api" && method && <MethodTag method={method}>{method}</MethodTag>}
-    </ItemWrapper>
+    <>
+      <ItemWrapper module={module} active={active} onClick={handleToggle}>
+        <Label>{label}</Label>
+
+        {hasChevron &&
+          (open ? <ChevronDown size={16} /> : <ChevronRight size={16} />)}
+
+        {module === "api" && method && (
+          <MethodTag method={method}>{method}</MethodTag>
+        )}
+      </ItemWrapper>
+
+      {hasChevron && open && childrenItems.length > 0 && (
+        <SubMenu>
+          {childrenItems.map((child, i) => (
+            <SidebarItem
+              key={i}
+              label={child.label}
+              module={child.module}
+              method={child.method}
+            />
+          ))}
+        </SubMenu>
+      )}
+    </>
   );
 }
 
@@ -44,7 +74,8 @@ const ItemWrapper = styled.div<{ module: ModuleType; active: boolean }>`
   transition: all 0.2s ease;
 
   ${({ theme, module }) => sidebarModules[module].base({ theme })};
-  ${({ theme, module, active }) => active && sidebarModules[module].active({ theme })};
+  ${({ theme, module, active }) =>
+    active && sidebarModules[module].active({ theme })};
 `;
 
 const Label = styled.span`
@@ -63,4 +94,9 @@ const MethodTag = styled.span<{ method: string }>`
       POST: "#F06820",
       DELETE: "#F14437",
     }[method] ?? "#9CA3AF")};
+`;
+
+const SubMenu = styled.div`
+  display: flex;
+  flex-direction: column;
 `;

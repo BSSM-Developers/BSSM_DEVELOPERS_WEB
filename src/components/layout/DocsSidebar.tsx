@@ -9,8 +9,15 @@ export function DocsSidebar() {
       <SidebarItem label = "시작하기" module = "default" active/>
       <SidebarItem label = "결제 이해하기" module = "api" method="GET"/>
       <SidebarItem label = "결제 서비스" module= "main"/>
-      <SidebarItem label = "테스트" module = "collapse" open/>
-      <SidebarItem label = "테스트 서비스" module = "small"/>
+      <SidebarItem
+        label="결제 이해하기"
+        module="collapse"
+        childrenItems={[
+          { label: "결제 개요", module: "small"},
+          { label: "결제 API 가이드", module: "small"},
+          { label: "결제 예시 코드", module: "small"},
+        ]}
+      />
     </Nav>
   );
 }

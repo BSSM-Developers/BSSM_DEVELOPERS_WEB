@@ -10,13 +10,11 @@ export const docsModules = {
   headline_2: (theme: Theme) => css`
     ${applyTypography(theme, "Headline_2")}
     color: ${theme.colors.grey[900]};
-    margin: 64px 0 12px;
   `,
 
   docs_1: (theme: Theme) => css`
     ${applyTypography(theme, "Docs_1")}
     color: ${theme.colors.grey[600]};
-    margin-bottom: 12px;
   `,
 
   list: (theme: Theme) => css`

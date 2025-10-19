@@ -1,6 +1,6 @@
 "use client";
 
-import { applyTypography } from "@/lib/themeHelper";
+import { applyTypography } from "../../lib/themeHelper";
 import styled from "@emotion/styled";
 
 interface DocsHeaderProps {

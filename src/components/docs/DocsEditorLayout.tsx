@@ -14,6 +14,7 @@ export function DocsEditorLayout() {
   const handleBlockChange = (index: number, updated: DocsBlock) => {
     const copy = [...blocks];
     copy[index] = updated;
+    console.log(copy);
     setBlocks(copy);
   };
 

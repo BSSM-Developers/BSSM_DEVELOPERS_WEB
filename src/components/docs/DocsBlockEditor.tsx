@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 
@@ -15,6 +15,11 @@ interface DocsBlockEditorProps {
 export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
 
+
+  useEffect(() => {
+    setValue(block.content ?? "");
+  }, [block.content]);
+
   // 블록 타입 자동 판별
   const detectModuleType = (text: string): DocsBlockType["module"] => {
     if (/^##\s/.test(text)) return "headline_2";
@@ -23,20 +28,30 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     return "docs_1";
   };
 
-  // 입력 감지
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
-    setValue(text);
 
-    if (block.module === "space" && text.trim() !== "") {
-      onChange(index, { ...block, module: "docs_1", content: text });
-      return;
-    }
+    const nextModule =
+      block.module !== "docs_1"
+        ? (text.trim() === "" ? "docs_1" : block.module)
+        : detectModuleType(text);
 
-    onChange(index, { ...block, content: text });
+    const cleaned =
+      nextModule === "headline_2" ? text.replace(/^##\s*/, "") :
+      nextModule === "headline_1" ? text.replace(/^#\s*/, "") :
+      nextModule === "list" ? text.replace(/^[-*]\s*/, "") :
+      text;
+
+    setValue(cleaned);
+    onChange(index, { ...block, module: nextModule, content: cleaned });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // IME(한글 등) 조합 중 Enter는 무시
+    // 일부 브라우저는 keyCode 229를 사용
+    const composing = (e.nativeEvent as any)?.isComposing || (e as any).keyCode === 229;
+    if (composing) return;
+
     if (e.key === "Enter") {
       e.preventDefault();
       onAddBlock(index, { module: "docs_1", content: ""});
@@ -50,7 +65,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     }
   };
 
-  // 🔹 space / big_space 는 비어있는 표시만
+  // space / big_space 는 비어있는 표시만
   if (block.module === "space" || block.module === "big_space") {
     return <DocsBlock module={block.module} />;
   }

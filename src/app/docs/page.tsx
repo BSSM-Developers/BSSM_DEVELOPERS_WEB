@@ -40,6 +40,7 @@ export default function DocsEditPage() {
     const copy = [...blocks];
     copy[index] = { ...copy[index], ...updated } as BlockWithId;
     setBlocks(copy);
+    console.log(copy);
   };
 
   const handleAddBlock = (index: number, newBlock?: DocsBlock) => {
@@ -54,6 +55,7 @@ export default function DocsEditPage() {
       const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockToInsert.id}']`);
       el?.focus();
     }, 0);
+    console.log(copy);
   };
 
   const handleRemoveBlock = (index: number) => {
@@ -68,6 +70,7 @@ export default function DocsEditPage() {
         el?.focus();
       }, 0);
     }
+    console.log(copy);
   };
 
   return (

@@ -44,13 +44,6 @@ export const docsModules = {
     }
   `,
   
-  space: (theme: Theme) => css`
-    margin-bottom: 4px;
-  `,
-
-  big_space: (theme: Theme) => css`
-    margin-bottom: 72px;
-  `,
 };
 
 export type DocsModuleType = keyof typeof docsModules;

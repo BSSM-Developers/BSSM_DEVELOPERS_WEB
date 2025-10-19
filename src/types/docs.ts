@@ -1,5 +1,13 @@
+export type DocsModule =
+  | "docs_1"
+  | "code"
+  | "image"
+  | "headline_1"
+  | "headline_2"
+  | "list";
+
 export interface DocsBlock {
-  module: string;
+  module: DocsModule;
   content?: string;
   listItems?: string[];
   imageSrc?: string;

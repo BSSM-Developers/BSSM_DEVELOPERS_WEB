@@ -2,17 +2,19 @@
 
 import styled from "@emotion/styled";
 import { DocsSidebar } from "./DocsSidebar";
+import { useState } from "react";
 import { TopNav } from "./TopNav";
 
 export function DocsLayout({ children }: { children: React.ReactNode }) {
+  const [selected, setSelected] = useState<string>("시작하기");
   return (
     <Wrapper>
       <TopNav />
       <Body>
         <Sidebar>
-          <DocsSidebar />
+          <DocsSidebar onSelect={(key) => setSelected(key)} />
         </Sidebar>
-        <Content>{children}</Content>
+        <Content data-selected={selected}>{children}</Content>
       </Body>
     </Wrapper>
   );

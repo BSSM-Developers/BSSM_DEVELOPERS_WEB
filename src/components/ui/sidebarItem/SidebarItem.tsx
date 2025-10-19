@@ -19,6 +19,8 @@ interface SidebarItemProps {
   method?: "GET" | "POST" | "DELETE";
   active?: boolean;
   childrenItems?: SidebarChild[];
+  onSelect?: (key: string) => void;
+  selected?: string;
 }
 
 export function SidebarItem({
@@ -27,18 +29,27 @@ export function SidebarItem({
   method,
   active = false,
   childrenItems = [],
+  onSelect,
+  selected,
 }: SidebarItemProps) {
 
   const hasChevron = module === "collapse";
   const [open, setOpen] = useState(true);
 
-  const handleToggle = () => {
-    if (hasChevron) setOpen((prev) => !prev);
+  const handleClick = () => {
+    if (hasChevron) {
+      setOpen((prev) => !prev);
+    } else {
+      onSelect?.(label);
+    }
   };
+
+  const childActive = hasChevron && childrenItems?.some((c) => c.label === selected);
+  const isActive = active || selected === label || !!childActive;
 
   return (
     <>
-      <ItemWrapper module={module} active={active} onClick={handleToggle}>
+      <ItemWrapper module={module} active={isActive} onClick={handleClick} data-active={isActive}>
         <Label>{label}</Label>
 
         {hasChevron &&
@@ -57,6 +68,9 @@ export function SidebarItem({
               label={child.label}
               module={child.module}
               method={child.method}
+              onSelect={onSelect}
+              active={selected === child.label}
+              selected={selected}
             />
           ))}
         </SubMenu>

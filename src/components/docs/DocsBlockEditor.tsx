@@ -47,8 +47,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // IME(한글 등) 조합 중 Enter는 무시
-    // 일부 브라우저는 keyCode 229를 사용
     const composing = (e.nativeEvent as any)?.isComposing || (e as any).keyCode === 229;
     if (composing) return;
 
@@ -65,7 +63,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     }
   };
 
-  // space / big_space 는 비어있는 표시만
   if (block.module === "space" || block.module === "big_space") {
     return <DocsBlock module={block.module} />;
   }

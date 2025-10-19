@@ -10,9 +10,10 @@ interface DocsBlockEditorProps {
   onChange: (index: number, updated: DocsBlockType) => void;
   onAddBlock: (index: number, newBlock?: DocsBlockType) => void;
   onRemoveBlock?: (index: number) => void;
+  onFocusMove?: (index: number, direction: "up" | "down") => void;
 }
 
-export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock }: DocsBlockEditorProps) {
+export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock, onFocusMove }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
   const [focused, setFocused] = useState(false);
 
@@ -62,6 +63,26 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
       onRemoveBlock?.(index);
       return;
     }
+
+    if (e.key === "ArrowUp") {
+      const caret = (e.currentTarget.selectionStart ?? 0);
+      if (caret === 0) {
+        e.preventDefault();
+        onFocusMove?.(index, "up");
+        return;
+      }
+    }
+
+    if (e.key === "ArrowDown") {
+      const caret = (e.currentTarget.selectionStart ?? 0);
+      const len = e.currentTarget.value.length;
+      if (caret === len) {
+        e.preventDefault();
+        onFocusMove?.(index, "down");
+        return;
+      }
+    }
+
   };
 
   if (block.module === "space" || block.module === "big_space") {

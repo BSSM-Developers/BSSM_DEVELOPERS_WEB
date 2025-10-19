@@ -73,6 +73,17 @@ export default function DocsEditPage() {
     console.log(copy);
   };
 
+
+  const handleFocusMove = (index: number, direction: "up" | "down") => {
+    const target = direction === "up" ? index - 1 : index + 1;
+    const targetId = blocks[target]?.id;
+    if (!targetId) return;
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${targetId}']`);
+      el?.focus();
+    }, 0);
+  };
+
   return (
     <DocsLayout>
       <DocsHeader title="시작하기" breadcrumb={["가이드"]} />
@@ -85,6 +96,7 @@ export default function DocsEditPage() {
           onChange={(idx, updated) => handleBlockChange(idx, updated)}
           onAddBlock={handleAddBlock}
           onRemoveBlock={handleRemoveBlock}
+          onFocusMove={handleFocusMove}
         />
       ))}
     </DocsLayout>

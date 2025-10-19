@@ -9,9 +9,10 @@ interface DocsBlockEditorProps {
   index: number;
   onChange: (index: number, updated: DocsBlockType) => void;
   onAddBlock: (index: number, newBlock?: DocsBlockType) => void;
+  onRemoveBlock?: (index: number) => void;
 }
 
-export function DocsBlockEditor({ block, index, onChange, onAddBlock }: DocsBlockEditorProps) {
+export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
 
   // 블록 타입 자동 판별
@@ -38,10 +39,14 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock }: DocsBloc
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-
-      const moduleType = detectModuleType(value);
-      const cleanValue = value.replace(/^([#-]+\s)/, "").trim();
       onAddBlock(index, { module: "docs_1", content: ""});
+      return;
+    }
+
+    if (e.key === "Backspace" && value === "") {
+      e.preventDefault();
+      onRemoveBlock?.(index);
+      return;
     }
   };
 

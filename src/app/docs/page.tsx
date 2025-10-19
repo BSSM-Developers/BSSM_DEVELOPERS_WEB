@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useDocsStore } from "@/store/docsStore";
 import { DocsLayout } from "@/components/layout/DocsLayout";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
@@ -9,6 +10,7 @@ import { DocsBlock } from "@/types/docs";
 type BlockWithId = DocsBlock & { id: string };
 
 export default function DocsEditPage() {
+  const selected = useDocsStore((s: any) => s.selected);
   const [blocks, setBlocks] = useState<BlockWithId[]>([
     { id: "init-1", module: "headline_1", content: "시작하기" },
     {
@@ -32,6 +34,15 @@ export default function DocsEditPage() {
       content: "테스트 환경과 라이브 환경이 다른 점은 아래 표에서 확인해주세요",
     },
   ]);
+
+  useEffect(() => {
+    if (!selected || selected === "시작하기") return;
+    setBlocks((prev) => {
+      const copy = [...prev];
+      copy[0] = { ...copy[0], module: "headline_1", content: selected } as BlockWithId;
+      return copy;
+    });
+  }, [selected]);
 
   const handleBlockChange = (index: number, updated: DocsBlock) => {
     const copy = [...blocks];

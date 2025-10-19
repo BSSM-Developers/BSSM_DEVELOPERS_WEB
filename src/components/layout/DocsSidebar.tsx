@@ -2,9 +2,25 @@
 
 import styled from "@emotion/styled";
 import { SidebarItem } from "../ui/sidebarItem/SidebarItem";
+import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { useDocsStore } from "@/store/docsStore";
 
-export function DocsSidebar({ onSelect }: { onSelect?: (key: string) => void }) {
+const defaultMenu: SidebarNode[] = [
+  { label: "시작하기", module: "default" },
+  { label: "결제 이해하기", module: "api", method: "GET" },
+  { label: "결제 서비스", module: "main" },
+  {
+    label: "결제 이해하기",
+    module: "collapse",
+    childrenItems: [
+      { label: "결제 개요", module: "small" },
+      { label: "결제 API 가이드", module: "small" },
+      { label: "결제 예시 코드", module: "small" },
+    ],
+  },
+];
+
+export function DocsSidebar({ onSelect, items = defaultMenu }: { onSelect?: (key: string) => void; items?: SidebarNode[] }) {
   const selected = useDocsStore((s: any) => s.selected);
   const setSelected = useDocsStore((s: any) => s.setSelected);
   const handleSelect = (key: string) => {
@@ -13,20 +29,18 @@ export function DocsSidebar({ onSelect }: { onSelect?: (key: string) => void }) 
   };
   return (
     <Nav>
-      <SidebarItem label = "시작하기" module = "default" active={selected === "시작하기"} selected={selected} onSelect={handleSelect}/>
-      <SidebarItem label = "결제 이해하기" module = "api" method="GET" active={selected === "결제 이해하기"} selected={selected} onSelect={handleSelect}/>
-      <SidebarItem label = "결제 서비스" module= "main" active={selected === "결제 서비스"} selected={selected} onSelect={handleSelect}/>
-      <SidebarItem
-        label="결제 이해하기"
-        module="collapse"
-        childrenItems={[
-          { label: "결제 개요", module: "small"},
-          { label: "결제 API 가이드", module: "small"},
-          { label: "결제 예시 코드", module: "small"},
-        ]}
-        onSelect={handleSelect}
-        selected={selected}
-      />
+      {items.map((node, i) => (
+        <SidebarItem
+          key={i}
+          label={node.label}
+          module={node.module}
+          method={node.method}
+          childrenItems={node.childrenItems}
+          onSelect={handleSelect}
+          selected={selected}
+          active={selected === node.label}
+        />
+      ))}
     </Nav>
   );
 }

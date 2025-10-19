@@ -1,5 +1,5 @@
 import { css } from "@emotion/react";
-import { applyTypography } from "@/lib/themeHelper";
+import { applyTypography } from "../../../lib/themeHelper";
 
 export const sidebarModules = {
   default: {

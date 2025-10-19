@@ -14,6 +14,7 @@ interface DocsBlockEditorProps {
 
 export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
+  const [focused, setFocused] = useState(false);
 
 
   useEffect(() => {
@@ -73,8 +74,10 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
         value={value}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         data-block-id={(block as any).id}
-        placeholder="내용을 입력하세요..."
+        placeholder={focused ? "내용을 입력하세요..." : ""}
         style={{
           width: "100%",
           border: "none",

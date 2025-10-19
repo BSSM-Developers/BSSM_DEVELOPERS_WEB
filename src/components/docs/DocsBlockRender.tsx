@@ -28,12 +28,6 @@ export function DocsBlockRender({ blocks } : { blocks : DocsBlockType[]} ){
               </DocsBlock>
             );
 
-          case "space":
-          case "big_space":
-            return(
-              <DocsBlock key={i} module={module}/>
-            )
-          
           // case "api":
           //   return (
           //     <DocsBlock key={i} module="docs_1">

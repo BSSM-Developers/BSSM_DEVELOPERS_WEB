@@ -11,26 +11,23 @@ type BlockWithId = DocsBlock & { id: string };
 export default function DocsEditPage() {
   const [blocks, setBlocks] = useState<BlockWithId[]>([
     { id: "init-1", module: "headline_1", content: "시작하기" },
-    { id: "init-2", module: "space" },
     {
-      id: "init-3",
+      id: "init-2",
       module: "docs_1",
       content: "테스트 환경 주의점, 방화벽 설정, 지원 플랫폼 및 브라우저를 알아보세요",
     },
-    { id: "init-4", module: "space" },
-    { id: "init-5", module: "big_space" },
-    { id: "init-6", module: "headline_2", content: "테스트 환경" },
-    { id: "init-7", module: "space" },
-    { id: "init-8", module: "space" },
-    { id: "init-9", module: "space" },
+    { id: "init-3", module: "docs_1", content: "" },
+    { id: "init-7", module: "docs_1", content: "" },
+    { id: "init-8", module: "docs_1", content: "" },
+    { id: "init-4", module: "headline_2", content: "테스트 환경" },
     {
-      id: "init-10",
+      id: "init-5",
       module: "docs_1",
       content:
         "BSSM Developers는 개발자의 편의를 위해 라이브 환경과 비슷한 테스트 환경을 제공하고 있어요",
     },
     {
-      id: "init-11",
+      id: "init-6",
       module: "docs_1",
       content: "테스트 환경과 라이브 환경이 다른 점은 아래 표에서 확인해주세요",
     },

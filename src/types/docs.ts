@@ -4,9 +4,7 @@ export type DocsModule =
   | "image"
   | "headline_1"
   | "headline_2"
-  | "list"
-  | "space"
-  | "big_space";
+  | "list";
 
 export interface DocsBlock {
   module: DocsModule;

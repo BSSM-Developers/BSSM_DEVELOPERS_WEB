@@ -7,8 +7,7 @@ import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
 export function DocsEditorLayout() {
   const [blocks, setBlocks] = useState<DocsBlock[]>([
     { module: "headline_1", content: "시작하기" },
-    { module: "space" },
-    { module: "docs_1", content: "내용을 입력하세요." },
+    { module: "docs_1", content: "" },
   ]);
 
   const handleBlockChange = (index: number, updated: DocsBlock) => {

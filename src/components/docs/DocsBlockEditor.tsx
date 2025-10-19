@@ -85,9 +85,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
 
   };
 
-  if (block.module === "space" || block.module === "big_space") {
-    return <DocsBlock module={block.module} />;
-  }
 
   return (
     <DocsBlock module={block.module}>
@@ -98,7 +95,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         data-block-id={(block as any).id}
-        placeholder={focused ? "내용을 입력하세요..." : ""}
+        placeholder={focused ? "내용을 입력하세요" : ""}
         style={{
           width: "100%",
           border: "none",

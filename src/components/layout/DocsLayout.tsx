@@ -5,6 +5,20 @@ import { DocsSidebar } from "./DocsSidebar";
 import { useState } from "react";
 import { TopNav } from "./TopNav";
 
+const testItems = [
+  { id: "s-1", label: "시작하기", module: "default" } as any,
+  { id: "s-2", label: "결제 이해하기", module: "api", method: "GET" } as any,
+  {
+    id: "s-3",
+    label: "결제",
+    module: "collapse",
+    childrenItems: [
+      { id: "s-3-1", label: "결제 개요", module: "small" } as any,
+      { id: "s-3-2", label: "결제 API 가이드", module: "small" } as any,
+    ],
+  } as any,
+];
+
 export function DocsLayout({ children }: { children: React.ReactNode }) {
   const [selected, setSelected] = useState<string>("시작하기");
   return (
@@ -12,7 +26,7 @@ export function DocsLayout({ children }: { children: React.ReactNode }) {
       <TopNav />
       <Body>
         <Sidebar>
-          <DocsSidebar onSelect={(key) => setSelected(key)} />
+          <DocsSidebar items = {testItems} onSelect={(key) => setSelected(key)} editable={true} />
         </Sidebar>
         <Content data-selected={selected}>{children}</Content>
       </Body>

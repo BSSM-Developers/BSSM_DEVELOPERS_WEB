@@ -1,46 +1,96 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { SidebarItem } from "../ui/sidebarItem/SidebarItem";
+import { useEffect, useState } from "react";
+import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
-import { useDocsStore } from "@/store/docsStore";
 
-const defaultMenu: SidebarNode[] = [
-  { label: "시작하기", module: "default" },
-  { label: "결제 이해하기", module: "api", method: "GET" },
-  { label: "결제 서비스", module: "main" },
-  {
-    label: "결제 이해하기",
-    module: "collapse",
-    childrenItems: [
-      { label: "결제 개요", module: "small" },
-      { label: "결제 API 가이드", module: "small" },
-      { label: "결제 예시 코드", module: "small" },
-    ],
-  },
-];
-
-export function DocsSidebar({ onSelect, items = defaultMenu }: { onSelect?: (key: string) => void; items?: SidebarNode[] }) {
-  const selected = useDocsStore((s: any) => s.selected);
-  const setSelected = useDocsStore((s: any) => s.setSelected);
-  const handleSelect = (key: string) => {
-    setSelected(key);
-    onSelect?.(key);
+const insertAfter = (list: SidebarNode[], targetId: string, node: Omit<SidebarNode,"id">): SidebarNode[] => {
+  const id = crypto.randomUUID();
+  const walk = (xs: SidebarNode[]): SidebarNode[] => {
+    const i = xs.findIndex(x => x.id === targetId);
+    if (i >= 0) {
+      const copy = [...xs];
+      copy.splice(i + 1, 0, { id, ...node });
+      return copy;
+    }
+    return xs.map(x => ({
+      ...x,
+      childrenItems: x.childrenItems ? walk(x.childrenItems) : undefined,
+    }));
   };
+  return walk(list);
+};
+
+const appendChild = (list: SidebarNode[], parentId: string, node: Omit<SidebarNode,"id">): SidebarNode[] => {
+  const id = crypto.randomUUID();
+  const walk = (xs: SidebarNode[]): SidebarNode[] =>
+    xs.map(x =>
+      x.id === parentId
+        ? { ...x, childrenItems: [ ...(x.childrenItems ?? []), { id, ...node } ] }
+        : { ...x, childrenItems: x.childrenItems ? walk(x.childrenItems) : undefined }
+    );
+  return walk(list);
+};
+
+const renameNode = (list: SidebarNode[], id: string, label: string): SidebarNode[] =>
+  list.map(x =>
+    x.id === id
+      ? { ...x, label }
+      : { ...x, childrenItems: x.childrenItems ? renameNode(x.childrenItems, id, label) : undefined }
+  );
+
+const removeNode = (list: SidebarNode[], id: string): SidebarNode[] =>
+  list
+    .filter(x => x.id !== id)
+    .map(x => ({ ...x, childrenItems: x.childrenItems ? removeNode(x.childrenItems, id) : undefined }));
+
+type DocsSidebarProps = {
+  items?: SidebarNode[];
+  selected?: string | null;
+  onSelect?: (label: string) => void;
+  editable?: boolean;
+  onChange?: (next: SidebarNode[]) => void;
+};
+
+export function DocsSidebar({ 
+  items = [],
+  selected = null, 
+  onSelect, editable = false, onChange
+ }: DocsSidebarProps) {
+  const propItems = Array.isArray(items) ? items : [];
+  const [localItems, setLocalItems] = useState<SidebarNode[]>(propItems);
+  useEffect(() => { setLocalItems(propItems); }, [propItems]);
+  const effectiveItems = editable && !onChange ? localItems : propItems;
+  const safeOnSelect = onSelect ?? (() => {});
+  const mutators = {
+    addSibling: (targetId: string, node: Omit<SidebarNode,"id">) =>
+      (onChange ? onChange : setLocalItems)(insertAfter(effectiveItems, targetId, node)),
+    addChild: (parentId: string, node: Omit<SidebarNode,"id">) =>
+      (onChange ? onChange : setLocalItems)(appendChild(effectiveItems, parentId, node)),
+    rename: (id: string, label: string) =>
+      (onChange ? onChange : setLocalItems)(renameNode(effectiveItems, id, label)),
+    remove: (id: string) =>
+      (onChange ? onChange : setLocalItems)(removeNode(effectiveItems, id)),
+  };
+
   return (
     <Nav>
-      {items.map((node, i) => (
+      {effectiveItems.map(node => (
         <SidebarItem
-          key={i}
-          label={node.label}
-          module={node.module}
-          method={node.method}
-          childrenItems={node.childrenItems}
-          onSelect={handleSelect}
+          key={(node as any).id ?? node.label}
+          node={node}
           selected={selected}
-          active={selected === node.label}
+          onSelect={safeOnSelect}
+          editable={editable}
+          mutators={mutators}
         />
       ))}
+      {editable && (
+        <AddButton onClick={() => mutators.addSibling(effectiveItems[effectiveItems.length - 1]?.id ?? "", { label: "새 항목", module: "small" })}>
+          +
+        </AddButton>
+      )}
     </Nav>
   );
 }
@@ -50,4 +100,15 @@ const Nav = styled.nav`
   display: flex;
   flex-direction: column;
   gap: 3px;
+`;
+
+const AddButton = styled.button`
+  margin-top: 12px;
+  height: 51px;
+  border-radius: 12px;
+  border: 2px solid ${({ theme }) => theme.colors.bssmDarkBlue};
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  font-size: 24px;
+  background: transparent;
+  cursor: pointer;
 `;

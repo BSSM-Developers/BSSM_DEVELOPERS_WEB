@@ -5,6 +5,14 @@ import { useEffect, useState } from "react";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
+const MODULE_OPTIONS = [
+  { label: "기본", module: "default" },
+  { label: "그룹", module: "collapse" },
+  { label: "메인", module: "main" },
+  { label: "스몰", module: "small" },
+  { label: "API(GET)", module: "api", method: "GET" as const },
+] as const;
+
 const insertAfter = (list: SidebarNode[], targetId: string, node: Omit<SidebarNode,"id">): SidebarNode[] => {
   const id = crypto.randomUUID();
   const walk = (xs: SidebarNode[]): SidebarNode[] => {
@@ -38,12 +46,13 @@ const renameNode = (list: SidebarNode[], id: string, label: string): SidebarNode
     x.id === id
       ? { ...x, label }
       : { ...x, childrenItems: x.childrenItems ? renameNode(x.childrenItems, id, label) : undefined }
-  );
+);
 
 const removeNode = (list: SidebarNode[], id: string): SidebarNode[] =>
   list
     .filter(x => x.id !== id)
     .map(x => ({ ...x, childrenItems: x.childrenItems ? removeNode(x.childrenItems, id) : undefined }));
+
 
 type DocsSidebarProps = {
   items?: SidebarNode[];
@@ -63,6 +72,20 @@ export function DocsSidebar({
   useEffect(() => { setLocalItems(propItems); }, [propItems]);
   const effectiveItems = editable && !onChange ? localItems : propItems;
   const safeOnSelect = onSelect ?? (() => {});
+  const [picker, setPicker] = useState<{
+    open: boolean;
+    anchor: { x: number; y: number } | null;
+    mode: "sibling" | "child";
+    targetId: string | null;
+  }>({ open: false, anchor: null, mode: "sibling", targetId: null });
+
+  const openPicker = (e: React.MouseEvent, mode: "sibling" | "child", targetId: string | null) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setPicker({ open: true, anchor: { x: rect.right + 8, y: rect.top }, mode, targetId });
+  };
+
+  const closePicker = () => setPicker(p => ({ ...p, open: false }));
+
   const mutators = {
     addSibling: (targetId: string, node: Omit<SidebarNode,"id">) =>
       (onChange ? onChange : setLocalItems)(insertAfter(effectiveItems, targetId, node)),
@@ -72,6 +95,18 @@ export function DocsSidebar({
       (onChange ? onChange : setLocalItems)(renameNode(effectiveItems, id, label)),
     remove: (id: string) =>
       (onChange ? onChange : setLocalItems)(removeNode(effectiveItems, id)),
+  };
+
+  const onPickModule = (opt: { label: string; module: any; method?: "GET" | "POST" | "DELETE" }) => {
+    const node: any = { label: opt.label, module: opt.module };
+    if (opt.method) node.method = opt.method;
+    if (picker.mode === "child" && picker.targetId) {
+      mutators.addChild(picker.targetId, node);
+    } else {
+      const baseId = picker.targetId ?? effectiveItems[effectiveItems.length - 1]?.id ?? "";
+      mutators.addSibling(baseId, node);
+    }
+    closePicker();
   };
 
   return (
@@ -87,10 +122,49 @@ export function DocsSidebar({
         />
       ))}
       {editable && (
-        <AddButton onClick={() => mutators.addSibling(effectiveItems[effectiveItems.length - 1]?.id ?? "", { label: "새 항목", module: "small" })}>
+        <AddButton onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
           +
         </AddButton>
       )}
+      {picker.open && <Backdrop onClick={closePicker} />}
+      {picker.open && picker.anchor && (
+        <div
+          style={{
+            position: "fixed",
+            top: picker.anchor.y,
+            left: picker.anchor.x,
+            zIndex: 1000,
+            background: "#fff",
+            border: "1px solid #E5E7EB",
+            borderRadius: 12,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            padding: 8,
+            width: 140,
+          }}
+        >
+          {MODULE_OPTIONS.map((opt) => (
+            <button
+              key={opt.label}
+              onClick={() => onPickModule(opt as any)}
+              style={{
+                width: "100%",
+                textAlign: "left",
+                padding: "8px 10px",
+                background: "transparent",
+                border: 0,
+                cursor: "pointer",
+                color: "#4B5563",
+                borderRadius: 8,
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+      
     </Nav>
   );
 }
@@ -111,4 +185,11 @@ const AddButton = styled.button`
   font-size: 24px;
   background: transparent;
   cursor: pointer;
+`;
+
+const Backdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: transparent;
 `;

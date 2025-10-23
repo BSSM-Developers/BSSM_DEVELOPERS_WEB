@@ -47,7 +47,7 @@ export function SidebarItem({ node, selected, onSelect, editable, mutators }: Si
         {editable && (
           <DeleteButton
             aria-label="delete"
-            onClick={(e) => { e.stopPropagation(); if (confirm("삭제할까요?")) mutators.remove(node.id); }}
+            onClick={(e) => { e.stopPropagation(); if (confirm("삭제하시겠습니까?")) mutators.remove(node.id); }}
           >
             –
           </DeleteButton>

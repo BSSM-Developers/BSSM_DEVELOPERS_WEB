@@ -122,41 +122,17 @@ export function DocsSidebar({
       )}
       {picker.open && <Backdrop onClick={closePicker} />}
       {picker.open && picker.anchor && (
-        <div
-          style={{
-            position: "fixed",
-            top: picker.anchor.y,
-            left: picker.anchor.x,
-            zIndex: 1000,
-            background: "#fff",
-            border: "1px solid #E5E7EB",
-            borderRadius: 12,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-            padding: 8,
-            width: 140,
-          }}
-        >
+        <Picker anchor={picker.anchor}>
           {MODULE_OPTIONS.map((opt) => (
-            <button
+            <PickerItem
               key={opt.label}
               onClick={() => onPickModule(opt as any)}
-              style={{
-                width: "100%",
-                textAlign: "left",
-                padding: "8px 10px",
-                background: "transparent",
-                border: 0,
-                cursor: "pointer",
-                color: "#4B5563",
-                borderRadius: 8,
-              }}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-            >
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
               {opt.label}
-            </button>
+            </PickerItem>
           ))}
-        </div>
+        </Picker>
       )}
       
     </Nav>
@@ -186,4 +162,28 @@ const Backdrop = styled.div`
   inset: 0;
   z-index: 999;
   background: transparent;
+`;
+
+const Picker = styled.div`
+  position: fixed;
+  top: ${({ anchor }: { anchor: { x: number; y: number } }) => anchor.y}px;
+  left: ${({ anchor }: { anchor: { x: number; y: number } }) => anchor.x}px;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 8px;
+  width: 140px;
+`;
+
+const PickerItem = styled.button`
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: #4B5563;
+  border-radius: 8px;
 `;

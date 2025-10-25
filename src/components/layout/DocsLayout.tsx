@@ -8,15 +8,13 @@ import { useDocsStore } from "@/store/docsStore";
 
 const testItems = [
   { id: "doc-1", label: "시작하기", module: "default" } as any,
-  { id: "doc-2", label: "박동현", module: "default" } as any,
-  { id: "doc-3", label: "서정현", module: "default"} as any,
   {
-    id: "doc-4",
-    label: "결제",
+    id: "group-1",
+    label: "개발자",
     module: "collapse",
     childrenItems: [
-      { id: "s-3-1", label: "결제 개요", module: "small" } as any,
-      { id: "s-3-2", label: "결제 API 가이드", module: "small" } as any,
+      { id: "doc-2", label: "박동현", module: "small" } as any,
+      { id: "doc-3", label: "류승찬", module: "small" } as any,
     ],
   } as any,
 ];

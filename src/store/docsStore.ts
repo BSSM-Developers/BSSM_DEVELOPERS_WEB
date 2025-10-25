@@ -6,8 +6,6 @@ export interface DocsStoreState {
 }
 
 export const useDocsStore = create<DocsStoreState>((set: any) => ({
-  selected: "시작하기",
+  selected: "doc-2",
   setSelected: (key: string) => set({ selected: key }),
 }));
-
-

@@ -4,12 +4,14 @@ import styled from "@emotion/styled";
 import { DocsSidebar } from "./DocsSidebar";
 import { useState } from "react";
 import { TopNav } from "./TopNav";
+import { useDocsStore } from "@/store/docsStore";
 
 const testItems = [
-  { id: "s-1", label: "시작하기", module: "default" } as any,
-  { id: "s-2", label: "결제 이해하기", module: "api", method: "GET" } as any,
+  { id: "doc-1", label: "시작하기", module: "default" } as any,
+  { id: "doc-2", label: "박동현", module: "default" } as any,
+  { id: "doc-3", label: "서정현", module: "default"} as any,
   {
-    id: "s-3",
+    id: "doc-4",
     label: "결제",
     module: "collapse",
     childrenItems: [
@@ -20,15 +22,15 @@ const testItems = [
 ];
 
 export function DocsLayout({ children }: { children: React.ReactNode }) {
-  const [selected, setSelected] = useState<string>("시작하기");
+  const selectedDocId = useDocsStore((s: any) => s.selected)
   return (
     <Wrapper>
       <TopNav />
       <Body>
         <Sidebar>
-          <DocsSidebar items = {testItems} onSelect={(key) => setSelected(key)} editable={true} />
+          <DocsSidebar items = {testItems} editable={true} />
         </Sidebar>
-        <Content data-selected={selected}>{children}</Content>
+        <Content data-selected={selectedDocId}>{children}</Content>
       </Body>
     </Wrapper>
   );

@@ -56,22 +56,18 @@ const removeNode = (list: SidebarNode[], id: string): SidebarNode[] =>
 
 type DocsSidebarProps = {
   items?: SidebarNode[];
-  selected?: string | null;
-  onSelect?: (label: string) => void;
   editable?: boolean;
   onChange?: (next: SidebarNode[]) => void;
 };
 
 export function DocsSidebar({ 
   items = [],
-  selected = null, 
-  onSelect, editable = false, onChange
+  editable = false, onChange
  }: DocsSidebarProps) {
   const propItems = Array.isArray(items) ? items : [];
   const [localItems, setLocalItems] = useState<SidebarNode[]>(propItems);
   useEffect(() => { setLocalItems(propItems); }, [propItems]);
   const effectiveItems = editable && !onChange ? localItems : propItems;
-  const safeOnSelect = onSelect ?? (() => {});
   const [picker, setPicker] = useState<{
     open: boolean;
     anchor: { x: number; y: number } | null;
@@ -115,8 +111,6 @@ export function DocsSidebar({
         <SidebarItem
           key={(node as any).id ?? node.label}
           node={node}
-          selected={selected}
-          onSelect={safeOnSelect}
           editable={editable}
           mutators={mutators}
         />

@@ -4,6 +4,7 @@ import { useState } from "react";
 import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
+import { useDocsStore } from "@/store/docsStore";
 
 type Mutators = {
   addSibling: (targetId: string, node: Omit<SidebarNode,"id">) => void;
@@ -14,25 +15,22 @@ type Mutators = {
 
 type SidebarItemProps = {
   node: SidebarNode;
-  selected: string | null;
-  onSelect: (label: string) => void;
   editable: boolean;
   mutators: Mutators;
 };
 
-export function SidebarItem({ node, selected, onSelect, editable, mutators }: SidebarItemProps) {
+export function SidebarItem({ node, editable, mutators }: SidebarItemProps) {
   const [open, setOpen] = useState(true);
   const [renaming, setRenaming] = useState(false);
   const [label, setLabel] = useState(node.label);
-
+  const selectedDocId = useDocsStore((s: any) => s.selected)
   const isFolder = node.module === "collapse";
-  const childHasActive = (node.childrenItems ?? []).some(c => c.label === selected);
-  const isActive = selected === node.label || childHasActive;
+  const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedDocId);
+  const isActive = selectedDocId === node.id || childHasActive;
 
   const handleClick = () => {
     if (isFolder) setOpen(p => !p);
     else if (editable) setRenaming(true);
-    else onSelect(node.label);
   };
 
   const commitRename = () => {
@@ -67,7 +65,7 @@ export function SidebarItem({ node, selected, onSelect, editable, mutators }: Si
             style={{ width: "100%", background: "transparent", color: "inherit", border: 0, outline: "none" }}
           />
         ) : (
-          <Label onClick={(e) => { if (editable) { e.stopPropagation(); setRenaming(true); } }}>{node.label}</Label>
+          <Label onClick={(e) => { if (editable) { e.stopPropagation(); setRenaming(true); useDocsStore.setState({ selected: node.id }); } }}>{node.label}</Label>
         )}
       </ItemWrapper>
 
@@ -77,8 +75,6 @@ export function SidebarItem({ node, selected, onSelect, editable, mutators }: Si
             <SidebarItem
               key={child.id}
               node={child}
-              selected={selected}
-              onSelect={onSelect}
               editable={editable}
               mutators={mutators}
             />

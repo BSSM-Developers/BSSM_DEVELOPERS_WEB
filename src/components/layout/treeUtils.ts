@@ -13,3 +13,16 @@ export function findParentId(list: Node[], childId: string, parentId: string | n
   }
   return null;
 }
+
+// 상위 노드인지 확인
+export function isTopLevel(list: Node[], topLevelId: string, targetId: string): boolean {
+    const walk = (xs: Node[], foundTopLevel: boolean): boolean => {
+      for (const n of xs) {
+        const nextFound = foundTopLevel || n.id === topLevelId;
+        if (n.id === targetId && foundTopLevel) return true;
+        if (n.childrenItems?.length && walk(n.childrenItems as Node[], nextFound)) return true;
+      }
+      return false;
+    };
+    return walk(list, false);
+}

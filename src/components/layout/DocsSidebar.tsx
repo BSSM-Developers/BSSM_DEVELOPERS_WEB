@@ -4,6 +4,10 @@ import styled from "@emotion/styled";
 import { useEffect, useState } from "react";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
+import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
+import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { findParentId, removeNodeWithReturn, applySiblings } from "@/components/layout/treeUtils";
 
 const MODULE_OPTIONS = [
   { label: "기본", module: "default" },
@@ -60,6 +64,29 @@ type DocsSidebarProps = {
   onChange?: (next: SidebarNode[]) => void;
 };
 
+const SortableNode = ({ node, editable, mutators }: { node: any; editable: boolean; mutators: any }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
+  const style = {
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition,
+    zIndex: isDragging ? 1000 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      <SidebarItem node={node} editable={editable} mutators={mutators} renderChildren={false} />
+      {node.childrenItems?.length ? (
+        <div style={{ marginLeft: 16 }}>
+          <SortableContext items={node.childrenItems.map((c: any) => c.id)}>
+            {node.childrenItems.map((child: any) => (
+              <SortableNode key={child.id} node={child} editable={editable} mutators={mutators} />
+            ))}
+          </SortableContext>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function DocsSidebar({ 
   items = [],
   editable = false, onChange
@@ -93,6 +120,39 @@ export function DocsSidebar({
       (onChange ? onChange : setLocalItems)(removeNode(effectiveItems, id)),
   };
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
+
+  const getSiblings = (parentId: string | null): (SidebarNode & { id: string })[] => {
+    if (parentId === null) return (effectiveItems as any);
+    const stack: any[] = [...(effectiveItems as any)];
+    while (stack.length) {
+      const n = stack.pop();
+      if (n.id === parentId) return (n.childrenItems ?? []) as any;
+      if (n.childrenItems) stack.push(...n.childrenItems);
+    }
+    return [] as any;
+  };
+
+  const onDragEnd = (_evt: DragEndEvent) => {
+    const { active, over } = _evt;
+    if (!over || active.id === over.id) return;
+
+    const fromParent = findParentId(effectiveItems as any, String(active.id));
+    const toParent = findParentId(effectiveItems as any, String(over.id));
+    if (fromParent !== toParent) return;
+
+    const siblings = getSiblings(fromParent);
+    const fromIdx = siblings.findIndex((s) => s.id === active.id);
+    const toIdx = siblings.findIndex((s) => s.id === over.id);
+    if (fromIdx < 0 || toIdx < 0) return;
+    
+    const moved = arrayMove(siblings, fromIdx, toIdx) as any;
+    const next = applySiblings(effectiveItems as any, fromParent, moved as any) as any;
+    (onChange ? onChange : setLocalItems)(next);
+  };
+
   const onPickModule = (opt: { label: string; module: any; method?: "GET" | "POST" | "DELETE" }) => {
     const node: any = { label: opt.label, module: opt.module };
     if (opt.method) node.method = opt.method;
@@ -106,36 +166,35 @@ export function DocsSidebar({
   };
 
   return (
+    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
     <Nav>
-      {effectiveItems.map(node => (
-        <SidebarItem
-          key={(node as any).id ?? node.label}
-          node={node}
-          editable={editable}
-          mutators={mutators}
-        />
-      ))}
-      {editable && (
-        <AddButton onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
-          +
-        </AddButton>
-      )}
-      {picker.open && <Backdrop onClick={closePicker} />}
-      {picker.open && picker.anchor && (
-        <Picker anchor={picker.anchor}>
-          {MODULE_OPTIONS.map((opt) => (
-            <PickerItem
-              key={opt.label}
-              onClick={() => onPickModule(opt as any)}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-              {opt.label}
-            </PickerItem>
+        <SortableContext items={effectiveItems.map((n: any) => n.id)}>
+          {effectiveItems.map((node: any) => (
+            <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} />
           ))}
-        </Picker>
-      )}
-      
+        </SortableContext>
+        {editable && (
+          <AddButton onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
+            +
+          </AddButton>
+        )}
+        {picker.open && <Backdrop onClick={closePicker} />}
+        {picker.open && picker.anchor && (
+          <Picker anchor={picker.anchor}>
+            {MODULE_OPTIONS.map((opt) => (
+              <PickerItem
+                key={opt.label}
+                onClick={() => onPickModule(opt as any)}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                {opt.label}
+              </PickerItem>
+            ))}
+          </Picker>
+        )}
+        
     </Nav>
+    </DndContext>
   );
 }
 

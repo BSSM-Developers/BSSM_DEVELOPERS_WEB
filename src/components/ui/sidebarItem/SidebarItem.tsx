@@ -17,9 +17,10 @@ type SidebarItemProps = {
   node: SidebarNode;
   editable: boolean;
   mutators: Mutators;
+  renderChildren?: boolean;
 };
 
-export function SidebarItem({ node, editable, mutators }: SidebarItemProps) {
+export function SidebarItem({ node, editable, mutators, renderChildren = true }: SidebarItemProps) {
   const [open, setOpen] = useState(true);
   const [renaming, setRenaming] = useState(false);
   const [label, setLabel] = useState(node.label);
@@ -69,7 +70,7 @@ export function SidebarItem({ node, editable, mutators }: SidebarItemProps) {
         )}
       </ItemWrapper>
 
-      {isFolder && open && (node.childrenItems?.length ?? 0) > 0 && (
+      {renderChildren && isFolder && open && (node.childrenItems?.length ?? 0) > 0 && (
         <SubMenu>
           {node.childrenItems!.map(child => (
             <SidebarItem
@@ -77,6 +78,7 @@ export function SidebarItem({ node, editable, mutators }: SidebarItemProps) {
               node={child}
               editable={editable}
               mutators={mutators}
+              renderChildren={renderChildren}
             />
           ))}
         </SubMenu>

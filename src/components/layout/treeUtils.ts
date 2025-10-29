@@ -47,7 +47,7 @@ export function removeNodeWithReturn(list: Node[], id: string): { tree: Node[]; 
   return { tree, removed };
 }
 
-  // parentId의 children을 주어진 siblings로 갈아끼운다
+// parentId의 children을 주어진 siblings로 갈아끼운다
 export function applySiblings(list: Node[], parentId: string | null, newSiblings: Node[]): Node[] {
   if (parentId === null) {
     return newSiblings as SidebarNode[];

@@ -1,47 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useDocsStore } from "@/store/docsStore";
 import { DocsLayout } from "@/components/layout/DocsLayout";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
 import { DocsBlock } from "@/types/docs";
+import { docsSubData, DocsSubEntry } from "./mock/docsSubData";
+import { useDocsStore } from "@/store/docsStore";
 
 type BlockWithId = DocsBlock & { id: string };
 
 export default function DocsEditPage() {
   const selected = useDocsStore((s: any) => s.selected);
-  const [blocks, setBlocks] = useState<BlockWithId[]>([
-    { id: "init-1", module: "headline_1", content: "시작하기" },
-    {
-      id: "init-2",
-      module: "docs_1",
-      content: "테스트 환경 주의점, 방화벽 설정, 지원 플랫폼 및 브라우저를 알아보세요",
-    },
-    { id: "init-3", module: "docs_1", content: "" },
-    { id: "init-7", module: "docs_1", content: "" },
-    { id: "init-8", module: "docs_1", content: "" },
-    { id: "init-4", module: "headline_2", content: "테스트 환경" },
-    {
-      id: "init-5",
-      module: "docs_1",
-      content:
-        "BSSM Developers는 개발자의 편의를 위해 라이브 환경과 비슷한 테스트 환경을 제공하고 있어요",
-    },
-    {
-      id: "init-6",
-      module: "docs_1",
-      content: "테스트 환경과 라이브 환경이 다른 점은 아래 표에서 확인해주세요",
-    },
-  ]);
+  const [blocks, setBlocks] = useState<BlockWithId[]>(docsSubData[0].blocks as BlockWithId[]);
 
   useEffect(() => {
-    if (!selected || selected === "시작하기") return;
-    setBlocks((prev) => {
-      const copy = [...prev];
-      copy[0] = { ...copy[0], module: "headline_1", content: selected } as BlockWithId;
-      return copy;
-    });
+    if (selected == null) return;
+    if (typeof selected === "number") {
+      setBlocks((docsSubData[selected]?.blocks as BlockWithId[]) ?? []);
+      return;
+    }
+    const found: DocsSubEntry | undefined = docsSubData.find(d => d.id === String(selected));
+    setBlocks((found?.blocks as BlockWithId[]) ?? []);
   }, [selected]);
 
   const handleBlockChange = (index: number, updated: DocsBlock) => {

@@ -15,10 +15,18 @@ export function convertMarkdown(content: string): DocsBlock[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
-    // 빈 줄은 무시 (이전 list flush만 유지)
+
+    // big_space
+    if (trimmed === "::space") {
+      flushList();
+      blocks.push({ module: "big_space" });
+      continue;
+    }
+
+    // space
     if (trimmed === "") {
       flushList();
+      blocks.push({ module: "space" });
       continue;
     }
 

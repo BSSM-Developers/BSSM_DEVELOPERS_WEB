@@ -120,7 +120,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
             </ContextMenuItem>
             {isFolder && (
               <ContextMenuItem onClick={() => {
-                mutators.addChild(node.id, { label: "새 항목", module: "default" });
+                mutators.addChild(node.id, { label: "새 항목", module: "small" });
                 closeContextMenu();
               }}>
                 하위 항목 추가

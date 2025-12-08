@@ -52,7 +52,7 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
   };
 
   const onDragOver = (evt: DragOverEvent) => {
-    const { over } = evt;
+    const { over, active } = evt;
     if (!over) {
       setOverIntent(null);
       return;
@@ -63,8 +63,17 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       setOverIntent(null);
       return;
     }
-    const mode = target.module === "collapse" ? "child" : "sibling";
-    setOverIntent({ id: targetId, mode });
+
+    // 드래그되는 아이템 찾기
+    const draggedItem = findNodeById(effectiveItems as Node[], String(active.id));
+
+    // collapse 모듈 위에 드롭하려고 할 때, 드래그되는 아이템이 small이 아니면 자식 모드 차단
+    if (target.module === "collapse") {
+      const mode = draggedItem?.module === "small" ? "child" : "sibling";
+      setOverIntent({ id: targetId, mode });
+    } else {
+      setOverIntent({ id: targetId, mode: "sibling" });
+    }
   };
 
 
@@ -79,6 +88,10 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       const { tree: afterRemove, removed } =
         removeNodeWithReturn(effectiveItems as any, String(active.id));
       if (!removed) return;
+
+      // small 모듈이 아니면 자식으로 추가 차단
+      if (removed.module !== "small") return;
+
       const next = appendChild(afterRemove as any, targetId, removed as any);
       onChange(next as any);
       return;

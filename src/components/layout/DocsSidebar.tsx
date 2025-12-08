@@ -76,14 +76,26 @@ const SortableNode = ({
   );
 };
 
-export function DocsSidebar({ 
+export function DocsSidebar({
   items = [],
   editable = false, onChange
  }: DocsSidebarProps) {
   const propItems = Array.isArray(items) ? items : [];
-  const [localItems, setLocalItems] = useState<SidebarNode[]>(propItems);
-  useEffect(() => { setLocalItems(propItems); }, [propItems]);
-  const effectiveItems = editable && !onChange ? localItems : propItems;
+  const [localItems, setLocalItems] = useState<SidebarNode[]>([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    setLocalItems(propItems);
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+      setLocalItems(propItems);
+    }
+  }, [propItems, isClient]);
+
+  const effectiveItems = isClient ? (editable && !onChange ? localItems : propItems) : [];
   const [picker, setPicker] = useState<{
     open: boolean;
     anchor: { x: number; y: number } | null;

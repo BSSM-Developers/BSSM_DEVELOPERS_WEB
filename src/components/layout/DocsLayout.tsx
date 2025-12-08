@@ -21,12 +21,22 @@ const testItems = [
 
 export function DocsLayout({ children }: { children: React.ReactNode }) {
   const selectedDocId = useDocsStore((s: any) => s.selected)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
+
   return (
     <Wrapper>
       <TopNav />
       <Body>
-        <Sidebar>
-          <DocsSidebar items = {testItems} editable={true} />
+        <Sidebar collapsed={sidebarCollapsed}>
+          <SidebarHeader>
+            <ToggleButton onClick={toggleSidebar}>
+              {sidebarCollapsed ? "→" : "←"}
+            </ToggleButton>
+            {!sidebarCollapsed && <SidebarTitle>문서</SidebarTitle>}
+          </SidebarHeader>
+          {!sidebarCollapsed && <DocsSidebar items = {testItems} editable={true} />}
         </Sidebar>
         <Content data-selected={selectedDocId}>{children}</Content>
       </Body>
@@ -46,11 +56,46 @@ const Body = styled.div`
   overflow: hidden;
 `;
 
-const Sidebar = styled.aside`
-  width: 260px;
+const Sidebar = styled.aside<{ collapsed: boolean }>`
+  width: ${({ collapsed }) => collapsed ? "48px" : "260px"};
   background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.grey[200]};
   overflow-y: auto;
+  transition: width 0.3s ease;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SidebarHeader = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  gap: 8px;
+`;
+
+const ToggleButton = styled.button`
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: ${({ theme }) => theme.colors.grey[100]};
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ theme }) => theme.colors.grey[600]};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.grey[200]};
+  }
+`;
+
+const SidebarTitle = styled.h2`
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Content = styled.main`

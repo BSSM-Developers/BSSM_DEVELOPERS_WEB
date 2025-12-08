@@ -1,13 +1,14 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
-import { DndContext, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, useSortable, arrayMove } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { findParentId, removeNodeWithReturn, applySiblings } from "@/components/layout/treeUtils";
+import { DndContext } from "@dnd-kit/core";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
+import { verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useSidebarDrag } from "@/hooks/useSidebarDrag";
+import { createMutators, type Mutators } from "@/components/layout/sidebarUtils";
 
 const MODULE_OPTIONS = [
   { label: "기본", module: "default" },
@@ -15,47 +16,12 @@ const MODULE_OPTIONS = [
   { label: "메인", module: "main" },
   { label: "스몰", module: "small" },
   { label: "API(GET)", module: "api", method: "GET" as const },
+  { label: "API(POST)", module: "api", method: "POST" as const },
+  { label: "API(DELETE)", module: "api", method: "DELETE" as const },
+  { label: "API(PUT)", module: "api", method: "PUT" as const },
+  { label: "API(PATCH)", module: "api", method: "PATCH" as const },
 ] as const;
 
-const insertAfter = (list: SidebarNode[], targetId: string, node: Omit<SidebarNode,"id">): SidebarNode[] => {
-  const id = crypto.randomUUID();
-  const walk = (xs: SidebarNode[]): SidebarNode[] => {
-    const i = xs.findIndex(x => x.id === targetId);
-    if (i >= 0) {
-      const copy = [...xs];
-      copy.splice(i + 1, 0, { id, ...node });
-      return copy;
-    }
-    return xs.map(x => ({
-      ...x,
-      childrenItems: x.childrenItems ? walk(x.childrenItems) : undefined,
-    }));
-  };
-  return walk(list);
-};
-
-const appendChild = (list: SidebarNode[], parentId: string, node: Omit<SidebarNode,"id">): SidebarNode[] => {
-  const id = crypto.randomUUID();
-  const walk = (xs: SidebarNode[]): SidebarNode[] =>
-    xs.map(x =>
-      x.id === parentId
-        ? { ...x, childrenItems: [ ...(x.childrenItems ?? []), { id, ...node } ] }
-        : { ...x, childrenItems: x.childrenItems ? walk(x.childrenItems) : undefined }
-    );
-  return walk(list);
-};
-
-const renameNode = (list: SidebarNode[], id: string, label: string): SidebarNode[] =>
-  list.map(x =>
-    x.id === id
-      ? { ...x, label }
-      : { ...x, childrenItems: x.childrenItems ? renameNode(x.childrenItems, id, label) : undefined }
-);
-
-const removeNode = (list: SidebarNode[], id: string): SidebarNode[] =>
-  list
-    .filter(x => x.id !== id)
-    .map(x => ({ ...x, childrenItems: x.childrenItems ? removeNode(x.childrenItems, id) : undefined }));
 
 
 type DocsSidebarProps = {
@@ -64,28 +30,51 @@ type DocsSidebarProps = {
   onChange?: (next: SidebarNode[]) => void;
 };
 
-const SortableNode = ({ node, editable, mutators }: { node: any; editable: boolean; mutators: any }) => {
+type Node = SidebarNode & { id: string };
+
+const SortableNode = ({
+  node,
+  editable,
+  mutators,
+  overIntent
+}: {
+  node: Node;
+  editable: boolean;
+  mutators: Mutators;
+  overIntent?: { id: string; mode: "sibling" | "child" } | null;
+}) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
-  const style = {
+
+  const isDropTarget = overIntent?.id === node.id;
+  const isChildTarget = isDropTarget && overIntent?.mode === "child";
+  const isSiblingTarget = isDropTarget && overIntent?.mode === "sibling";
+
+  const style: React.CSSProperties = {
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     zIndex: isDragging ? 1000 : undefined,
   };
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <SidebarItem node={node} editable={editable} mutators={mutators} renderChildren={false} />
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-node-id={node.id}>
+      <DropTargetWrapper
+        isChildTarget={isChildTarget}
+        isSiblingTarget={isSiblingTarget}
+      >
+        <SidebarItem node={node} editable={editable} mutators={mutators} renderChildren={false} />
+        {isChildTarget && <ChildDropIndicator />}
+        {isSiblingTarget && <SiblingDropIndicator />}
+      </DropTargetWrapper>
       {node.childrenItems?.length ? (
-        <div style={{ marginLeft: 16 }}>
-          <SortableContext items={node.childrenItems.map((c: any) => c.id)}>
-            {node.childrenItems.map((child: any) => (
-              <SortableNode key={child.id} node={child} editable={editable} mutators={mutators} />
-            ))}
-          </SortableContext>
-        </div>
+        <SortableContext items={(node.childrenItems as Node[]).map(c => c.id)} strategy={verticalListSortingStrategy}>
+          {(node.childrenItems as Node[]).map(child => (
+            <SortableNode key={child.id} node={child} editable={editable} mutators={mutators} overIntent={overIntent} />
+          ))}
+        </SortableContext>
       ) : null}
     </div>
   );
-}
+};
 
 export function DocsSidebar({ 
   items = [],
@@ -109,49 +98,45 @@ export function DocsSidebar({
 
   const closePicker = () => setPicker(p => ({ ...p, open: false }));
 
-  const mutators = {
-    addSibling: (targetId: string, node: Omit<SidebarNode,"id">) =>
-      (onChange ? onChange : setLocalItems)(insertAfter(effectiveItems, targetId, node)),
-    addChild: (parentId: string, node: Omit<SidebarNode,"id">) =>
-      (onChange ? onChange : setLocalItems)(appendChild(effectiveItems, parentId, node)),
-    rename: (id: string, label: string) =>
-      (onChange ? onChange : setLocalItems)(renameNode(effectiveItems, id, label)),
-    remove: (id: string) =>
-      (onChange ? onChange : setLocalItems)(removeNode(effectiveItems, id)),
-  };
+  const { sensors, onDragOver, onDragEnd, overIntent } = useSidebarDrag({
+    effectiveItems,
+    onChange: onChange || setLocalItems,
+  });
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
-  );
+  const mutators = createMutators(effectiveItems, onChange, setLocalItems);
 
-  const getSiblings = (parentId: string | null): (SidebarNode & { id: string })[] => {
-    if (parentId === null) return (effectiveItems as any);
-    const stack: any[] = [...(effectiveItems as any)];
-    while (stack.length) {
-      const n = stack.pop();
-      if (n.id === parentId) return (n.childrenItems ?? []) as any;
-      if (n.childrenItems) stack.push(...n.childrenItems);
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (!editable) return;
+
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+    switch (e.key) {
+      case 'Delete':
+        // TODO: 현재 선택된 아이템 삭제 (추후 selection 상태 관리 필요)
+        break;
+      case 'n':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const baseId = effectiveItems[effectiveItems.length - 1]?.id ?? "";
+          mutators.addSibling(baseId, { label: "새 항목", module: "default" });
+        }
+        break;
+      case 'd':
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          // TODO: 현재 선택된 아이템 복제
+        }
+        break;
     }
-    return [] as any;
-  };
+  }, [editable, effectiveItems, mutators]);
 
-  const onDragEnd = (_evt: DragEndEvent) => {
-    const { active, over } = _evt;
-    if (!over || active.id === over.id) return;
-
-    const fromParent = findParentId(effectiveItems as any, String(active.id));
-    const toParent = findParentId(effectiveItems as any, String(over.id));
-    if (fromParent !== toParent) return;
-
-    const siblings = getSiblings(fromParent);
-    const fromIdx = siblings.findIndex((s) => s.id === active.id);
-    const toIdx = siblings.findIndex((s) => s.id === over.id);
-    if (fromIdx < 0 || toIdx < 0) return;
-    
-    const moved = arrayMove(siblings, fromIdx, toIdx) as any;
-    const next = applySiblings(effectiveItems as any, fromParent, moved as any) as any;
-    (onChange ? onChange : setLocalItems)(next);
-  };
+  useEffect(() => {
+    if (editable) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [editable, handleKeyDown]);
 
   const onPickModule = (opt: { label: string; module: any; method?: "GET" | "POST" | "DELETE" }) => {
     const node: any = { label: opt.label, module: opt.module };
@@ -166,11 +151,11 @@ export function DocsSidebar({
   };
 
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd}>
+    <DndContext sensors={sensors} onDragEnd={onDragEnd} onDragOver={onDragOver}>
     <Nav>
         <SortableContext items={effectiveItems.map((n: any) => n.id)}>
           {effectiveItems.map((node: any) => (
-            <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} />
+            <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} overIntent={overIntent} />
           ))}
         </SortableContext>
         {editable && (
@@ -245,4 +230,69 @@ const PickerItem = styled.button`
   cursor: pointer;
   color: #4B5563;
   border-radius: 8px;
+`;
+
+const DropTargetWrapper = styled.div<{
+  isChildTarget: boolean;
+  isSiblingTarget: boolean;
+}>`
+  position: relative;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  ${({ isChildTarget }) => isChildTarget && `
+    background: rgba(59, 130, 246, 0.1);
+    border: 2px solid #3B82F6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  `}
+
+  ${({ isSiblingTarget }) => isSiblingTarget && `
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid #10B981;
+  `}
+`;
+
+const ChildDropIndicator = styled.div`
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background: #3B82F6;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 10;
+
+  &::before {
+    content: "자식으로 추가";
+  }
+`;
+
+const SiblingDropIndicator = styled.div`
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #10B981;
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10;
+
+  &::after {
+    content: "형제로 추가";
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    background: #10B981;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
 `;

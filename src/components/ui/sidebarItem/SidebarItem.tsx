@@ -24,6 +24,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const [open, setOpen] = useState(true);
   const [renaming, setRenaming] = useState(false);
   const [label, setLabel] = useState(node.label);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const selectedDocId = useDocsStore((s: any) => s.selected)
   const isFolder = node.module === "collapse";
   const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedDocId);
@@ -40,9 +41,24 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
     setRenaming(false);
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (!editable) return;
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
+  const closeContextMenu = () => setContextMenu(null);
+
+  const duplicateItem = () => {
+    const newNode = { ...node, label: `${node.label} 복사` };
+    delete (newNode as any).id;
+    mutators.addSibling(node.id, newNode);
+    closeContextMenu();
+  };
+
   return (
     <>
-      <ItemWrapper module={(node.module ?? "default") as keyof typeof sidebarModules} active={isActive} onClick={handleClick}>
+      <ItemWrapper module={(node.module ?? "default") as keyof typeof sidebarModules} active={isActive} onClick={handleClick} onContextMenu={handleContextMenu}>
         {editable && (
           <DeleteButton
             aria-label="delete"
@@ -66,7 +82,12 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
             style={{ width: "100%", background: "transparent", color: "inherit", border: 0, outline: "none" }}
           />
         ) : (
-          <Label onClick={(e) => { if (editable) { e.stopPropagation(); setRenaming(true); useDocsStore.setState({ selected: node.id }); } }}>{node.label}</Label>
+          <>
+            <Label onClick={(e) => { if (editable) { e.stopPropagation(); setRenaming(true); useDocsStore.setState({ selected: node.id }); } }}>{node.label}</Label>
+            {node.module === "api" && node.method && (
+              <MethodBadge method={node.method}>{node.method}</MethodBadge>
+            )}
+          </>
         )}
       </ItemWrapper>
 
@@ -82,6 +103,38 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
             />
           ))}
         </SubMenu>
+      )}
+
+      {contextMenu && (
+        <>
+          <ContextMenuBackdrop onClick={closeContextMenu} />
+          <ContextMenu style={{ top: contextMenu.y, left: contextMenu.x }}>
+            <ContextMenuItem onClick={() => { setRenaming(true); closeContextMenu(); }}>
+              이름 변경
+            </ContextMenuItem>
+            <ContextMenuItem onClick={duplicateItem}>
+              복제
+            </ContextMenuItem>
+            {isFolder && (
+              <ContextMenuItem onClick={() => {
+                mutators.addChild(node.id, { label: "새 항목", module: "default" });
+                closeContextMenu();
+              }}>
+                하위 항목 추가
+              </ContextMenuItem>
+            )}
+            <ContextMenuDivider />
+            <ContextMenuItem
+              onClick={() => {
+                if (confirm("삭제하시겠습니까?")) mutators.remove(node.id);
+                closeContextMenu();
+              }}
+              danger
+            >
+              삭제
+            </ContextMenuItem>
+          </ContextMenu>
+        </>
       )}
     </>
   );
@@ -116,3 +169,63 @@ const DeleteButton = styled.button`
   cursor: pointer;
 `;
 const SubMenu = styled.div` display: flex; flex-direction: column; margin-left: 16px; `;
+
+const MethodBadge = styled.span<{ method: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" }>`
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: ${({ method }) => {
+    switch (method) {
+      case "GET": return "#10B981";
+      case "POST": return "#3B82F6";
+      case "DELETE": return "#EF4444";
+      case "PUT": return "#F59E0B";
+      case "PATCH": return "#8B5CF6";
+      default: return "#6B7280";
+    }
+  }};
+  color: white;
+`;
+
+const ContextMenuBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: transparent;
+`;
+
+const ContextMenu = styled.div`
+  position: fixed;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  min-width: 140px;
+`;
+
+const ContextMenuItem = styled.button<{ danger?: boolean }>`
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: ${({ danger }) => danger ? "#EF4444" : "#374151"};
+  border-radius: 4px;
+  font-size: 14px;
+
+  &:hover {
+    background: ${({ danger }) => danger ? "#FEF2F2" : "#F3F4F6"};
+  }
+`;
+
+const ContextMenuDivider = styled.hr`
+  margin: 4px 0;
+  border: 0;
+  height: 1px;
+  background: #E5E7EB;
+`;

@@ -31,8 +31,11 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const isActive = selectedDocId === node.id || childHasActive;
 
   const handleClick = () => {
-    if (isFolder) setOpen(p => !p);
-    else if (editable) setRenaming(true);
+    if (isFolder) {
+      setOpen(p => !p);
+    } else {
+      useDocsStore.setState({ selected: node.id });
+    }
   };
 
   const commitRename = () => {
@@ -83,7 +86,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
           />
         ) : (
           <>
-            <Label onClick={(e) => { if (editable) { e.stopPropagation(); setRenaming(true); useDocsStore.setState({ selected: node.id }); } }}>{node.label}</Label>
+            <Label>{node.label}</Label>
             {node.module === "api" && node.method && (
               <MethodBadge method={node.method}>{node.method}</MethodBadge>
             )}

@@ -98,7 +98,7 @@ export function DocsSidebar({
 
   const closePicker = () => setPicker(p => ({ ...p, open: false }));
 
-  const { sensors, onDragOver, onDragEnd, overIntent } = useSidebarDrag({
+  const { sensors, onDragStart, onDragOver, onDragEnd, overIntent } = useSidebarDrag({
     effectiveItems,
     onChange: onChange || setLocalItems,
   });
@@ -151,7 +151,7 @@ export function DocsSidebar({
   };
 
   return (
-    <DndContext sensors={sensors} onDragEnd={onDragEnd} onDragOver={onDragOver}>
+    <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
     <Nav>
         <SortableContext items={effectiveItems.map((n: any) => n.id)}>
           {effectiveItems.map((node: any) => (

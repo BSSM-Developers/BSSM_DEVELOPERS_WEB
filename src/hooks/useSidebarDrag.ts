@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DragEndEvent, DragOverEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { DragEndEvent, DragOverEvent, DragStartEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { findParentId, removeNodeWithReturn, applySiblings } from "@/components/layout/treeUtils";
@@ -47,18 +47,29 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     return [] as any;
   };
 
+  const onDragStart = (evt: DragStartEvent) => {
+    setOverIntent(null);
+  };
+
   const onDragOver = (evt: DragOverEvent) => {
     const { over } = evt;
-    if (!over) return;
+    if (!over) {
+      setOverIntent(null);
+      return;
+    }
     const targetId = String(over.id);
     const target = findNodeById(effectiveItems as Node[], targetId);
-    if (!target) return;
+    if (!target) {
+      setOverIntent(null);
+      return;
+    }
     const mode = target.module === "collapse" ? "child" : "sibling";
     setOverIntent({ id: targetId, mode });
   };
 
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
+    setOverIntent(null);
     if (!over || active.id === over.id) return;
 
     const targetId = String(over.id);
@@ -70,7 +81,6 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       if (!removed) return;
       const next = appendChild(afterRemove as any, targetId, removed as any);
       onChange(next as any);
-      setOverIntent(null);
       return;
     }
 
@@ -84,7 +94,6 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       if (!removed) return;
       const next = insertAfter(afterRemove as any, targetId, removed as any);
       onChange(next as any);
-      setOverIntent(null);
       return;
     }
 
@@ -96,11 +105,11 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     const moved = arrayMove(siblings, fromIdx, toIdx);
     const next  = applySiblings(effectiveItems as any, fromParent, moved as any);
     onChange(next as any);
-    setOverIntent(null);
   };
 
   return {
     sensors,
+    onDragStart,
     onDragOver,
     onDragEnd,
     overIntent,

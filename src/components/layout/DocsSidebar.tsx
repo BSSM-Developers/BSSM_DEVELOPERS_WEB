@@ -125,7 +125,6 @@ export function DocsSidebar({
 
     switch (e.key) {
       case 'Delete':
-        // TODO: 현재 선택된 아이템 삭제 (추후 selection 상태 관리 필요)
         break;
       case 'n':
         if (e.ctrlKey || e.metaKey) {
@@ -137,7 +136,6 @@ export function DocsSidebar({
       case 'd':
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
-          // TODO: 현재 선택된 아이템 복제
         }
         break;
     }

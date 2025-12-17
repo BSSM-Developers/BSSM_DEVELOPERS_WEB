@@ -2,16 +2,13 @@
 
 import styled from "@emotion/styled";
 import { DocsSidebar } from "./DocsSidebar";
-import { ApiDocModule } from "@/components/docs/ApiDocModule";
 import { useState } from "react";
 import { TopNav } from "./TopNav";
-import { useDocsStore } from "@/store/docsStore";
-import { apiDocsData } from "@/data/apiDocs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
 const testItems: SidebarNode[] = [
   { id: "perseus", label: "페르세우스", module: "main" },
-  { id: "getting-started", label: "시작하기", module: "default" },
+  { id: "doc-1", label: "시작하기", module: "default" },
   { id: "api-description", label: "API 설명", module: "default" },
   { id: "api-spec", label: "API 명세서", module: "collapse", childrenItems: [] },
   {
@@ -55,14 +52,9 @@ const testItems: SidebarNode[] = [
 ];
 
 export function DocsLayout({ children }: { children: React.ReactNode }) {
-  const selectedDocId = useDocsStore((s: any) => s.selected)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
-
-  // 선택된 아이템이 API 문서인지 확인하고 해당 데이터 가져오기
-  const selectedApiDoc = apiDocsData[selectedDocId];
-  const isApiSelected = !!selectedApiDoc;
 
   return (
     <Wrapper>
@@ -77,22 +69,8 @@ export function DocsLayout({ children }: { children: React.ReactNode }) {
           </SidebarHeader>
           {!sidebarCollapsed && <DocsSidebar items={testItems} editable={true} />}
         </Sidebar>
-        <Content data-selected={selectedDocId}>
-          {isApiSelected ? (
-            <ApiDocModule
-              apiId={selectedApiDoc.id}
-              apiName={selectedApiDoc.name}
-              method={selectedApiDoc.method}
-              endpoint={selectedApiDoc.endpoint}
-              description={selectedApiDoc.description}
-              headerParams={selectedApiDoc.headerParams}
-              bodyParams={selectedApiDoc.bodyParams}
-              sampleCode={selectedApiDoc.sampleCode}
-              responseCode={selectedApiDoc.responseCode}
-            />
-          ) : (
-            children
-          )}
+        <Content>
+          {children}
         </Content>
       </Body>
     </Wrapper>
@@ -159,15 +137,3 @@ const Content = styled.main`
   background: ${({ theme }) => theme.colors.background};
 `;
 
-const DefaultContent = styled.div`
-  padding: 48px;
-
-  h2 {
-    color: ${({ theme }) => theme.colors.text};
-    margin-bottom: 16px;
-  }
-
-  p {
-    color: ${({ theme }) => theme.colors.grey[600]};
-  }
-`;

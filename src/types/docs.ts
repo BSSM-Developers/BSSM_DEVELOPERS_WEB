@@ -4,7 +4,8 @@ export type DocsModule =
   | "image"
   | "headline_1"
   | "headline_2"
-  | "list";
+  | "list"
+  | "api";
 
 export interface DocsBlock {
   module: DocsModule;
@@ -15,14 +16,23 @@ export interface DocsBlock {
 }
 
 export interface ApiDoc {
-  method: string;
+  id: string;
+  name: string;
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   endpoint: string;
-  request: {
-    headers?: Record<string, string>;
-    body?: Record<string, string>;
-  };
-  response: {
-    status_code: number;
-    body: Record<string, string>;
-  };
+  description: string;
+  headerParams?: Array<{
+    name: string;
+    type: string;
+    description: string;
+    required?: boolean;
+  }>;
+  bodyParams?: Array<{
+    name: string;
+    type: string;
+    description: string;
+    required?: boolean;
+  }>;
+  sampleCode?: string;
+  responseCode?: string;
 }

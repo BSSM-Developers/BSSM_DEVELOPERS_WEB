@@ -43,7 +43,12 @@ export const docsModules = {
       max-width: 100%;
     }
   `,
-  
+
+  api: (theme: Theme) => css`
+    margin: 20px 0;
+    width: 100%;
+  `,
+
 };
 
 export type DocsModuleType = keyof typeof docsModules;

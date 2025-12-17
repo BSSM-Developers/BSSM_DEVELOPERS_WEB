@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { DocsBlock } from "@/components/docs/DocsBlock";
+import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 
 interface DocsBlockEditorProps {
@@ -85,6 +86,11 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
 
   };
 
+
+  // API 블록인 경우 특별한 렌더링
+  if (block.module === "api" && block.apiData) {
+    return <ApiBlock apiData={block.apiData} />;
+  }
 
   return (
     <DocsBlock module={block.module}>

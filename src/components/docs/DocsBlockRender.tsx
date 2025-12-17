@@ -1,4 +1,5 @@
 import { DocsBlock } from "./DocsBlock";
+import { ApiBlock } from "./ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 
 export function DocsBlockRender({ blocks } : { blocks : DocsBlockType[]} ){
@@ -28,15 +29,10 @@ export function DocsBlockRender({ blocks } : { blocks : DocsBlockType[]} ){
               </DocsBlock>
             );
 
-          // case "api":
-          //   return (
-          //     <DocsBlock key={i} module="docs_1">
-          //       <div>
-          //         <strong>{apiData?.method}</strong> {apiData?.endpoint}
-          //       </div>
-          //       <pre>{JSON.stringify(apiData, null, 2)}</pre>
-          //     </DocsBlock>
-          //   );
+          case "api":
+            return apiData ? (
+              <ApiBlock key={i} apiData={apiData} />
+            ) : null;
 
           default:
             return null;

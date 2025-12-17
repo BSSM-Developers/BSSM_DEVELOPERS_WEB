@@ -135,5 +135,7 @@ const Content = styled.main`
   flex: 1;
   overflow-y: auto;
   background: ${({ theme }) => theme.colors.background};
+  padding: 40px 30px;
 `;
+
 

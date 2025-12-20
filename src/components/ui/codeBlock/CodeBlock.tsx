@@ -3,26 +3,39 @@
 import styled from "@emotion/styled";
 import { useState } from "react";
 
-type Language = "Shell" | "JavaScript" | "Java" | "Swift";
-type LibraryOption = "Axios" | "Fetch" | "jQuery" | "Native" | "XHR";
+type Language = "Shell" | "JavaScript" | "Python";
+type LibraryOption = "Axios" | "Fetch" | "jQuery" | "Requests" | "cURL";
 
 type CodeBlockProps = {
   title: "Request" | "Response";
   languages?: Language[];
   libraryOptions?: LibraryOption[];
+  selectedLanguage?: string;
+  selectedLibrary?: string;
   code: string;
   className?: string;
+  onLanguageChange?: (language: string) => void;
+  onLibraryChange?: (library: string) => void;
 };
 
 export function CodeBlock({
   title,
   languages = ["JavaScript"],
   libraryOptions = ["Axios"],
+  selectedLanguage,
+  selectedLibrary,
   code,
-  className
+  className,
+  onLanguageChange,
+  onLibraryChange
 }: CodeBlockProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
-  const [selectedLibrary, setSelectedLibrary] = useState(libraryOptions[0]);
+  const handleLanguageChange = (language: Language) => {
+    onLanguageChange?.(language);
+  };
+
+  const handleLibraryChange = (library: LibraryOption) => {
+    onLibraryChange?.(library);
+  };
 
   return (
     <Container className={className}>
@@ -35,7 +48,7 @@ export function CodeBlock({
                 <LanguageTab
                   key={lang}
                   active={selectedLanguage === lang}
-                  onClick={() => setSelectedLanguage(lang)}
+                  onClick={() => handleLanguageChange(lang)}
                 >
                   {lang}
                 </LanguageTab>
@@ -50,7 +63,7 @@ export function CodeBlock({
               <LibraryButton
                 key={lib}
                 active={selectedLibrary === lib}
-                onClick={() => setSelectedLibrary(lib)}
+                onClick={() => handleLibraryChange(lib)}
               >
                 {lib}
               </LibraryButton>
@@ -157,7 +170,9 @@ const LibraryButton = styled.button<{ active: boolean }>`
   align-items: center;
   justify-content: center;
   height: 19px;
-  width: 48px;
+  width: auto;
+  padding: 0 10px;
+  min-width: 48px;
   border-radius: 3px;
   background: ${({ active }) => active ? "#FFFFFF" : "transparent"};
   border: none;

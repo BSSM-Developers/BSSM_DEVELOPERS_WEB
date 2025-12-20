@@ -33,10 +33,17 @@ type ApiDocModuleProps = {
   responseCode?: string;
   languages?: string[];
   libraryOptions?: string[];
+  baseUrl?: string;
+  includeAuth?: boolean;
+  authType?: 'bearer' | 'basic' | 'apikey';
+  responseData?: any;
+  responseStatus?: number;
+  responseMessage?: string;
   onTryClick?: () => void;
 };
 
 export function ApiDocModule({
+  apiId,
   apiName,
   method,
   endpoint,
@@ -48,8 +55,25 @@ export function ApiDocModule({
   responseCode,
   languages,
   libraryOptions,
+  baseUrl,
+  includeAuth = true,
+  authType = 'bearer',
+  responseData,
+  responseStatus = 200,
+  responseMessage = "성공",
   onTryClick
 }: ApiDocModuleProps) {
+  // ApiDoc 객체 생성
+  const apiDoc = {
+    id: apiId,
+    name: apiName,
+    method,
+    endpoint,
+    description,
+    headerParams,
+    bodyParams
+  };
+
   return (
     <Container>
       <ContentWrapper>
@@ -75,10 +99,17 @@ export function ApiDocModule({
       </ContentWrapper>
 
       <ApiCodeSection
+        apiDoc={apiDoc}
         sampleCode={sampleCode}
         responseCode={responseCode}
-        languages={languages}
-        libraryOptions={libraryOptions}
+        languages={languages as any}
+        libraryOptions={libraryOptions as any}
+        baseUrl={baseUrl}
+        includeAuth={includeAuth}
+        authType={authType}
+        responseData={responseData}
+        responseStatus={responseStatus}
+        responseMessage={responseMessage}
       />
     </Container>
   );

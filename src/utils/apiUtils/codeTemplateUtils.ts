@@ -2,6 +2,8 @@ import type { ApiDoc } from "@/types/docs";
 import type { ApiParam } from "./paramUtils";
 import { generateParamExamples, extractParams } from "./paramUtils";
 
+import { wrapColor, highlightJson } from "./highlightUtils";
+
 export type Language = 'javascript' | 'python' | 'shell';
 export type Library = 'axios' | 'fetch' | 'jquery' | 'requests' | 'native';
 
@@ -15,9 +17,7 @@ export interface CodeTemplateOptions {
   formatCode?: boolean;
 }
 
-/**
- * API 정보에서 요청 코드를 생성
- */
+// API 정보에서 요청 코드 생성
 export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions): string {
   const { language, library = 'axios', baseUrl = '', includeAuth = true } = options;
 
@@ -44,9 +44,7 @@ export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions
   }
 }
 
-/**
- * 경로 파라미터를 실제 값으로 치환
- */
+// 경로 파라미터 실제 값으로 치환
 function replacePathParams(endpoint: string, pathParams: Record<string, any>): string {
   let result = endpoint;
   Object.entries(pathParams).forEach(([key, value]) => {
@@ -55,9 +53,7 @@ function replacePathParams(endpoint: string, pathParams: Record<string, any>): s
   return result;
 }
 
-/**
- * 인증 헤더 생성
- */
+// 인증 헤더 생성
 function generateAuthHeader(options: CodeTemplateOptions): Record<string, string> {
   if (!options.includeAuth) return {};
 
@@ -75,9 +71,7 @@ function generateAuthHeader(options: CodeTemplateOptions): Record<string, string
   }
 }
 
-/**
- * JavaScript/TypeScript 코드 생성
- */
+// JavaScript 코드 생성
 function generateJavaScriptCode(
   apiDoc: ApiDoc,
   url: string,
@@ -91,54 +85,54 @@ function generateJavaScriptCode(
 
   switch (library) {
     case 'axios':
-      return `<span style="color: #ff7b72">const</span> axios = <span style="color: #ffa656">require</span>(<span style="color: #9fcef8">'axios'</span>);
+      return `${wrapColor('const', 'keyword')} axios = ${wrapColor('require', 'special')}(${wrapColor("'axios'", 'string')});
 
-<span style="color: #ff7b72">const</span> response = <span style="color: #ff7b72">await</span> <span style="color: #cda3f9">axios</span>({
-  <span style="color: #9fcef8">method</span>: <span style="color: #9fcef8">'${apiDoc.method.toLowerCase()}'</span>,
-  <span style="color: #9fcef8">url</span>: <span style="color: #9fcef8">'${url}'</span>,${Object.keys(headers).length > 0 ? `
-  <span style="color: #9fcef8">headers</span>: ${JSON.stringify(headers, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')},` : ''}${hasBody && Object.keys(examples.body).length > 0 ? `
-  <span style="color: #9fcef8">data</span>: ${JSON.stringify(examples.body, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')},` : ''}
+${wrapColor('const', 'keyword')} response = ${wrapColor('await', 'keyword')} ${wrapColor('axios', 'function')}({
+  ${wrapColor('method', 'key')}: ${wrapColor(`'${apiDoc.method.toLowerCase()}'`, 'string')},
+  ${wrapColor('url', 'key')}: ${wrapColor(`'${url}'`, 'string')},${Object.keys(headers).length > 0 ? `
+  ${wrapColor('headers', 'key')}: ${highlightJson(JSON.stringify(headers, null, 2))},` : ''}${hasBody && Object.keys(examples.body).length > 0 ? `
+  ${wrapColor('data', 'key')}: ${highlightJson(JSON.stringify(examples.body, null, 2))},` : ''}
 });
 
-<span style="color: #ff7b72">console</span>.<span style="color: #cda3f9">log</span>(response.data);`;
+${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(response.data);`;
 
     case 'fetch':
-      const fetchOptions: string[] = [`<span style="color: #9fcef8">method</span>: <span style="color: #9fcef8">'${apiDoc.method}'</span>`];
+      const fetchOptions: string[] = [`${wrapColor('method', 'key')}: ${wrapColor(`'${apiDoc.method}'`, 'string')}`];
 
       if (Object.keys(headers).length > 0) {
-        fetchOptions.push(`<span style="color: #9fcef8">headers</span>: ${JSON.stringify(headers, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')}`);
+        fetchOptions.push(`${wrapColor('headers', 'key')}: ${highlightJson(JSON.stringify(headers, null, 2))}`);
       }
 
       if (hasBody && Object.keys(examples.body).length > 0) {
-        fetchOptions.push(`<span style="color: #9fcef8">body</span>: <span style="color: #cda3f9">JSON.stringify</span>(${JSON.stringify(examples.body, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')})`);
+        fetchOptions.push(`${wrapColor('body', 'key')}: ${wrapColor('JSON.stringify', 'function')}(${highlightJson(JSON.stringify(examples.body, null, 2))})`);
       }
 
-      return `<span style="color: #ff7b72">const</span> response = <span style="color: #ff7b72">await</span> <span style="color: #cda3f9">fetch</span>(<span style="color: #9fcef8">'${url}'</span>, {
+      return `${wrapColor('const', 'keyword')} response = ${wrapColor('await', 'keyword')} ${wrapColor('fetch', 'function')}(${wrapColor(`'${url}'`, 'string')}, {
   ${fetchOptions.join(',\n  ')}
 });
 
-<span style="color: #ff7b72">const</span> data = <span style="color: #ff7b72">await</span> response.<span style="color: #cda3f9">json</span>();
-<span style="color: #ff7b72">console</span>.<span style="color: #cda3f9">log</span>(data);`;
+${wrapColor('const', 'keyword')} data = ${wrapColor('await', 'keyword')} response.${wrapColor('json', 'function')}();
+${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(data);`;
 
     case 'jquery':
       const jqueryOptions: string[] = [
-        `<span style="color: #9fcef8">url</span>: <span style="color: #9fcef8">'${url}'</span>`,
-        `<span style="color: #9fcef8">method</span>: <span style="color: #9fcef8">'${apiDoc.method}'</span>`
+        `${wrapColor('url', 'key')}: ${wrapColor(`'${url}'`, 'string')}`,
+        `${wrapColor('method', 'key')}: ${wrapColor(`'${apiDoc.method}'`, 'string')}`
       ];
 
       if (Object.keys(headers).length > 0) {
-        jqueryOptions.push(`<span style="color: #9fcef8">headers</span>: ${JSON.stringify(headers, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')}`);
+        jqueryOptions.push(`${wrapColor('headers', 'key')}: ${highlightJson(JSON.stringify(headers, null, 2))}`);
       }
 
       if (hasBody && Object.keys(examples.body).length > 0) {
-        jqueryOptions.push(`<span style="color: #9fcef8">contentType</span>: <span style="color: #9fcef8">'application/json'</span>`);
-        jqueryOptions.push(`<span style="color: #9fcef8">data</span>: <span style="color: #cda3f9">JSON.stringify</span>(${JSON.stringify(examples.body, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')})`);
+        jqueryOptions.push(`${wrapColor('contentType', 'key')}: ${wrapColor("'application/json'", 'string')}`);
+        jqueryOptions.push(`${wrapColor('data', 'key')}: ${wrapColor('JSON.stringify', 'function')}(${highlightJson(JSON.stringify(examples.body, null, 2))})`);
       }
 
-      return `<span style="color: #cda3f9">$</span>.<span style="color: #cda3f9">ajax</span>({
+      return `${wrapColor('$', 'function')}.${wrapColor('ajax', 'function')}({
   ${jqueryOptions.join(',\n  ')}
-}).<span style="color: #cda3f9">done</span>(<span style="color: #ff7b72">function</span>(response) {
-  <span style="color: #ff7b72">console</span>.<span style="color: #cda3f9">log</span>(response);
+}).${wrapColor('done', 'function')}(${wrapColor('function', 'keyword')}(response) {
+  ${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(response);
 });`;
 
     default:
@@ -146,9 +140,7 @@ function generateJavaScriptCode(
   }
 }
 
-/**
- * Python 코드 생성
- */
+// Python 코드 생성
 function generatePythonCode(
   apiDoc: ApiDoc,
   url: string,
@@ -160,19 +152,17 @@ function generatePythonCode(
   const headers = { ...authHeaders, ...examples.header };
   const hasBody = ['POST', 'PUT', 'PATCH'].includes(apiDoc.method);
 
-  return `<span style="color: #ff7b72">import</span> <span style="color: #cda3f9">requests</span>
+  return `${wrapColor('import', 'keyword')} ${wrapColor('requests', 'function')}
 
-${Object.keys(headers).length > 0 ? `<span style="color: #9fcef8">headers</span> = ${JSON.stringify(headers, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')}` : ''}
-${hasBody && Object.keys(examples.body).length > 0 ? `<span style="color: #9fcef8">data</span> = ${JSON.stringify(examples.body, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')}` : ''}
+${Object.keys(headers).length > 0 ? `${wrapColor('headers', 'variable')} = ${highlightJson(JSON.stringify(headers, null, 2))}` : ''}
+${hasBody && Object.keys(examples.body).length > 0 ? `${wrapColor('data', 'variable')} = ${highlightJson(JSON.stringify(examples.body, null, 2))}` : ''}
 
-<span style="color: #9fcef8">response</span> = <span style="color: #cda3f9">requests</span>.<span style="color: #cda3f9">${apiDoc.method.toLowerCase()}</span>(<span style="color: #9fcef8">'${url}'</span>${Object.keys(headers).length > 0 ? ', <span style="color: #9fcef8">headers</span>=<span style="color: #9fcef8">headers</span>' : ''}${hasBody && Object.keys(examples.body).length > 0 ? ', <span style="color: #9fcef8">json</span>=<span style="color: #9fcef8">data</span>' : ''})
+${wrapColor('response', 'variable')} = ${wrapColor('requests', 'function')}.${wrapColor(apiDoc.method.toLowerCase(), 'function')}(${wrapColor(`'${url}'`, 'string')}${Object.keys(headers).length > 0 ? `, ${wrapColor('headers', 'key')}=${wrapColor('headers', 'variable')}` : ''}${hasBody && Object.keys(examples.body).length > 0 ? `, ${wrapColor('json', 'key')}=${wrapColor('data', 'variable')}` : ''})
 
-<span style="color: #ff7b72">print</span>(<span style="color: #9fcef8">response</span>.<span style="color: #cda3f9">json</span>())`;
+${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColor('json', 'function')}())`;
 }
 
-/**
- * 응답 코드 템플릿 생성
- */
+// 응답 코드 템플릿 생성
 export function generateResponseTemplate(
   statusCode: number = 200,
   message: string = "성공",
@@ -184,17 +174,10 @@ export function generateResponseTemplate(
     data
   };
 
-  return JSON.stringify(responseObj, null, 2)
-    .replace(/"([^"]+)":/g, '<span style="color: #9fcef8">"$1"</span><span style="color: #d1d6db">:</span>')
-    .replace(/: "([^"]+)"/g, ': <span style="color: #9fcef8">"$1"</span>')
-    .replace(/: (\d+)/g, ': <span style="color: #9fcef8">$1</span>')
-    .replace(/: (true|false|null)/g, ': <span style="color: #ff7b72">$1</span>')
-    .replace(/,/g, '<span style="color: #d1d6db">,</span>');
+  return highlightJson(JSON.stringify(responseObj, null, 2));
 }
 
-/**
- * Shell/cURL 코드 생성
- */
+// Shell 코드 생성
 function generateShellCode(
   apiDoc: ApiDoc,
   url: string,
@@ -205,25 +188,23 @@ function generateShellCode(
   const headers = { ...authHeaders, ...examples.header };
   const hasBody = ['POST', 'PUT', 'PATCH'].includes(apiDoc.method);
 
-  const curlParts = [`<span style="color: #cda3f9">curl</span> <span style="color: #ff7b72">-X</span> <span style="color: #9fcef8">${apiDoc.method}</span>`];
+  const curlParts = [`${wrapColor('curl', 'function')} ${wrapColor('-X', 'keyword')} ${wrapColor(apiDoc.method, 'string')}`];
 
   Object.entries(headers).forEach(([key, value]) => {
-    curlParts.push(`  <span style="color: #ff7b72">-H</span> <span style="color: #9fcef8">"${key}: ${value}"</span>`);
+    curlParts.push(`  ${wrapColor('-H', 'keyword')} ${wrapColor(`"${key}: ${value}"`, 'string')}`);
   });
 
   if (hasBody && Object.keys(examples.body).length > 0) {
-    curlParts.push(`  <span style="color: #ff7b72">-H</span> <span style="color: #9fcef8">"Content-Type: application/json"</span>`);
-    curlParts.push(`  <span style="color: #ff7b72">-d</span> <span style="color: #9fcef8">'${JSON.stringify(examples.body).replace(/'/g, "\\'")}'</span>`);
+    curlParts.push(`  ${wrapColor('-H', 'keyword')} ${wrapColor('"Content-Type: application/json"', 'string')}`);
+    curlParts.push(`  ${wrapColor('-d', 'keyword')} ${wrapColor(`'${JSON.stringify(examples.body).replace(/'/g, "\\'")}'`, 'string')}`);
   }
 
-  curlParts.push(`  <span style="color: #9fcef8">"${url}"</span>`);
+  curlParts.push(`  ${wrapColor(`"${url}"`, 'string')}`);
 
   return curlParts.join(' \\\n');
 }
 
-/**
- * 라이브러리별 지원 언어 매핑
- */
+// 라이브러리별 지원 언어 매핑
 export const libraryLanguageMap: Record<Library, Language[]> = {
   axios: ['javascript'],
   fetch: ['javascript'],
@@ -232,9 +213,7 @@ export const libraryLanguageMap: Record<Library, Language[]> = {
   native: ['shell']
 };
 
-/**
- * 언어별 기본 라이브러리
- */
+// 언어별 기본 라이브러리
 export const defaultLibraryMap: Record<Language, Library> = {
   javascript: 'axios',
   python: 'requests',

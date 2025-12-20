@@ -116,7 +116,9 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
           style={{
             width: "100%",
             border: "none",
-            background: "transparent",
+            background: "white",
+            padding: "8px 12px",
+            borderRadius: "4px",
             font: "inherit",
             color: "inherit",
             outline: "none",

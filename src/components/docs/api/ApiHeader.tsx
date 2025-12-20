@@ -122,12 +122,13 @@ const EditTitleInput = styled.input`
   color: #191F28;
   letter-spacing: -1.8px;
   border: none;
-  border-bottom: 2px solid #E5E7EB;
   outline: none;
   width: 100%;
-  background: transparent;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
   &:focus {
-    border-color: #58A6FF;
+    box-shadow: 0 0 0 2px #58A6FF;
   }
 `;
 
@@ -138,12 +139,13 @@ const EditDescInput = styled.input`
   color: #6B7684;
   letter-spacing: -0.7px;
   border: none;
-  border-bottom: 1px solid #E5E7EB;
   outline: none;
   width: 100%;
-  background: transparent;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
   &:focus {
-    border-color: #58A6FF;
+    box-shadow: 0 0 0 2px #58A6FF;
   }
 `;
 
@@ -158,6 +160,7 @@ const EditEndpointInput = styled.input`
   padding: 4px 8px;
   outline: none;
   flex: 1;
+  background: white;
   &:focus {
     border-color: #58A6FF;
   }

@@ -34,7 +34,7 @@ export function ParamItem({
               value={name}
               onChange={(e) => onChange?.({ name: e.target.value, type, description, required })}
               placeholder="이름"
-              style={{ width: '100px', background: '#F7FBFF', color: '#58A6FF', fontWeight: 500 }}
+              style={{ width: '100px', color: '#58A6FF', fontWeight: 500 }}
             />
             <TypeSelect
               value={type}
@@ -179,6 +179,7 @@ const EditInput = styled.input`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 13px;
   outline: none;
+  background: white;
   &:focus {
     border-color: #58A6FF;
   }

@@ -160,14 +160,14 @@ function generatePythonCode(
   const headers = { ...authHeaders, ...examples.header };
   const hasBody = ['POST', 'PUT', 'PATCH'].includes(apiDoc.method);
 
-  return `import requests
+  return `<span style="color: #ff7b72">import</span> <span style="color: #cda3f9">requests</span>
 
-${Object.keys(headers).length > 0 ? `headers = ${JSON.stringify(headers, null, 2)}` : ''}
-${hasBody && Object.keys(examples.body).length > 0 ? `data = ${JSON.stringify(examples.body, null, 2)}` : ''}
+${Object.keys(headers).length > 0 ? `<span style="color: #9fcef8">headers</span> = ${JSON.stringify(headers, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')}` : ''}
+${hasBody && Object.keys(examples.body).length > 0 ? `<span style="color: #9fcef8">data</span> = ${JSON.stringify(examples.body, null, 2).replace(/"/g, '<span style="color: #9fcef8">\\"</span>')}` : ''}
 
-response = requests.${apiDoc.method.toLowerCase()}('${url}'${Object.keys(headers).length > 0 ? ', headers=headers' : ''}${hasBody && Object.keys(examples.body).length > 0 ? ', json=data' : ''})
+<span style="color: #9fcef8">response</span> = <span style="color: #cda3f9">requests</span>.<span style="color: #cda3f9">${apiDoc.method.toLowerCase()}</span>(<span style="color: #9fcef8">'${url}'</span>${Object.keys(headers).length > 0 ? ', <span style="color: #9fcef8">headers</span>=<span style="color: #9fcef8">headers</span>' : ''}${hasBody && Object.keys(examples.body).length > 0 ? ', <span style="color: #9fcef8">json</span>=<span style="color: #9fcef8">data</span>' : ''})
 
-print(response.json())`;
+<span style="color: #ff7b72">print</span>(<span style="color: #9fcef8">response</span>.<span style="color: #cda3f9">json</span>())`;
 }
 
 /**
@@ -205,18 +205,18 @@ function generateShellCode(
   const headers = { ...authHeaders, ...examples.header };
   const hasBody = ['POST', 'PUT', 'PATCH'].includes(apiDoc.method);
 
-  const curlParts = [`curl -X ${apiDoc.method}`];
+  const curlParts = [`<span style="color: #cda3f9">curl</span> <span style="color: #ff7b72">-X</span> <span style="color: #9fcef8">${apiDoc.method}</span>`];
 
   Object.entries(headers).forEach(([key, value]) => {
-    curlParts.push(`  -H "${key}: ${value}"`);
+    curlParts.push(`  <span style="color: #ff7b72">-H</span> <span style="color: #9fcef8">"${key}: ${value}"</span>`);
   });
 
   if (hasBody && Object.keys(examples.body).length > 0) {
-    curlParts.push(`  -H "Content-Type: application/json"`);
-    curlParts.push(`  -d '${JSON.stringify(examples.body)}'`);
+    curlParts.push(`  <span style="color: #ff7b72">-H</span> <span style="color: #9fcef8">"Content-Type: application/json"</span>`);
+    curlParts.push(`  <span style="color: #ff7b72">-d</span> <span style="color: #9fcef8">'${JSON.stringify(examples.body).replace(/'/g, "\\'")}'</span>`);
   }
 
-  curlParts.push(`  "${url}"`);
+  curlParts.push(`  <span style="color: #9fcef8">"${url}"</span>`);
 
   return curlParts.join(' \\\n');
 }

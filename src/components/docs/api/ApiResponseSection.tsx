@@ -13,13 +13,17 @@ interface ApiParam {
 interface ApiResponseSectionProps {
   responseParams?: ApiParam[];
   title?: string;
+  editable?: boolean;
+  onParamsChange?: (params: ApiParam[]) => void;
 }
 
 export function ApiResponseSection({
   responseParams = [],
-  title = "Response"
+  title = "Response",
+  editable = false,
+  onParamsChange
 }: ApiResponseSectionProps) {
-  const hasParams = responseParams.length > 0;
+  const hasParams = responseParams.length > 0 || editable;
 
   if (!hasParams) return null;
 
@@ -31,6 +35,8 @@ export function ApiResponseSection({
         title="Response Body"
         params={responseParams}
         large
+        editable={editable}
+        onParamsChange={onParamsChange}
       />
     </ResponseSection>
   );

@@ -17,9 +17,18 @@ interface ApiParamsSectionProps {
   params: ApiParam[];
   large?: boolean;
   showValidation?: boolean;
+  editable?: boolean;
+  onParamsChange?: (params: ApiParam[]) => void;
 }
 
-export function ApiParamsSection({ title, params, large = false, showValidation = false }: ApiParamsSectionProps) {
+export function ApiParamsSection({
+  title,
+  params,
+  large = false,
+  showValidation = false,
+  editable = false,
+  onParamsChange
+}: ApiParamsSectionProps) {
   const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: Record<string, string[]> }>({
     isValid: true,
     errors: {}
@@ -32,7 +41,23 @@ export function ApiParamsSection({ title, params, large = false, showValidation 
     }
   }, [params, showValidation]);
 
-  if (params.length === 0) return null;
+  const handleAddParam = () => {
+    const newParam: ApiParam = { name: "", type: "string", description: "", required: false };
+    onParamsChange?.([...params, newParam]);
+  };
+
+  const handleUpdateParam = (index: number, updated: ApiParam) => {
+    const nextParams = [...params];
+    nextParams[index] = updated;
+    onParamsChange?.(nextParams);
+  };
+
+  const handleDeleteParam = (index: number) => {
+    const nextParams = params.filter((_, i) => i !== index);
+    onParamsChange?.(nextParams);
+  };
+
+  if (params.length === 0 && !editable) return null;
 
   return (
     <ParamSection>
@@ -61,33 +86,45 @@ export function ApiParamsSection({ title, params, large = false, showValidation 
       )}
 
       <ParamCard large={large}>
-        {large ? (
-          <ParamList>
-            {params.map((param, index) => (
-              <ParamItem
-                key={index}
-                name={param.name}
-                type={param.type}
-                description={param.description}
-                required={param.required}
-              />
-            ))}
-          </ParamList>
-        ) : (
-          params.map((param, index) => (
+        <ParamList style={{ marginTop: 0 }}>
+          {params.map((param, index) => (
             <ParamItem
               key={index}
               name={param.name}
               type={param.type}
               description={param.description}
               required={param.required}
+              editable={editable}
+              onChange={(updated) => handleUpdateParam(index, updated)}
+              onDelete={() => handleDeleteParam(index)}
             />
-          ))
-        )}
+          ))}
+          {editable && (
+            <AddParamButton onClick={handleAddParam}>
+              + 파라미터 추가
+            </AddParamButton>
+          )}
+        </ParamList>
       </ParamCard>
     </ParamSection>
   );
 }
+
+const AddParamButton = styled.button`
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed #D1D5DB;
+  border-radius: 6px;
+  background: transparent;
+  color: #6B7280;
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 8px;
+  &:hover {
+    background: #F9FAFB;
+    border-color: #9CA3AF;
+  }
+`;
 
 const ParamSection = styled.div`
   display: flex;

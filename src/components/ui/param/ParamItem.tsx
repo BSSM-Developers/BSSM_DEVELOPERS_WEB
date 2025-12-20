@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import styled from "@emotion/styled";
 import { HttpMethodTag } from "@/components/ui/httpMethod/HttpMethodTag";
 
@@ -9,9 +10,59 @@ type ParamItemProps = {
   description: string;
   required?: boolean;
   className?: string;
+  editable?: boolean;
+  onChange?: (updated: { name: string; type: string; description: string; required: boolean }) => void;
+  onDelete?: () => void;
 };
 
-export function ParamItem({ name, type, description, required = false, className }: ParamItemProps) {
+export function ParamItem({
+  name,
+  type,
+  description,
+  required = false,
+  className,
+  editable = false,
+  onChange,
+  onDelete
+}: ParamItemProps) {
+  if (editable) {
+    return (
+      <Container className={className} style={{ padding: '8px 0' }}>
+        <ParamInfo style={{ gap: '4px' }}>
+          <ParamHeader>
+            <EditInput
+              value={name}
+              onChange={(e) => onChange?.({ name: e.target.value, type, description, required })}
+              placeholder="이름"
+              style={{ width: '100px', background: '#F7FBFF', color: '#58A6FF', fontWeight: 500 }}
+            />
+            <TypeSelect
+              value={type}
+              onChange={(newType) => onChange?.({ name, type: newType, description, required })}
+            />
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#F06820', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={required}
+                onChange={(e) => onChange?.({ name, type, description, required: e.target.checked })}
+              />
+              필수
+            </label>
+          </ParamHeader>
+          <DescriptionWrapper>
+            <EditInput
+              value={description}
+              onChange={(e) => onChange?.({ name, type, description: e.target.value, required })}
+              placeholder="설명"
+              style={{ flex: 1 }}
+            />
+          </DescriptionWrapper>
+        </ParamInfo>
+        <DeleteButton onClick={onDelete}>×</DeleteButton>
+      </Container>
+    );
+  }
+
   return (
     <Container className={className}>
       <ParamInfo>
@@ -27,6 +78,123 @@ export function ParamItem({ name, type, description, required = false, className
     </Container>
   );
 }
+
+const PARAM_TYPES = ["string", "number", "boolean", "object", "array", "any"];
+
+function TypeSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <SelectContainer>
+      <SelectTrigger onClick={() => setIsOpen(!isOpen)}>
+        {value || "타입"}
+        <Arrow isOpen={isOpen}>▼</Arrow>
+      </SelectTrigger>
+      {isOpen && (
+        <SelectOptions>
+          {PARAM_TYPES.map((t) => (
+            <SelectOption
+              key={t}
+              active={value === t}
+              onClick={() => {
+                onChange(t);
+                setIsOpen(false);
+              }}
+            >
+              {t}
+            </SelectOption>
+          ))}
+        </SelectOptions>
+      )}
+      {isOpen && <SelectBackdrop onClick={() => setIsOpen(false)} />}
+    </SelectContainer>
+  );
+}
+
+const SelectContainer = styled.div`
+  position: relative;
+  width: 100px;
+`;
+
+const SelectTrigger = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  color: #4B5563;
+  cursor: pointer;
+  &:hover {
+    border-color: #58A6FF;
+  }
+`;
+
+const Arrow = styled.span<{ isOpen: boolean }>`
+  font-size: 10px;
+  transition: transform 0.2s ease;
+  transform: ${({ isOpen }) => (isOpen ? "rotate(180deg)" : "rotate(0)")};
+  color: #9CA3AF;
+`;
+
+const SelectOptions = styled.div`
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  overflow: hidden;
+`;
+
+const SelectOption = styled.div<{ active: boolean }>`
+  padding: 6px 10px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  color: ${({ active }) => (active ? "#58A6FF" : "#4B5563")};
+  background: ${({ active }) => (active ? "#F7FBFF" : "transparent")};
+  cursor: pointer;
+  &:hover {
+    background: #F3F4F6;
+  }
+`;
+
+const SelectBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: transparent;
+`;
+
+const EditInput = styled.input`
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  outline: none;
+  &:focus {
+    border-color: #58A6FF;
+  }
+`;
+
+const DeleteButton = styled.button`
+  background: none;
+  border: none;
+  color: #FF4D4F;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 8px;
+  &:hover {
+    color: #CF1322;
+  }
+`;
 
 const Container = styled.div`
   display: flex;

@@ -28,30 +28,6 @@ export const apiMockData: Record<string, ApiDoc> = {
         description: "실명 입력",
         required: true,
       },
-      {
-        name: "nickName",
-        type: "string",
-        description: "닉네임 입력",
-        required: true,
-      },
-      {
-        name: "realName",
-        type: "string",
-        description: "실명 입력",
-        required: true,
-      },
-      {
-        name: "nickName",
-        type: "string",
-        description: "닉네임 입력",
-        required: true,
-      },
-      {
-        name: "realName",
-        type: "string",
-        description: "실명 입력",
-        required: true,
-      },
     ],
     responseParams: [
       {

@@ -14,31 +14,46 @@ interface ApiRequestSectionProps {
   headerParams?: ApiParam[];
   bodyParams?: ApiParam[];
   title?: string;
+  editable?: boolean;
+  onHeaderParamsChange?: (params: ApiParam[]) => void;
+  onBodyParamsChange?: (params: ApiParam[]) => void;
 }
 
 export function ApiRequestSection({
   headerParams = [],
   bodyParams = [],
-  title = "Request"
+  title = "Request",
+  editable = false,
+  onHeaderParamsChange,
+  onBodyParamsChange
 }: ApiRequestSectionProps) {
-  const hasParams = headerParams.length > 0 || bodyParams.length > 0;
+  const hasHeaders = headerParams.length > 0 || editable;
+  const hasBody = bodyParams.length > 0 || editable;
 
-  if (!hasParams) return null;
+  if (!hasHeaders && !hasBody) return null;
 
   return (
     <RequestSection>
       <SectionTitle>{title}</SectionTitle>
 
-      <ApiParamsSection
-        title="Header Params"
-        params={headerParams}
-      />
+      {hasHeaders && (
+        <ApiParamsSection
+          title="Header Params"
+          params={headerParams}
+          editable={editable}
+          onParamsChange={onHeaderParamsChange}
+        />
+      )}
 
-      <ApiParamsSection
-        title="Body Params"
-        params={bodyParams}
-        large
-      />
+      {hasBody && (
+        <ApiParamsSection
+          title="Body Params"
+          params={bodyParams}
+          large
+          editable={editable}
+          onParamsChange={onBodyParamsChange}
+        />
+      )}
     </RequestSection>
   );
 }

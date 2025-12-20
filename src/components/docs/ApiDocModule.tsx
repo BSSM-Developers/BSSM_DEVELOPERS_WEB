@@ -47,6 +47,10 @@ type ApiDocModuleProps = {
   responseStatus?: number;
   responseMessage?: string;
   onTryClick?: () => void;
+  editable?: boolean;
+  onHeaderParamsChange?: (params: any[]) => void;
+  onBodyParamsChange?: (params: any[]) => void;
+  onResponseParamsChange?: (params: any[]) => void;
 };
 
 export function ApiDocModule({
@@ -69,7 +73,11 @@ export function ApiDocModule({
   responseData,
   responseStatus = 200,
   responseMessage = "성공",
-  onTryClick
+  onTryClick,
+  editable = false,
+  onHeaderParamsChange,
+  onBodyParamsChange,
+  onResponseParamsChange
 }: ApiDocModuleProps) {
   // ApiDoc 객체 생성
   const apiDoc = {
@@ -103,10 +111,15 @@ export function ApiDocModule({
           <ApiRequestSection
             headerParams={headerParams}
             bodyParams={bodyParams}
+            editable={editable}
+            onHeaderParamsChange={onHeaderParamsChange}
+            onBodyParamsChange={onBodyParamsChange}
           />
 
           <ApiResponseSection
             responseParams={responseParams}
+            editable={editable}
+            onParamsChange={onResponseParamsChange}
           />
         </DocumentationContent>
       </ContentWrapper>

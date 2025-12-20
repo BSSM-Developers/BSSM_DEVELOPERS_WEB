@@ -74,6 +74,7 @@ export default function DocsEditPage() {
   const selected = useDocsStore((s: any) => s.selected);
   const [blocks, setBlocks] = useState<BlockWithId[]>(docsSubData[0].blocks as BlockWithId[]);
   const [isApiDoc, setIsApiDoc] = useState(false);
+  const [currentApiData, setCurrentApiData] = useState<any>(null);
 
   useEffect(() => {
     if (selected == null) return;
@@ -84,6 +85,7 @@ export default function DocsEditPage() {
     if (node && node.module === "api") {
       // It's an API document
       setIsApiDoc(true);
+      setCurrentApiData(apiMockData[selected]);
     } else {
       // It's a regular document
       setIsApiDoc(false);
@@ -96,6 +98,11 @@ export default function DocsEditPage() {
       setBlocks((found?.blocks as BlockWithId[]) ?? []);
     }
   }, [selected]);
+
+  const handleApiDataChange = (updated: any) => {
+    setCurrentApiData((prev: any) => ({ ...prev, ...updated }));
+    console.log("Updated API Data:", { ...currentApiData, ...updated });
+  };
 
   const handleBlockChange = (index: number, updated: DocsBlock) => {
     const copy = [...blocks];
@@ -151,18 +158,22 @@ export default function DocsEditPage() {
 
   return (
     <DocsLayout>
-      {isApiDoc && apiMockData[selected] ? (
+      {isApiDoc && currentApiData ? (
         <ApiDocModule
-          apiId={apiMockData[selected].id}
-          apiName={apiMockData[selected].name}
-          method={apiMockData[selected].method}
-          endpoint={apiMockData[selected].endpoint}
-          description={apiMockData[selected].description}
-          headerParams={apiMockData[selected].headerParams}
-          bodyParams={apiMockData[selected].bodyParams}
-          responseParams={apiMockData[selected].responseParams}
-          sampleCode={apiMockData[selected].sampleCode}
-          responseCode={apiMockData[selected].responseCode}
+          apiId={currentApiData.id}
+          apiName={currentApiData.name}
+          method={currentApiData.method}
+          endpoint={currentApiData.endpoint}
+          description={currentApiData.description}
+          headerParams={currentApiData.headerParams}
+          bodyParams={currentApiData.bodyParams}
+          responseParams={currentApiData.responseParams}
+          sampleCode={currentApiData.sampleCode}
+          responseCode={currentApiData.responseCode}
+          editable={true}
+          onHeaderParamsChange={(params) => handleApiDataChange({ headerParams: params })}
+          onBodyParamsChange={(params) => handleApiDataChange({ bodyParams: params })}
+          onResponseParamsChange={(params) => handleApiDataChange({ responseParams: params })}
         />
       ) : (
         <>

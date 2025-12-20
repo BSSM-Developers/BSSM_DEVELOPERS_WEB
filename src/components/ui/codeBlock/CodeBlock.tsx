@@ -29,6 +29,8 @@ export function CodeBlock({
   onLanguageChange,
   onLibraryChange
 }: CodeBlockProps) {
+  const [copied, setCopied] = useState(false);
+
   const handleLanguageChange = (language: Language) => {
     onLanguageChange?.(language);
   };
@@ -37,24 +39,42 @@ export function CodeBlock({
     onLibraryChange?.(library);
   };
 
+  const handleCopy = async () => {
+    // HTML 태그 제거 후 순수 텍스트만 추출
+    const plainText = code.replace(/<[^>]*>/g, '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+
+    try {
+      await navigator.clipboard.writeText(plainText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
+  };
+
   return (
     <Container className={className}>
       <Header>
         <HeaderContent>
           <Title>{title}</Title>
-          {languages.length > 1 && (
-            <LanguageTabs>
-              {languages.map(lang => (
-                <LanguageTab
-                  key={lang}
-                  active={selectedLanguage === lang}
-                  onClick={() => handleLanguageChange(lang)}
-                >
-                  {lang}
-                </LanguageTab>
-              ))}
-            </LanguageTabs>
-          )}
+          <HeaderRight>
+            {languages.length > 1 && (
+              <LanguageTabs>
+                {languages.map(lang => (
+                  <LanguageTab
+                    key={lang}
+                    active={selectedLanguage === lang}
+                    onClick={() => handleLanguageChange(lang)}
+                  >
+                    {lang}
+                  </LanguageTab>
+                ))}
+              </LanguageTabs>
+            )}
+            <CopyButton onClick={handleCopy} copied={copied}>
+              {copied ? "Copied!" : "Copy"}
+            </CopyButton>
+          </HeaderRight>
         </HeaderContent>
 
         {title === "Request" && libraryOptions.length > 0 && (
@@ -118,6 +138,17 @@ const HeaderContent = styled.div`
   }
 `;
 
+const HeaderRight = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 24px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: space-between;
+  }
+`;
+
 const Title = styled.div`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-weight: 500;
@@ -125,6 +156,24 @@ const Title = styled.div`
   color: #FFFFFF;
   letter-spacing: -0.7px;
   white-space: pre;
+`;
+
+const CopyButton = styled.button<{ copied: boolean }>`
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: ${({ copied }) => copied ? "#F3A941" : "#8B95A1"};
+  background: transparent;
+  border: 1px solid ${({ copied }) => copied ? "#F3A941" : "#4E5968"};
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #F3A941;
+    border-color: #F3A941;
+  }
 `;
 
 const LanguageTabs = styled.div`

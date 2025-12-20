@@ -48,6 +48,8 @@ type ApiDocModuleProps = {
   responseMessage?: string;
   onTryClick?: () => void;
   editable?: boolean;
+  mappingEndpoint?: string;
+  onHeaderChange?: (updated: { title: string; description: string; method: any; endpoint: string; mappingEndpoint: string }) => void;
   onHeaderParamsChange?: (params: any[]) => void;
   onBodyParamsChange?: (params: any[]) => void;
   onResponseParamsChange?: (params: any[]) => void;
@@ -58,6 +60,7 @@ export function ApiDocModule({
   apiName,
   method,
   endpoint,
+  mappingEndpoint,
   description,
   breadcrumb,
   headerParams = [],
@@ -75,6 +78,7 @@ export function ApiDocModule({
   responseMessage = "성공",
   onTryClick,
   editable = false,
+  onHeaderChange,
   onHeaderParamsChange,
   onBodyParamsChange,
   onResponseParamsChange
@@ -85,6 +89,7 @@ export function ApiDocModule({
     name: apiName,
     method,
     endpoint,
+    mappingEndpoint,
     description,
     headerParams,
     bodyParams,
@@ -94,18 +99,16 @@ export function ApiDocModule({
   return (
     <Container>
       <ContentWrapper>
-        <ApiBreadcrumb
-          category={breadcrumb?.category}
-          subcategory={breadcrumb?.subcategory}
-        />
-
         <DocumentationContent>
           <ApiHeader
             title={apiName}
             description={description}
             method={method}
             endpoint={endpoint}
+            mappingEndpoint={mappingEndpoint}
             onTryClick={onTryClick}
+            editable={editable}
+            onChange={onHeaderChange}
           />
 
           <ApiRequestSection
@@ -145,8 +148,6 @@ const Container = styled.div`
   display: flex;
   gap: 40px;
   width: 100%;
-  min-height: calc(100vh - 69px);
-  overflow-y: auto;
   align-items: flex-start;
 
   @media (max-width: 1400px) {

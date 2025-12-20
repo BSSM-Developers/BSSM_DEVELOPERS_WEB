@@ -74,7 +74,6 @@ export default function DocsEditPage() {
   const selected = useDocsStore((s: any) => s.selected);
   const [blocks, setBlocks] = useState<BlockWithId[]>(docsSubData[0].blocks as BlockWithId[]);
   const [isApiDoc, setIsApiDoc] = useState(false);
-  const [currentApiData, setCurrentApiData] = useState<any>(null);
 
   useEffect(() => {
     if (selected == null) return;
@@ -85,7 +84,12 @@ export default function DocsEditPage() {
     if (node && node.module === "api") {
       // It's an API document
       setIsApiDoc(true);
-      setCurrentApiData(apiMockData[selected]);
+      const apiData = apiMockData[selected];
+      if (apiData) {
+        setBlocks([
+          { id: 'api-spec-block', module: 'api', apiData: apiData }
+        ] as BlockWithId[]);
+      }
     } else {
       // It's a regular document
       setIsApiDoc(false);
@@ -99,10 +103,6 @@ export default function DocsEditPage() {
     }
   }, [selected]);
 
-  const handleApiDataChange = (updated: any) => {
-    setCurrentApiData((prev: any) => ({ ...prev, ...updated }));
-    console.log("Updated API Data:", { ...currentApiData, ...updated });
-  };
 
   const handleBlockChange = (index: number, updated: DocsBlock) => {
     const copy = [...blocks];
@@ -158,40 +158,19 @@ export default function DocsEditPage() {
 
   return (
     <DocsLayout>
-      {isApiDoc && currentApiData ? (
-        <ApiDocModule
-          apiId={currentApiData.id}
-          apiName={currentApiData.name}
-          method={currentApiData.method}
-          endpoint={currentApiData.endpoint}
-          description={currentApiData.description}
-          headerParams={currentApiData.headerParams}
-          bodyParams={currentApiData.bodyParams}
-          responseParams={currentApiData.responseParams}
-          sampleCode={currentApiData.sampleCode}
-          responseCode={currentApiData.responseCode}
-          editable={true}
-          onHeaderParamsChange={(params) => handleApiDataChange({ headerParams: params })}
-          onBodyParamsChange={(params) => handleApiDataChange({ bodyParams: params })}
-          onResponseParamsChange={(params) => handleApiDataChange({ responseParams: params })}
-        />
-      ) : (
-        <>
-          <DocsHeader title={title} breadcrumb={breadcrumb} />
+      <DocsHeader title={title} breadcrumb={breadcrumb} />
 
-          {blocks.map((block, i) => (
-            <DocsBlockEditor
-              key={block.id}
-              index={i}
-              block={block}
-              onChange={(idx, updated) => handleBlockChange(idx, updated)}
-              onAddBlock={handleAddBlock}
-              onRemoveBlock={handleRemoveBlock}
-              onFocusMove={handleFocusMove}
-            />
-          ))}
-        </>
-      )}
+      {blocks.map((block, i) => (
+        <DocsBlockEditor
+          key={block.id}
+          index={i}
+          block={block}
+          onChange={(idx, updated) => handleBlockChange(idx, updated)}
+          onAddBlock={handleAddBlock}
+          onRemoveBlock={handleRemoveBlock}
+          onFocusMove={handleFocusMove}
+        />
+      ))}
     </DocsLayout>
   );
 }

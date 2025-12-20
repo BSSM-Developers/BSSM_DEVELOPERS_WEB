@@ -20,6 +20,7 @@ export interface ApiDoc {
   name: string;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   endpoint: string;
+  mappingEndpoint?: string;
   description: string;
   headerParams?: Array<{
     name: string;

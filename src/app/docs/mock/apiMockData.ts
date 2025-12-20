@@ -53,6 +53,18 @@ export const apiMockData: Record<string, ApiDoc> = {
         required: true,
       },
     ],
+    responseParams: [
+      {
+        name: "id",
+        type: "string",
+        description: "사용자 고유 ID",
+      },
+      {
+        name: "nickName",
+        type: "string",
+        description: "사용자 닉네임",
+      },
+    ],
   },
   "user-profile": {
     id: "user-profile",
@@ -68,6 +80,28 @@ export const apiMockData: Record<string, ApiDoc> = {
         required: true,
       },
     ],
+    responseParams: [
+      {
+        name: "id",
+        type: "string",
+        description: "사용자 고유 ID",
+      },
+      {
+        name: "nickName",
+        type: "string",
+        description: "사용자 닉네임",
+      },
+      {
+        name: "email",
+        type: "string",
+        description: "사용자 이메일",
+      },
+      {
+        name: "profileImage",
+        type: "string",
+        description: "프로필 이미지 URL",
+      },
+    ],
   },
   "google-login": {
     id: "google-login",
@@ -81,6 +115,18 @@ export const apiMockData: Record<string, ApiDoc> = {
         type: "string",
         description: "구글 인증 코드",
         required: true,
+      },
+    ],
+    responseParams: [
+      {
+        name: "accessToken",
+        type: "string",
+        description: "액세스 토큰",
+      },
+      {
+        name: "refreshToken",
+        type: "string",
+        description: "리프레시 토큰",
       },
     ],
   },
@@ -103,6 +149,13 @@ export const apiMockData: Record<string, ApiDoc> = {
         type: "string",
         description: "리프레시 토큰",
         required: true,
+      },
+    ],
+    responseParams: [
+      {
+        name: "accessToken",
+        type: "string",
+        description: "새로운 액세스 토큰",
       },
     ],
   },

@@ -33,6 +33,12 @@ export interface ApiDoc {
     description: string;
     required?: boolean;
   }>;
+  responseParams?: Array<{
+    name: string;
+    type: string;
+    description: string;
+    required?: boolean;
+  }>;
   sampleCode?: string;
   responseCode?: string;
 }

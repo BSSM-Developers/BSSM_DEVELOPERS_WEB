@@ -167,7 +167,7 @@ const ParamCard = styled.div<{ large?: boolean }>`
   min-height: ${({ large }) => large ? "240px" : "100px"};
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
 
   @media (max-width: 768px) {
     padding: 10px 12px;

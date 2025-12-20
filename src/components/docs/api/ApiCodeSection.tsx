@@ -169,12 +169,10 @@ const CodeSection = styled.div`
 
   @media (max-width: 1400px) {
     width: 100%;
-    max-width: 500px;
-    margin: 0 auto;
+    margin: 0;
   }
 
   @media (max-width: 768px) {
     gap: 16px;
-    max-width: 400px;
   }
 `;

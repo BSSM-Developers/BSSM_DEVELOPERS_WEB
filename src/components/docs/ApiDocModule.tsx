@@ -4,6 +4,7 @@ import styled from "@emotion/styled";
 import { ApiBreadcrumb } from "./api/ApiBreadcrumb";
 import { ApiHeader } from "./api/ApiHeader";
 import { ApiRequestSection } from "./api/ApiRequestSection";
+import { ApiResponseSection } from "./api/ApiResponseSection";
 import { ApiCodeSection } from "./api/ApiCodeSection";
 import type { HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 
@@ -24,6 +25,12 @@ type ApiDocModuleProps = {
     required?: boolean;
   }>;
   bodyParams?: Array<{
+    name: string;
+    type: string;
+    description: string;
+    required?: boolean;
+  }>;
+  responseParams?: Array<{
     name: string;
     type: string;
     description: string;
@@ -51,6 +58,7 @@ export function ApiDocModule({
   breadcrumb,
   headerParams = [],
   bodyParams = [],
+  responseParams = [],
   sampleCode,
   responseCode,
   languages,
@@ -71,7 +79,8 @@ export function ApiDocModule({
     endpoint,
     description,
     headerParams,
-    bodyParams
+    bodyParams,
+    responseParams
   };
 
   return (
@@ -95,6 +104,10 @@ export function ApiDocModule({
             headerParams={headerParams}
             bodyParams={bodyParams}
           />
+
+          <ApiResponseSection
+            responseParams={responseParams}
+          />
         </DocumentationContent>
       </ContentWrapper>
 
@@ -117,7 +130,7 @@ export function ApiDocModule({
 
 const Container = styled.div`
   display: flex;
-  gap: 32px;
+  gap: 40px;
   width: 100%;
   min-height: calc(100vh - 69px);
   overflow-y: auto;
@@ -125,11 +138,12 @@ const Container = styled.div`
 
   @media (max-width: 1400px) {
     flex-direction: column;
-    gap: 24px;
+    gap: 40px;
+    align-items: stretch;
   }
 
   @media (max-width: 768px) {
-    gap: 20px;
+    gap: 32px;
   }
 `;
 
@@ -138,7 +152,8 @@ const ContentWrapper = styled.div`
   flex-direction: column;
   gap: 32px;
   flex: 1;
-  max-width: 700px;
+  max-width: 800px;
+  width: 100%;
 
   @media (max-width: 1400px) {
     max-width: none;
@@ -148,6 +163,6 @@ const ContentWrapper = styled.div`
 const DocumentationContent = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 20px;
   width: 100%;
 `;

@@ -103,7 +103,7 @@ const TypeText = styled.span`
 const DescriptionWrapper = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 0 0 0 3px;
   width: 100%;
 `;

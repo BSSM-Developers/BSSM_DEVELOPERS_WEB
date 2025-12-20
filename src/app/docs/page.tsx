@@ -160,6 +160,7 @@ export default function DocsEditPage() {
           description={apiMockData[selected].description}
           headerParams={apiMockData[selected].headerParams}
           bodyParams={apiMockData[selected].bodyParams}
+          responseParams={apiMockData[selected].responseParams}
           sampleCode={apiMockData[selected].sampleCode}
           responseCode={apiMockData[selected].responseCode}
         />

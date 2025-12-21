@@ -30,7 +30,13 @@ export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions
   };
 
   const endpoint = replacePathParams(apiDoc.endpoint, examples.path);
-  const fullUrl = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
+  let fullUrl = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
+
+  // Append query parameters
+  if (Object.keys(examples.query).length > 0) {
+    const queryString = new URLSearchParams(examples.query).toString();
+    fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryString;
+  }
 
   switch (language) {
     case 'javascript':

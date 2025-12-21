@@ -18,11 +18,20 @@ export interface ParamGroup {
  * ApiDoc에서 파라미터들을 추출하여 정리된 형태로 반환
  */
 export function extractParams(apiDoc: ApiDoc): ParamGroup {
+  const extractedPathParams = extractPathParams(apiDoc.endpoint);
+  const definedPathParams = apiDoc.pathParams || [];
+
+  // Merge: use defined ones if they exist, otherwise use extracted ones
+  const pathParams = extractedPathParams.map(ep => {
+    const defined = definedPathParams.find(dp => dp.name === ep.name);
+    return defined || ep;
+  });
+
   return {
     headerParams: apiDoc.headerParams || [],
     bodyParams: apiDoc.bodyParams || [],
-    queryParams: [], // 추후 확장 가능
-    pathParams: extractPathParams(apiDoc.endpoint)
+    queryParams: apiDoc.queryParams || [],
+    pathParams: pathParams
   };
 }
 
@@ -149,15 +158,15 @@ export function generateParamExamples(params: ApiParam[]): Record<string, any> {
       case 'string':
         examples[param.name] = param.name.includes('email') ? 'user@example.com'
           : param.name.includes('name') ? '사용자명'
-          : param.name.includes('id') ? 'abc123'
-          : `${param.name}_example`;
+            : param.name.includes('id') ? 'abc123'
+              : `${param.name}_example`;
         break;
       case 'number':
       case 'integer':
         examples[param.name] = param.name.includes('age') ? 25
           : param.name.includes('count') ? 10
-          : param.name.includes('id') ? 123
-          : 42;
+            : param.name.includes('id') ? 123
+              : 42;
         break;
       case 'boolean':
         examples[param.name] = true;

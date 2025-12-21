@@ -45,6 +45,12 @@ export function ApiBlock({ apiData, editable = false, onChange }: ApiBlockProps)
         onQueryParamsChange={(params) => onChange?.({ ...apiData, queryParams: params })}
         onBodyParamsChange={(params) => onChange?.({ ...apiData, bodyParams: params })}
         onResponseParamsChange={(params) => onChange?.({ ...apiData, responseParams: params })}
+        responseData={apiData.responseData}
+        onResponseDataChange={(data) => onChange?.({ ...apiData, responseData: data })}
+        responseStatus={apiData.responseStatus}
+        onResponseStatusChange={(status) => onChange?.({ ...apiData, responseStatus: status })}
+        responseMessage={apiData.responseMessage}
+        onResponseMessageChange={(message) => onChange?.({ ...apiData, responseMessage: message })}
       />
     </Container>
   );

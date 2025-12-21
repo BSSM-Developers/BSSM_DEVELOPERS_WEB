@@ -47,6 +47,14 @@ export const apiMockData: Record<string, ApiDoc> = {
         description: "사용자 닉네임",
       },
     ],
+    responseData: {
+      id: "user_12345",
+      nickName: "홍길동",
+      realName: "홍길동",
+      status: "ACTIVE"
+    },
+    responseStatus: 201,
+    responseMessage: "사용자 정보가 성공적으로 생성되었습니다."
   },
   "user-profile": {
     id: "user-profile",

@@ -43,6 +43,9 @@ type ApiDocModuleProps = {
   onQueryParamsChange?: (params: ApiParam[]) => void;
   onBodyParamsChange?: (params: ApiParam[]) => void;
   onResponseParamsChange?: (params: ApiParam[]) => void;
+  onResponseDataChange?: (data: any) => void;
+  onResponseStatusChange?: (status: number) => void;
+  onResponseMessageChange?: (message: string) => void;
 };
 
 export function ApiDocModule({
@@ -75,7 +78,10 @@ export function ApiDocModule({
   onPathParamsChange,
   onQueryParamsChange,
   onBodyParamsChange,
-  onResponseParamsChange
+  onResponseParamsChange,
+  onResponseDataChange,
+  onResponseStatusChange,
+  onResponseMessageChange
 }: ApiDocModuleProps) {
   // ApiDoc 객체 생성
   const apiDoc: ApiDoc = {
@@ -89,7 +95,10 @@ export function ApiDocModule({
     pathParams,
     queryParams,
     bodyParams,
-    responseParams
+    responseParams,
+    responseData,
+    responseStatus,
+    responseMessage
   };
 
   return (
@@ -102,7 +111,7 @@ export function ApiDocModule({
             method={method}
             endpoint={endpoint}
             mappingEndpoint={mappingEndpoint}
-            onTryClick={onTryClick}
+            onTryClick={onTryClick || (() => alert(`Trying ${method} ${endpoint}...`))}
             editable={editable}
             onChange={onHeaderChange}
           />
@@ -123,6 +132,12 @@ export function ApiDocModule({
             responseParams={responseParams}
             editable={editable}
             onParamsChange={onResponseParamsChange}
+            status={responseStatus}
+            message={responseMessage}
+            responseData={responseData}
+            onStatusChange={onResponseStatusChange}
+            onMessageChange={onResponseMessageChange}
+            onDataChange={onResponseDataChange}
           />
         </DocumentationContent>
       </ContentWrapper>

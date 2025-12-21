@@ -36,4 +36,7 @@ export interface ApiDoc {
   responseParams?: ApiParam[];
   sampleCode?: string;
   responseCode?: string;
+  responseData?: any;
+  responseStatus?: number;
+  responseMessage?: string;
 }

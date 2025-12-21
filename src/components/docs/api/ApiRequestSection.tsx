@@ -3,34 +3,39 @@
 import styled from "@emotion/styled";
 import { ApiParamsSection } from "./ApiParamsSection";
 
-interface ApiParam {
-  name: string;
-  type: string;
-  description: string;
-  required?: boolean;
-}
+import type { ApiParam } from "@/types/docs";
 
 interface ApiRequestSectionProps {
   headerParams?: ApiParam[];
+  pathParams?: ApiParam[];
+  queryParams?: ApiParam[];
   bodyParams?: ApiParam[];
   title?: string;
   editable?: boolean;
   onHeaderParamsChange?: (params: ApiParam[]) => void;
+  onPathParamsChange?: (params: ApiParam[]) => void;
+  onQueryParamsChange?: (params: ApiParam[]) => void;
   onBodyParamsChange?: (params: ApiParam[]) => void;
 }
 
 export function ApiRequestSection({
   headerParams = [],
+  pathParams = [],
+  queryParams = [],
   bodyParams = [],
   title = "Request",
   editable = false,
   onHeaderParamsChange,
+  onPathParamsChange,
+  onQueryParamsChange,
   onBodyParamsChange
 }: ApiRequestSectionProps) {
   const hasHeaders = headerParams.length > 0 || editable;
+  const hasPath = pathParams.length > 0 || editable;
+  const hasQuery = queryParams.length > 0 || editable;
   const hasBody = bodyParams.length > 0 || editable;
 
-  if (!hasHeaders && !hasBody) return null;
+  if (!hasHeaders && !hasPath && !hasQuery && !hasBody) return null;
 
   return (
     <RequestSection>
@@ -42,6 +47,24 @@ export function ApiRequestSection({
           params={headerParams}
           editable={editable}
           onParamsChange={onHeaderParamsChange}
+        />
+      )}
+
+      {hasPath && (
+        <ApiParamsSection
+          title="Path Params"
+          params={pathParams}
+          editable={editable}
+          onParamsChange={onPathParamsChange}
+        />
+      )}
+
+      {hasQuery && (
+        <ApiParamsSection
+          title="Query Params"
+          params={queryParams}
+          editable={editable}
+          onParamsChange={onQueryParamsChange}
         />
       )}
 

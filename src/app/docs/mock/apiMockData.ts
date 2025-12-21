@@ -15,6 +15,12 @@ export const apiMockData: Record<string, ApiDoc> = {
         required: true,
       },
     ],
+    pathParams: [
+      { name: "version", type: "string", description: "API 버전", required: true }
+    ],
+    queryParams: [
+      { name: "debug", type: "boolean", description: "디버그 모드", required: false }
+    ],
     bodyParams: [
       {
         name: "nickName",

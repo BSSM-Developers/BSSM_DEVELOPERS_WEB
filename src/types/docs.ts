@@ -15,6 +15,13 @@ export interface DocsBlock {
   apiData?: ApiDoc;
 }
 
+export interface ApiParam {
+  name: string;
+  type: string;
+  description: string;
+  required?: boolean;
+}
+
 export interface ApiDoc {
   id: string;
   name: string;
@@ -22,24 +29,11 @@ export interface ApiDoc {
   endpoint: string;
   mappingEndpoint?: string;
   description: string;
-  headerParams?: Array<{
-    name: string;
-    type: string;
-    description: string;
-    required?: boolean;
-  }>;
-  bodyParams?: Array<{
-    name: string;
-    type: string;
-    description: string;
-    required?: boolean;
-  }>;
-  responseParams?: Array<{
-    name: string;
-    type: string;
-    description: string;
-    required?: boolean;
-  }>;
+  headerParams?: ApiParam[];
+  pathParams?: ApiParam[];
+  queryParams?: ApiParam[];
+  bodyParams?: ApiParam[];
+  responseParams?: ApiParam[];
   sampleCode?: string;
   responseCode?: string;
 }

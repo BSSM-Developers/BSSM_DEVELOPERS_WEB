@@ -32,6 +32,8 @@ export function ApiBlock({ apiData, editable = false, onChange }: ApiBlockProps)
         mappingEndpoint={apiData.mappingEndpoint}
         description={apiData.description}
         headerParams={apiData.headerParams}
+        pathParams={apiData.pathParams}
+        queryParams={apiData.queryParams}
         bodyParams={apiData.bodyParams}
         responseParams={apiData.responseParams}
         sampleCode={apiData.sampleCode}
@@ -39,6 +41,8 @@ export function ApiBlock({ apiData, editable = false, onChange }: ApiBlockProps)
         editable={editable}
         onHeaderChange={handleHeaderChange}
         onHeaderParamsChange={(params) => onChange?.({ ...apiData, headerParams: params })}
+        onPathParamsChange={(params) => onChange?.({ ...apiData, pathParams: params })}
+        onQueryParamsChange={(params) => onChange?.({ ...apiData, queryParams: params })}
         onBodyParamsChange={(params) => onChange?.({ ...apiData, bodyParams: params })}
         onResponseParamsChange={(params) => onChange?.({ ...apiData, responseParams: params })}
       />

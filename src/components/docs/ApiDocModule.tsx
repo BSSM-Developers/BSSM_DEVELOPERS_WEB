@@ -7,35 +7,24 @@ import { ApiRequestSection } from "./api/ApiRequestSection";
 import { ApiResponseSection } from "./api/ApiResponseSection";
 import { ApiCodeSection } from "./api/ApiCodeSection";
 import type { HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
+import type { ApiDoc, ApiParam } from "@/types/docs";
 
 type ApiDocModuleProps = {
   apiId: string;
   apiName: string;
   method: HttpMethod;
   endpoint: string;
+  mappingEndpoint?: string;
   description: string;
   breadcrumb?: {
     category?: string;
     subcategory?: string;
   };
-  headerParams?: Array<{
-    name: string;
-    type: string;
-    description: string;
-    required?: boolean;
-  }>;
-  bodyParams?: Array<{
-    name: string;
-    type: string;
-    description: string;
-    required?: boolean;
-  }>;
-  responseParams?: Array<{
-    name: string;
-    type: string;
-    description: string;
-    required?: boolean;
-  }>;
+  headerParams?: ApiParam[];
+  pathParams?: ApiParam[];
+  queryParams?: ApiParam[];
+  bodyParams?: ApiParam[];
+  responseParams?: ApiParam[];
   sampleCode?: string;
   responseCode?: string;
   languages?: string[];
@@ -48,11 +37,12 @@ type ApiDocModuleProps = {
   responseMessage?: string;
   onTryClick?: () => void;
   editable?: boolean;
-  mappingEndpoint?: string;
-  onHeaderChange?: (updated: { title: string; description: string; method: any; endpoint: string; mappingEndpoint: string }) => void;
-  onHeaderParamsChange?: (params: any[]) => void;
-  onBodyParamsChange?: (params: any[]) => void;
-  onResponseParamsChange?: (params: any[]) => void;
+  onHeaderChange?: (updated: any) => void;
+  onHeaderParamsChange?: (params: ApiParam[]) => void;
+  onPathParamsChange?: (params: ApiParam[]) => void;
+  onQueryParamsChange?: (params: ApiParam[]) => void;
+  onBodyParamsChange?: (params: ApiParam[]) => void;
+  onResponseParamsChange?: (params: ApiParam[]) => void;
 };
 
 export function ApiDocModule({
@@ -64,6 +54,8 @@ export function ApiDocModule({
   description,
   breadcrumb,
   headerParams = [],
+  pathParams = [],
+  queryParams = [],
   bodyParams = [],
   responseParams = [],
   sampleCode,
@@ -80,11 +72,13 @@ export function ApiDocModule({
   editable = false,
   onHeaderChange,
   onHeaderParamsChange,
+  onPathParamsChange,
+  onQueryParamsChange,
   onBodyParamsChange,
   onResponseParamsChange
 }: ApiDocModuleProps) {
   // ApiDoc 객체 생성
-  const apiDoc = {
+  const apiDoc: ApiDoc = {
     id: apiId,
     name: apiName,
     method,
@@ -92,6 +86,8 @@ export function ApiDocModule({
     mappingEndpoint,
     description,
     headerParams,
+    pathParams,
+    queryParams,
     bodyParams,
     responseParams
   };
@@ -113,9 +109,13 @@ export function ApiDocModule({
 
           <ApiRequestSection
             headerParams={headerParams}
+            pathParams={pathParams}
+            queryParams={queryParams}
             bodyParams={bodyParams}
             editable={editable}
             onHeaderParamsChange={onHeaderParamsChange}
+            onPathParamsChange={onPathParamsChange}
+            onQueryParamsChange={onQueryParamsChange}
             onBodyParamsChange={onBodyParamsChange}
           />
 

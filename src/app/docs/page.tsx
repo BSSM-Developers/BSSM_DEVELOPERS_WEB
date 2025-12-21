@@ -12,12 +12,12 @@ import { useDocsStore } from "@/store/docsStore";
 
 type BlockWithId = DocsBlock & { id: string };
 
-// Helper function to find the sidebar node
-const findSidebarNode = (items: any[], id: string): any => {
+// Helper function to find the sidebar node and its path
+const findSidebarNodeWithPath = (items: any[], id: string, path: string[] = []): { node: any; path: string[] } | null => {
   for (const item of items) {
-    if (item.id === id) return item;
+    if (item.id === id) return { node: item, path };
     if (item.childrenItems) {
-      const found = findSidebarNode(item.childrenItems, id);
+      const found = findSidebarNodeWithPath(item.childrenItems, id, [...path, item.label]);
       if (found) return found;
     }
   }
@@ -84,7 +84,8 @@ export default function DocsEditPage() {
     if (selected == null) return;
 
     // Find the selected node in sidebar
-    const node = findSidebarNode(sidebarItems, selected);
+    const result = findSidebarNodeWithPath(sidebarItems, selected);
+    const node = result?.node;
 
     if (node && node.module === "api") {
       // It's an API document
@@ -159,13 +160,14 @@ export default function DocsEditPage() {
   };
 
   // Get current page info
-  const currentNode = findSidebarNode(sidebarItems, selected);
+  const result = findSidebarNodeWithPath(sidebarItems, selected);
+  const currentNode = result?.node;
   const title = currentNode?.label || "시작하기";
-  const breadcrumb = currentNode?.module === "api" ? ["API"] : ["가이드"];
+  const breadcrumb = result?.path || ["가이드"];
 
   return (
     <DocsLayout>
-      {!isApiDoc && <DocsHeader title={title} breadcrumb={breadcrumb} />}
+      <DocsHeader title={title} breadcrumb={breadcrumb} isApi={isApiDoc} />
 
       {blocks.map((block, i) => (
         <DocsBlockEditor

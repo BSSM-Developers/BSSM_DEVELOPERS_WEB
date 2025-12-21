@@ -117,11 +117,12 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
             width: "100%",
             border: "none",
             background: "white",
-            padding: "8px 12px",
+            padding: "2px 12px",
             borderRadius: "4px",
             font: "inherit",
             color: "inherit",
             outline: "none",
+            margin: 0,
           }}
         />
       </DocsBlock>
@@ -133,7 +134,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
 const BlockContainer = styled.div`
   position: relative;
   width: 100%;
-  padding: 8px 0;
+  padding: 0;
   &:hover > .add-block-area {
     opacity: 1;
   }

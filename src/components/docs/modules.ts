@@ -18,7 +18,7 @@ export const docsModules = {
   `,
 
   list: (theme: Theme) => css`
-    margin: 12px 0;
+    margin: 8px 0;
     padding-left: 20px;
     li {
       list-style: disc;
@@ -45,7 +45,7 @@ export const docsModules = {
   `,
 
   api: (theme: Theme) => css`
-    margin: 20px 0;
+    margin: 12px 0;
     width: 100%;
   `,
 

@@ -72,7 +72,12 @@ const sidebarItems = [
 
 export default function DocsEditPage() {
   const selected = useDocsStore((s: any) => s.selected);
-  const [blocks, setBlocks] = useState<BlockWithId[]>(docsSubData[0].blocks as BlockWithId[]);
+  const docsData = useDocsStore((s: any) => s.docsData);
+  const apiData = useDocsStore((s: any) => s.apiData);
+  const updateDocsData = useDocsStore((s: any) => s.updateDocsData);
+  const updateApiData = useDocsStore((s: any) => s.updateApiData);
+
+  const [blocks, setBlocks] = useState<BlockWithId[]>([]);
   const [isApiDoc, setIsApiDoc] = useState(false);
 
   useEffect(() => {
@@ -84,31 +89,31 @@ export default function DocsEditPage() {
     if (node && node.module === "api") {
       // It's an API document
       setIsApiDoc(true);
-      const apiData = apiMockData[selected];
-      if (apiData) {
+      const currentApiData = apiData[selected];
+      if (currentApiData) {
         setBlocks([
-          { id: 'api-spec-block', module: 'api', apiData: apiData }
+          { id: 'api-spec-block', module: 'api', apiData: currentApiData }
         ] as BlockWithId[]);
       }
     } else {
       // It's a regular document
       setIsApiDoc(false);
-
-      if (typeof selected === "number") {
-        setBlocks((docsSubData[selected]?.blocks as BlockWithId[]) ?? []);
-        return;
-      }
-      const found: DocsSubEntry | undefined = docsSubData.find(d => d.id === String(selected));
-      setBlocks((found?.blocks as BlockWithId[]) ?? []);
+      const currentDocsBlocks = docsData[selected] || [];
+      setBlocks(currentDocsBlocks);
     }
-  }, [selected]);
+  }, [selected, docsData, apiData]);
 
 
   const handleBlockChange = (index: number, updated: DocsBlock) => {
     const copy = [...blocks];
     copy[index] = { ...copy[index], ...updated } as BlockWithId;
     setBlocks(copy);
-    console.log(copy);
+
+    if (isApiDoc && updated.apiData) {
+      updateApiData(selected, updated.apiData);
+    } else {
+      updateDocsData(selected, copy);
+    }
   };
 
   const handleAddBlock = (index: number, newBlock?: DocsBlock) => {
@@ -119,11 +124,12 @@ export default function DocsEditPage() {
     } as BlockWithId;
     copy.splice(index + 1, 0, blockToInsert);
     setBlocks(copy);
+    updateDocsData(selected, copy);
+
     setTimeout(() => {
       const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockToInsert.id}']`);
       el?.focus();
     }, 0);
-    console.log(copy);
   };
 
   const handleRemoveBlock = (index: number) => {
@@ -132,13 +138,14 @@ export default function DocsEditPage() {
     const focusTargetId = index > 0 ? copy[index - 1]?.id : copy[index + 1]?.id;
     copy.splice(index, 1);
     setBlocks(copy);
+    updateDocsData(selected, copy);
+
     if (focusTargetId) {
       setTimeout(() => {
         const el = document.querySelector<HTMLInputElement>(`[data-block-id='${focusTargetId}']`);
         el?.focus();
       }, 0);
     }
-    console.log(copy);
   };
 
   const handleFocusMove = (index: number, direction: "up" | "down") => {

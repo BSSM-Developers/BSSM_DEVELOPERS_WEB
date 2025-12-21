@@ -158,7 +158,7 @@ export default function DocsEditPage() {
 
   return (
     <DocsLayout>
-      <DocsHeader title={title} breadcrumb={breadcrumb} />
+      {!isApiDoc && <DocsHeader title={title} breadcrumb={breadcrumb} />}
 
       {blocks.map((block, i) => (
         <DocsBlockEditor

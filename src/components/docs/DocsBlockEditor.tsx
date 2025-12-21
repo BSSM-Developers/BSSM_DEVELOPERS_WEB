@@ -141,9 +141,7 @@ const BlockContainer = styled.div`
 
 const AddBlockButton = ({ onClick }: { onClick: () => void }) => (
   <AddBlockArea className="add-block-area">
-    <AddLine />
     <AddCircle onClick={onClick}>+</AddCircle>
-    <AddLine />
   </AddBlockArea>
 );
 
@@ -155,17 +153,11 @@ const AddBlockArea = styled.div`
   height: 24px;
   display: flex;
   align-items: center;
+  justify-content: center;
   opacity: 0;
   transition: opacity 0.2s ease;
   z-index: 10;
   pointer-events: none;
-`;
-
-const AddLine = styled.div`
-  flex: 1;
-  height: 1px;
-  background: #58A6FF;
-  opacity: 0.3;
 `;
 
 const AddCircle = styled.button`

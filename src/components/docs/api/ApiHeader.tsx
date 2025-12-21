@@ -51,6 +51,7 @@ export function ApiHeader({
             onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, mappingEndpoint })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
+          <TryButton onClick={onTryClick}>Try It!</TryButton>
         </EndpointSection>
 
         <EndpointSection>

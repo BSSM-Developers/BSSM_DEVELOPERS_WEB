@@ -77,68 +77,52 @@ export default function DocsEditPage() {
   const updateDocsData = useDocsStore((s: any) => s.updateDocsData);
   const updateApiData = useDocsStore((s: any) => s.updateApiData);
 
-  const [blocks, setBlocks] = useState<BlockWithId[]>([]);
-  const [isApiDoc, setIsApiDoc] = useState(false);
+  // Find the selected node in sidebar
+  const result = findSidebarNodeWithPath(sidebarItems, selected);
+  const node = result?.node;
+  const isApiDoc = node?.module === "api";
 
-  useEffect(() => {
-    if (selected == null) return;
-
-    // Find the selected node in sidebar
-    const result = findSidebarNodeWithPath(sidebarItems, selected);
-    const node = result?.node;
-
-    if (node && node.module === "api") {
-      // It's an API document
-      setIsApiDoc(true);
-      const currentApiData = apiData[selected];
-      if (currentApiData) {
-        setBlocks([
-          { id: 'api-spec-block', module: 'api', apiData: currentApiData }
-        ] as BlockWithId[]);
-      }
-    } else {
-      // It's a regular document
-      setIsApiDoc(false);
-      const currentDocsBlocks = docsData[selected] || [];
-      setBlocks(currentDocsBlocks);
-    }
-  }, [selected, docsData, apiData]);
-
+  const blocks = isApiDoc
+    ? (apiData[selected] ? [{ id: 'api-spec-block', module: 'api', apiData: apiData[selected] }] : [])
+    : (docsData[selected] || []);
 
   const handleBlockChange = (index: number, updated: DocsBlock) => {
-    const copy = [...blocks];
-    copy[index] = { ...copy[index], ...updated } as BlockWithId;
-    setBlocks(copy);
-
     if (isApiDoc && updated.apiData) {
       updateApiData(selected, updated.apiData);
-    } else {
+    } else if (!isApiDoc) {
+      const copy = [...(docsData[selected] || [])];
+      copy[index] = { ...copy[index], ...updated } as BlockWithId;
       updateDocsData(selected, copy);
     }
   };
 
   const handleAddBlock = (index: number, newBlock?: DocsBlock) => {
-    const copy = [...blocks];
+    if (isApiDoc) return; // Don't add blocks to API spec for now
+
+    const copy = [...(docsData[selected] || [])];
+    const blockId = Math.random().toString(36).substring(2, 11);
     const blockToInsert: BlockWithId = {
-      id: crypto.randomUUID(),
+      id: blockId,
       ...(newBlock ?? { module: "docs_1", content: "" }),
     } as BlockWithId;
+
     copy.splice(index + 1, 0, blockToInsert);
-    setBlocks(copy);
     updateDocsData(selected, copy);
 
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockToInsert.id}']`);
+      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockId}']`);
       el?.focus();
     }, 0);
   };
 
   const handleRemoveBlock = (index: number) => {
-    if (blocks.length === 0) return;
-    const copy = [...blocks];
+    if (isApiDoc) return;
+
+    const copy = [...(docsData[selected] || [])];
+    if (copy.length <= 1) return; // Keep at least one block
+
     const focusTargetId = index > 0 ? copy[index - 1]?.id : copy[index + 1]?.id;
     copy.splice(index, 1);
-    setBlocks(copy);
     updateDocsData(selected, copy);
 
     if (focusTargetId) {
@@ -159,17 +143,14 @@ export default function DocsEditPage() {
     }, 0);
   };
 
-  // Get current page info
-  const result = findSidebarNodeWithPath(sidebarItems, selected);
-  const currentNode = result?.node;
-  const title = currentNode?.label || "시작하기";
+  const title = node?.label || "시작하기";
   const breadcrumb = result?.path || ["가이드"];
 
   return (
     <DocsLayout>
       <DocsHeader title={title} breadcrumb={breadcrumb} isApi={isApiDoc} />
 
-      {blocks.map((block, i) => (
+      {blocks.map((block: any, i: number) => (
         <DocsBlockEditor
           key={block.id}
           index={i}

@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
+import { highlightCode } from "@/utils/apiUtils/highlightUtils";
 
 interface DocsBlockEditorProps {
   block: DocsBlockType;
@@ -180,38 +181,94 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
             />
           </li>
         ) : isCode ? (
-          <textarea
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              onChange(index, { ...block, content: e.target.value });
-            }}
-            onKeyDown={(e: any) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                // Allow new lines in code block, but maybe Enter should still add a new block?
-                // Usually in Notion-like editors, Shift+Enter is new line, Enter is new block.
-                // But for code, Enter is usually new line.
-              }
-              handleKeyDown(e);
-            }}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            data-block-id={(block as any).id}
-            placeholder={focused ? "코드를 입력하세요" : ""}
-            style={{
-              width: "100%",
-              minHeight: "80px",
-              border: "none",
-              background: "transparent",
-              padding: "0",
-              fontFamily: "monospace",
-              fontSize: "14px",
-              color: "inherit",
-              outline: "none",
-              margin: 0,
-              resize: "vertical",
-            }}
-          />
+          <div style={{ position: 'relative', width: '100%', background: '#0d1117', borderRadius: '8px', padding: '12px' }}>
+            <div style={{
+              position: 'absolute',
+              top: '8px',
+              right: '8px',
+              zIndex: 20,
+              display: 'flex',
+              gap: '8px'
+            }}>
+              <select
+                value={block.language || "javascript"}
+                onChange={(e) => onChange(index, { ...block, language: e.target.value })}
+                style={{
+                  background: '#21262d',
+                  color: '#c9d1d9',
+                  border: '1px solid #30363d',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  padding: '2px 4px',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+              </select>
+            </div>
+            <div style={{ position: 'relative', minHeight: '120px' }}>
+              <pre
+                aria-hidden="true"
+                style={{
+                  margin: 0,
+                  padding: 0,
+                  fontFamily: 'monospace',
+                  fontSize: '14px',
+                  lineHeight: '1.5',
+                  color: '#c9d1d9',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  pointerEvents: 'none',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  overflow: 'hidden'
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: highlightCode(value, block.language || "javascript") + '\n'
+                }}
+              />
+              <textarea
+                value={value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  onChange(index, { ...block, content: e.target.value });
+                }}
+                onKeyDown={(e: any) => {
+                  handleKeyDown(e);
+                }}
+                onFocus={() => setFocused(true)}
+                onBlur={() => setFocused(false)}
+                data-block-id={(block as any).id}
+                placeholder={focused ? "코드를 입력하세요" : ""}
+                spellCheck={false}
+                style={{
+                  width: "100%",
+                  minHeight: "120px",
+                  border: "none",
+                  background: "transparent",
+                  padding: "0",
+                  fontFamily: "monospace",
+                  fontSize: "14px",
+                  lineHeight: '1.5',
+                  color: "transparent",
+                  caretColor: "#c9d1d9",
+                  outline: "none",
+                  margin: 0,
+                  resize: "vertical",
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  position: 'relative',
+                  zIndex: 10,
+                  display: 'block'
+                }}
+              />
+            </div>
+          </div>
         ) : (
           <input
             value={value}

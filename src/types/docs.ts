@@ -13,6 +13,7 @@ export interface DocsBlock {
   listItems?: string[];
   imageSrc?: string;
   apiData?: ApiDoc;
+  language?: string;
 }
 
 export interface ApiParam {

@@ -28,7 +28,7 @@ export interface ApiParam {
 export interface ApiDoc {
   id: string;
   name: string;
-  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "UPDATE";
   endpoint: string;
   mappingEndpoint?: string;
   description: string;

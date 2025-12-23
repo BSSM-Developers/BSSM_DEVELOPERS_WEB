@@ -13,7 +13,7 @@ interface ApiHeaderProps {
   onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; mappingEndpoint: string }) => void;
 }
 
-const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
+const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"];
 
 export function ApiHeader({
   title,

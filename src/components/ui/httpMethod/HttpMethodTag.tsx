@@ -2,7 +2,7 @@
 
 import styled from "@emotion/styled";
 
-export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "UPDATE";
 
 type HttpMethodTagProps = {
   method: HttpMethod;
@@ -14,7 +14,8 @@ const colorMap: Record<HttpMethod, { bg: string; text: string; bgHover?: string 
   POST: { bg: "#FDEDE4", text: "#F06820" },
   PUT: { bg: "#FEF3C7", text: "#D97706" },
   DELETE: { bg: "#FDE9E7", text: "#F14437" },
-  PATCH: { bg: "#EDE9FE", text: "#8B5CF6" }
+  PATCH: { bg: "#EDE9FE", text: "#8B5CF6" },
+  UPDATE: { bg: "#E0F2FE", text: "#0284C7" }
 };
 
 export function HttpMethodTag({ method, className }: HttpMethodTagProps) {

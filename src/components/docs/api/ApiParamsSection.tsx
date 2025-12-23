@@ -1,7 +1,8 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { ParamItem } from "@/components/ui/param/ParamItem";
 import { validateParams } from "@/utils/apiUtils/paramUtils";
 
@@ -41,8 +42,8 @@ export function ApiParamsSection({
     }
   }, [params, showValidation]);
 
-  const handleAddParam = () => {
-    const newParam: ApiParam = { name: "", type: "string", description: "", required: false };
+  const handleAddParam = (type: string = "string") => {
+    const newParam: ApiParam = { name: "", type, description: "", required: false };
     onParamsChange?.([...params, newParam]);
   };
 
@@ -53,8 +54,10 @@ export function ApiParamsSection({
   };
 
   const handleDeleteParam = (index: number) => {
-    const nextParams = params.filter((_, i) => i !== index);
-    onParamsChange?.(nextParams);
+    if (window.confirm("정말 이 파라미터를 삭제하시겠습니까?")) {
+      const nextParams = params.filter((_, i) => i !== index);
+      onParamsChange?.(nextParams);
+    }
   };
 
   if (params.length === 0 && !editable) return null;
@@ -100,15 +103,85 @@ export function ApiParamsSection({
             />
           ))}
           {editable && (
-            <AddParamButton onClick={handleAddParam}>
-              + 파라미터 추가
-            </AddParamButton>
+            <AddParamMenu onAdd={(type) => handleAddParam(type)} />
           )}
         </ParamList>
       </ParamCard>
     </ParamSection>
   );
 }
+
+function AddParamMenu({ onAdd }: { onAdd: (type: string) => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
+
+  return (
+    <>
+      <AddParamButton ref={triggerRef} onClick={() => setIsOpen(!isOpen)}>
+        + 파라미터 추가
+      </AddParamButton>
+      {isOpen && createPortal(
+        <>
+          <MenuBackdrop onClick={() => setIsOpen(false)} />
+          <MenuContainer style={{
+            top: coords.top + 4,
+            left: coords.left,
+            width: 120,
+            position: 'absolute'
+          }}>
+            <MenuItem onClick={() => { onAdd("string"); setIsOpen(false); }}>
+              기본
+            </MenuItem>
+            <MenuItem onClick={() => { onAdd("object"); setIsOpen(false); }}>
+              그룹
+            </MenuItem>
+          </MenuContainer>
+        </>,
+        document.body
+      )}
+    </>
+  );
+}
+
+const MenuBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: transparent;
+`;
+
+const MenuContainer = styled.div`
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  overflow: hidden;
+`;
+
+const MenuItem = styled.div`
+  padding: 8px 12px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  color: #4B5563;
+  cursor: pointer;
+  &:hover {
+    background: #F3F4F6;
+    color: #58A6FF;
+  }
+`;
 
 const AddParamButton = styled.button`
   width: 100%;

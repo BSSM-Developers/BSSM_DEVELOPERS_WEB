@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 import { HttpMethodTag } from "@/components/ui/httpMethod/HttpMethodTag";
 
@@ -58,7 +59,7 @@ export function ParamItem({
             />
           </DescriptionWrapper>
         </ParamInfo>
-        <DeleteButton onClick={onDelete}>×</DeleteButton>
+        <DeleteButton type="button" onClick={onDelete}>×</DeleteButton>
       </Container>
     );
   }
@@ -83,30 +84,51 @@ const PARAM_TYPES = ["string", "number", "boolean", "object", "array", "any"];
 
 function TypeSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width
+      });
+    }
+  }, [isOpen]);
 
   return (
-    <SelectContainer>
+    <SelectContainer ref={triggerRef}>
       <SelectTrigger onClick={() => setIsOpen(!isOpen)}>
         {value || "타입"}
         <Arrow isOpen={isOpen}>▼</Arrow>
       </SelectTrigger>
-      {isOpen && (
-        <SelectOptions>
-          {PARAM_TYPES.map((t) => (
-            <SelectOption
-              key={t}
-              active={value === t}
-              onClick={() => {
-                onChange(t);
-                setIsOpen(false);
-              }}
-            >
-              {t}
-            </SelectOption>
-          ))}
-        </SelectOptions>
+      {isOpen && createPortal(
+        <>
+          <SelectBackdrop onClick={() => setIsOpen(false)} />
+          <SelectOptions style={{
+            top: coords.top + 4,
+            left: coords.left,
+            width: coords.width,
+            position: 'absolute'
+          }}>
+            {PARAM_TYPES.map((t) => (
+              <SelectOption
+                key={t}
+                active={value === t}
+                onClick={() => {
+                  onChange(t);
+                  setIsOpen(false);
+                }}
+              >
+                {t}
+              </SelectOption>
+            ))}
+          </SelectOptions>
+        </>,
+        document.body
       )}
-      {isOpen && <SelectBackdrop onClick={() => setIsOpen(false)} />}
     </SelectContainer>
   );
 }

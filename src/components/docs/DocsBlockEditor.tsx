@@ -20,6 +20,45 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   const [value, setValue] = useState(block.content ?? "");
   const [focused, setFocused] = useState(false);
 
+  // 슬래시 메뉴 상태
+  const [showMenu, setShowMenu] = useState(false);
+  const [menuIndex, setMenuIndex] = useState(0);
+  const [menuFilter, setMenuFilter] = useState("");
+
+  const MENU_OPTIONS = [
+    { id: 'headline_1', label: '제목 1', icon: 'H1', module: 'headline_1' },
+    { id: 'headline_2', label: '제목 2', icon: 'H2', module: 'headline_2' },
+    { id: 'list', label: '리스트', icon: '•', module: 'list' },
+    { id: 'code', label: '코드 블록', icon: '</>', module: 'code' },
+    { id: 'image', label: '이미지', icon: 'IMG', module: 'image' },
+    { id: 'api', label: 'API 명세', icon: 'API', module: 'api' },
+  ];
+
+  const filteredOptions = MENU_OPTIONS.filter(opt =>
+    opt.label.toLowerCase().includes(menuFilter.toLowerCase()) ||
+    opt.id.toLowerCase().includes(menuFilter.toLowerCase())
+  );
+
+  const selectModule = (module: string) => {
+    if (module === 'api') {
+      onChange(index, {
+        ...block,
+        module: 'api',
+        apiData: {
+          id: Math.random().toString(36).substring(2, 11),
+          name: "새 API",
+          method: "GET",
+          endpoint: "/api/v1/endpoint",
+          description: "API 설명을 입력하세요"
+        }
+      });
+    } else {
+      onChange(index, { ...block, module: module as any, content: "" });
+      setValue("");
+    }
+    setShowMenu(false);
+    setMenuFilter("");
+  };
 
   useEffect(() => {
     setValue(block.content ?? "");
@@ -47,6 +86,15 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     const text = e.target.value;
 
     if (block.module === "docs_1") {
+      // 슬래시 메뉴 감지
+      if (text.startsWith("/")) {
+        setShowMenu(true);
+        setMenuFilter(text.slice(1));
+        setMenuIndex(0);
+        setValue(text);
+        return;
+      }
+
       const detection = detectModuleType(text);
       if (detection) {
         setValue(detection.content);
@@ -69,9 +117,34 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     onChange(index, { ...block, content: text });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const composing = (e.nativeEvent as any)?.isComposing || (e as any).keyCode === 229;
     if (composing) return;
+
+    if (showMenu) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setMenuIndex(prev => (prev + 1) % Math.max(1, filteredOptions.length));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setMenuIndex(prev => (prev - 1 + filteredOptions.length) % Math.max(1, filteredOptions.length));
+        return;
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (filteredOptions[menuIndex]) {
+          selectModule(filteredOptions[menuIndex].module);
+        }
+        return;
+      }
+      if (e.key === "Escape") {
+        setShowMenu(false);
+        setMenuFilter("");
+        return;
+      }
+    }
 
     if (e.key === "Enter") {
       e.preventDefault();
@@ -270,26 +343,47 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
             </div>
           </div>
         ) : (
-          <input
-            value={value}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => setFocused(true)}
-            onBlur={() => setFocused(false)}
-            data-block-id={(block as any).id}
-            placeholder={focused ? "내용을 입력하세요" : ""}
-            style={{
-              width: "100%",
-              border: "none",
-              background: "white",
-              padding: "2px 12px",
-              borderRadius: "4px",
-              font: "inherit",
-              color: "inherit",
-              outline: "none",
-              margin: 0,
-            }}
-          />
+          <div style={{ position: 'relative', width: '100%' }}>
+            <input
+              value={value}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setFocused(true)}
+              onBlur={() => {
+                setFocused(false);
+                // 메뉴 클릭을 허용하기 위해 약간의 지연 후 닫기
+                setTimeout(() => setShowMenu(false), 200);
+              }}
+              data-block-id={(block as any).id}
+              placeholder={focused ? "내용을 입력하세요" : ""}
+              style={{
+                width: "100%",
+                border: "none",
+                background: "white",
+                padding: "2px 12px",
+                borderRadius: "4px",
+                font: "inherit",
+                color: "inherit",
+                outline: "none",
+                margin: 0,
+              }}
+            />
+            {showMenu && filteredOptions.length > 0 && (
+              <MenuContainer>
+                {filteredOptions.map((opt, i) => (
+                  <MenuItem
+                    key={opt.id}
+                    active={i === menuIndex}
+                    onClick={() => selectModule(opt.module)}
+                    onMouseEnter={() => setMenuIndex(i)}
+                  >
+                    <MenuIcon>{opt.icon}</MenuIcon>
+                    <MenuLabel>{opt.label}</MenuLabel>
+                  </MenuItem>
+                ))}
+              </MenuContainer>
+            )}
+          </div>
         )}
       </DocsBlock>
       <AddBlockButton onClick={() => onAddBlock(index)} />
@@ -346,6 +440,52 @@ const AddCircle = styled.button`
     background: #1a7fec;
     transform: scale(1.2);
   }
+`;
+
+const MenuContainer = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 12px;
+  z-index: 100;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  width: 200px;
+  padding: 4px;
+  margin-top: 4px;
+`;
+
+const MenuItem = styled.div<{ active: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  background: ${props => props.active ? '#F3F4F6' : 'transparent'};
+  &:hover {
+    background: #F3F4F6;
+  }
+`;
+
+const MenuIcon = styled.div`
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: bold;
+  color: #6B7280;
+`;
+
+const MenuLabel = styled.div`
+  font-size: 14px;
+  color: #374151;
 `;
 
 

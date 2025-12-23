@@ -49,6 +49,11 @@ export const docsModules = {
     width: 100%;
   `,
 
+  big_space: (theme: Theme) => css`
+    height: 48px;
+    width: 100%;
+  `,
+
 };
 
 export type DocsModuleType = keyof typeof docsModules;

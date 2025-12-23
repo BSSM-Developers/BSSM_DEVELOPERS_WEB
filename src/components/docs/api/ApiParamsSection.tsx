@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ParamItem } from "@/components/ui/param/ParamItem";
 import { validateParams } from "@/utils/apiUtils/paramUtils";
+import { useConfirm } from "@/hooks/useConfirm";
 
 interface ApiParam {
   name: string;
@@ -35,6 +36,8 @@ export function ApiParamsSection({
     errors: {}
   });
 
+  const { confirm, ConfirmDialog } = useConfirm();
+
   useEffect(() => {
     if (showValidation && params.length > 0) {
       const result = validateParams(params);
@@ -53,8 +56,15 @@ export function ApiParamsSection({
     onParamsChange?.(nextParams);
   };
 
-  const handleDeleteParam = (index: number) => {
-    if (window.confirm("정말 이 파라미터를 삭제하시겠습니까?")) {
+  const handleDeleteParam = async (index: number) => {
+    const isConfirmed = await confirm({
+      title: "파라미터 삭제",
+      message: "정말 이 파라미터를 삭제하시겠습니까?\n삭제된 내용은 복구할 수 없습니다.",
+      confirmText: "삭제",
+      cancelText: "취소"
+    });
+
+    if (isConfirmed) {
       const nextParams = params.filter((_, i) => i !== index);
       onParamsChange?.(nextParams);
     }
@@ -107,6 +117,7 @@ export function ApiParamsSection({
           )}
         </ParamList>
       </ParamCard>
+      <ConfirmDialog />
     </ParamSection>
   );
 }

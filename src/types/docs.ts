@@ -6,7 +6,8 @@ export type DocsModule =
   | "headline_2"
   | "list"
   | "api"
-  | "big_space";
+  | "big_space"
+  | "space";
 
 export interface DocsBlock {
   module: DocsModule;

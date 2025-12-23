@@ -31,7 +31,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     { id: 'list', label: '리스트', icon: '•', module: 'list' },
     { id: 'code', label: '코드 블록', icon: '</>', module: 'code' },
     { id: 'image', label: '이미지', icon: 'IMG', module: 'image' },
-    { id: 'api', label: 'API 명세', icon: 'API', module: 'api' },
   ];
 
   const filteredOptions = MENU_OPTIONS.filter(opt =>
@@ -93,6 +92,10 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
         setMenuIndex(0);
         setValue(text);
         return;
+      } else if (showMenu) {
+        // 슬래시가 지워지면 메뉴 닫기
+        setShowMenu(false);
+        setMenuFilter("");
       }
 
       const detection = detectModuleType(text);
@@ -464,9 +467,6 @@ const MenuItem = styled.div<{ active: boolean }>`
   border-radius: 4px;
   cursor: pointer;
   background: ${props => props.active ? '#F3F4F6' : 'transparent'};
-  &:hover {
-    background: #F3F4F6;
-  }
 `;
 
 const MenuIcon = styled.div`

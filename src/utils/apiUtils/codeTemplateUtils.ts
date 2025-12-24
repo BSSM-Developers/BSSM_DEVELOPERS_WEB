@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ApiDoc } from "@/types/docs";
-import type { ApiParam } from "./paramUtils";
 import { generateParamExamples, extractParams } from "./paramUtils";
 
 import { wrapColor, highlightJson } from "./highlightUtils";
@@ -19,7 +19,7 @@ export interface CodeTemplateOptions {
 
 // API 정보에서 요청 코드 생성
 export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions): string {
-  const { language, library = 'axios', baseUrl = '', includeAuth = true } = options;
+  const { language, library = 'axios', baseUrl = '' } = options;
 
   const params = extractParams(apiDoc);
   const examples = {
@@ -29,12 +29,12 @@ export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions
     path: generateParamExamples(params.pathParams)
   };
 
-  const endpoint = replacePathParams(apiDoc.endpoint, examples.path);
+  const endpoint = replacePathParams(apiDoc.endpoint, examples.path as Record<string, string>);
   let fullUrl = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
 
   // Append query parameters
   if (Object.keys(examples.query).length > 0) {
-    const queryString = new URLSearchParams(examples.query).toString();
+    const queryString = new URLSearchParams(examples.query as Record<string, string>).toString();
     fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryString;
   }
 
@@ -51,7 +51,7 @@ export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions
 }
 
 // 경로 파라미터 실제 값으로 치환
-function replacePathParams(endpoint: string, pathParams: Record<string, any>): string {
+function replacePathParams(endpoint: string, pathParams: Record<string, string>): string {
   let result = endpoint;
   Object.entries(pathParams).forEach(([key, value]) => {
     result = result.replace(`{${key}}`, String(value));
@@ -81,7 +81,7 @@ function generateAuthHeader(options: CodeTemplateOptions): Record<string, string
 function generateJavaScriptCode(
   apiDoc: ApiDoc,
   url: string,
-  examples: any,
+  examples: { header: Record<string, unknown>; body: Record<string, unknown>; query: Record<string, unknown>; path: Record<string, unknown> },
   library: Library,
   options: CodeTemplateOptions
 ): string {
@@ -150,7 +150,7 @@ ${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(data);`;
 function generatePythonCode(
   apiDoc: ApiDoc,
   url: string,
-  examples: any,
+  examples: { header: Record<string, unknown>; body: Record<string, unknown>; query: Record<string, unknown>; path: Record<string, unknown> },
   _library: Library,
   options: CodeTemplateOptions
 ): string {
@@ -172,7 +172,7 @@ ${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColo
 export function generateResponseTemplate(
   statusCode: number = 200,
   message: string = "성공",
-  data: any = null
+  data: unknown = null
 ): string {
   const responseObj = {
     status: statusCode,
@@ -187,7 +187,7 @@ export function generateResponseTemplate(
 function generateShellCode(
   apiDoc: ApiDoc,
   url: string,
-  examples: any,
+  examples: { header: Record<string, unknown>; body: Record<string, unknown>; query: Record<string, unknown>; path: Record<string, unknown> },
   options: CodeTemplateOptions
 ): string {
   const authHeaders = generateAuthHeader(options);

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { css } from "@emotion/react";
 import { applyTypography } from "../../../lib/themeHelper";
 

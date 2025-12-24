@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useRef, useEffect } from "react";
 import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
 import { useDocsStore } from "@/store/docsStore";
 
 type Mutators = {
-  addSibling: (targetId: string, node: Omit<SidebarNode,"id">) => void;
-  addChild: (parentId: string, node: Omit<SidebarNode,"id">) => void;
+  addSibling: (targetId: string, node: Omit<SidebarNode, "id">) => void;
+  addChild: (parentId: string, node: Omit<SidebarNode, "id">) => void;
   rename: (id: string, label: string) => void;
   remove: (id: string) => void;
 };
@@ -31,10 +32,12 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const isActive = selectedDocId === node.id || childHasActive;
 
   const handleClick = () => {
+    // 항상 선택 상태 업데이트
+    useDocsStore.setState({ selected: node.id });
+
+    // collapse 타입이면 토글도 수행
     if (isFolder) {
       setOpen(p => !p);
-    } else {
-      useDocsStore.setState({ selected: node.id });
     }
   };
 

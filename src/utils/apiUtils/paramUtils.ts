@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { ApiDoc } from "@/types/docs";
 
 export interface ApiParam {
@@ -150,8 +151,8 @@ export function validateParams(params: ApiParam[]): { isValid: boolean; errors: 
 /**
  * 파라미터를 예시 값으로 변환
  */
-export function generateParamExamples(params: ApiParam[]): Record<string, any> {
-  const examples: Record<string, any> = {};
+export function generateParamExamples(params: ApiParam[]): Record<string, unknown> {
+  const examples: Record<string, unknown> = {};
 
   params.forEach(param => {
     switch (param.type.toLowerCase()) {
@@ -188,8 +189,8 @@ export function generateParamExamples(params: ApiParam[]): Record<string, any> {
 /**
  * 파라미터를 JSON Schema 형태로 변환
  */
-export function paramsToJsonSchema(params: ApiParam[]): any {
-  const properties: any = {};
+export function paramsToJsonSchema(params: ApiParam[]): { type: string; properties: Record<string, unknown>; required: string[] } {
+  const properties: Record<string, unknown> = {};
   const required: string[] = [];
 
   params.forEach(param => {
@@ -206,6 +207,6 @@ export function paramsToJsonSchema(params: ApiParam[]): any {
   return {
     type: 'object',
     properties,
-    required: required.length > 0 ? required : undefined
+    required
   };
 }

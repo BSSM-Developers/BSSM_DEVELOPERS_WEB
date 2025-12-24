@@ -8,12 +8,20 @@ import { ApiDocModule } from "@/components/docs/ApiDocModule";
 import { DocsBlock } from "@/types/docs";
 import { docsSubData, DocsSubEntry } from "./mock/docsSubData";
 import { apiMockData } from "./mock/apiMockData";
-import { useDocsStore } from "@/store/docsStore";
+import { useDocsStore, DocsStoreState } from "@/store/docsStore";
 
 type BlockWithId = DocsBlock & { id: string };
 
+interface SidebarItem {
+  id: string;
+  label: string;
+  module: string;
+  childrenItems?: SidebarItem[];
+  method?: string;
+}
+
 // Helper function to find the sidebar node and its path
-const findSidebarNodeWithPath = (items: any[], id: string, path: string[] = []): { node: any; path: string[] } | null => {
+const findSidebarNodeWithPath = (items: SidebarItem[], id: string, path: string[] = []): { node: SidebarItem; path: string[] } | null => {
   for (const item of items) {
     if (item.id === id) return { node: item, path };
     if (item.childrenItems) {
@@ -25,7 +33,7 @@ const findSidebarNodeWithPath = (items: any[], id: string, path: string[] = []):
 };
 
 // Need to import sidebar items to check if selected is API
-const sidebarItems = [
+const sidebarItems: SidebarItem[] = [
   { id: "perseus", label: "페르세우스", module: "main" },
   { id: "doc-1", label: "시작하기", module: "default" },
   { id: "api-description", label: "API 설명", module: "default" },
@@ -71,11 +79,11 @@ const sidebarItems = [
 ];
 
 export default function DocsEditPage() {
-  const selected = useDocsStore((s: any) => s.selected);
-  const docsData = useDocsStore((s: any) => s.docsData);
-  const apiData = useDocsStore((s: any) => s.apiData);
-  const updateDocsData = useDocsStore((s: any) => s.updateDocsData);
-  const updateApiData = useDocsStore((s: any) => s.updateApiData);
+  const selected = useDocsStore((s: DocsStoreState) => s.selected);
+  const docsData = useDocsStore((s: DocsStoreState) => s.docsData);
+  const apiData = useDocsStore((s: DocsStoreState) => s.apiData);
+  const updateDocsData = useDocsStore((s: DocsStoreState) => s.updateDocsData);
+  const updateApiData = useDocsStore((s: DocsStoreState) => s.updateApiData);
 
   // Find the selected node in sidebar
   const result = findSidebarNodeWithPath(sidebarItems, selected);
@@ -119,7 +127,12 @@ export default function DocsEditPage() {
     if (isApiDoc) return;
 
     const copy = [...(docsData[selected] || [])];
-    if (copy.length <= 1) return; // Keep at least one block
+    if (copy.length <= 1) {
+      // Reset the last block instead of deleting it
+      copy[0] = { ...copy[0], module: "docs_1", content: "" };
+      updateDocsData(selected, copy);
+      return;
+    }
 
     const focusTargetId = index > 0 ? copy[index - 1]?.id : copy[index + 1]?.id;
     copy.splice(index, 1);
@@ -135,7 +148,7 @@ export default function DocsEditPage() {
 
   const handleFocusMove = (index: number, direction: "up" | "down") => {
     const target = direction === "up" ? index - 1 : index + 1;
-    const targetId = blocks[target]?.id;
+    const targetId = (blocks[target] as BlockWithId)?.id;
     if (!targetId) return;
     setTimeout(() => {
       const el = document.querySelector<HTMLInputElement>(`[data-block-id='${targetId}']`);
@@ -150,17 +163,33 @@ export default function DocsEditPage() {
     <DocsLayout>
       <DocsHeader title={title} breadcrumb={breadcrumb} isApi={isApiDoc} />
 
-      {blocks.map((block: any, i: number) => (
-        <DocsBlockEditor
-          key={block.id}
-          index={i}
-          block={block}
-          onChange={(idx, updated) => handleBlockChange(idx, updated)}
-          onAddBlock={handleAddBlock}
-          onRemoveBlock={handleRemoveBlock}
-          onFocusMove={handleFocusMove}
-        />
-      ))}
+      <div
+        style={{ minHeight: "500px" }}
+        onClick={() => {
+          if (blocks.length === 0 && !isApiDoc) {
+            const blockId = Math.random().toString(36).substring(2, 11);
+            updateDocsData(selected, [{ id: blockId, module: "docs_1", content: "" }]);
+          }
+        }}
+      >
+        {blocks.length === 0 && !isApiDoc ? (
+          <div style={{ padding: "20px 0", color: "#9CA3AF", cursor: "text" }}>
+            내용을 입력하려면 클릭하세요...
+          </div>
+        ) : (
+          (blocks as BlockWithId[]).map((block, i: number) => (
+            <DocsBlockEditor
+              key={block.id || i}
+              index={i}
+              block={block}
+              onChange={(idx, updated) => handleBlockChange(idx, updated)}
+              onAddBlock={handleAddBlock}
+              onRemoveBlock={handleRemoveBlock}
+              onFocusMove={handleFocusMove}
+            />
+          ))
+        )}
+      </div>
     </DocsLayout>
   );
 }

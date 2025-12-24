@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { DragEndEvent, DragOverEvent, DragStartEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -98,7 +99,7 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     }
 
     const fromParent = findParentId(effectiveItems as any, String(active.id));
-    const toParent   = findParentId(effectiveItems as any, String(over.id));
+    const toParent = findParentId(effectiveItems as any, String(over.id));
 
     // 2) 다른 부모로 이동 (형제로 삽입)
     if (fromParent !== toParent) {
@@ -113,10 +114,10 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     // 3) 같은 부모 내에서 정렬
     const siblings = getSiblings(fromParent);
     const fromIdx = siblings.findIndex(s => s.id === active.id);
-    const toIdx   = siblings.findIndex(s => s.id === over.id);
+    const toIdx = siblings.findIndex(s => s.id === over.id);
     if (fromIdx < 0 || toIdx < 0) return;
     const moved = arrayMove(siblings, fromIdx, toIdx);
-    const next  = applySiblings(effectiveItems as any, fromParent, moved as any);
+    const next = applySiblings(effectiveItems as any, fromParent, moved as any);
     onChange(next as any);
   };
 

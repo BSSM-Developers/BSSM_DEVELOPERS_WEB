@@ -173,7 +173,7 @@ export function DocsSidebar({
             }}
             variant="cancel"
           >
-            (수정)취소
+            취소
           </EditModeButton>
           <EditModeButton
             onClick={() => {
@@ -184,7 +184,7 @@ export function DocsSidebar({
             }}
             variant="complete"
           >
-            (수정)완료
+            완료
           </EditModeButton>
         </EditModeControls>
       )}

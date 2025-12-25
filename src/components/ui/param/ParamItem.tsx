@@ -283,12 +283,17 @@ const NameTag = styled.span`
 `;
 
 const TypeText = styled.span`
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: #F3F4F6;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-weight: 400;
-  font-size: 14px;
-  color: #8B95A1;
-  letter-spacing: -0.7px;
-  white-space: pre;
+  font-weight: 500;
+  font-size: 12px;
+  color: #6B7280;
+  letter-spacing: -0.3px;
+  white-space: nowrap;
 `;
 
 const DescriptionWrapper = styled.div`

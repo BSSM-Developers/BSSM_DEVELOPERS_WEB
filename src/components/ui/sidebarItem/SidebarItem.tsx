@@ -6,6 +6,7 @@ import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
 import { useDocsStore } from "@/store/docsStore";
+import { HttpMethodTag } from "@/components/ui/httpMethod/HttpMethodTag";
 
 type Mutators = {
   addSibling: (targetId: string, node: Omit<SidebarNode, "id">) => void;
@@ -91,7 +92,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
           <>
             <Label>{node.label}</Label>
             {node.module === "api" && node.method && (
-              <MethodBadge method={node.method}>{node.method}</MethodBadge>
+              <HttpMethodTag method={node.method as any} size="small" />
             )}
           </>
         )}
@@ -175,25 +176,6 @@ const DeleteButton = styled.button`
   cursor: pointer;
 `;
 const SubMenu = styled.div` display: flex; flex-direction: column; margin-left: 16px; `;
-
-const MethodBadge = styled.span<{ method: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" }>`
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: ${({ method }) => {
-    switch (method) {
-      case "GET": return "#10B981";
-      case "POST": return "#3B82F6";
-      case "DELETE": return "#EF4444";
-      case "PUT": return "#F59E0B";
-      case "PATCH": return "#8B5CF6";
-      default: return "#6B7280";
-    }
-  }};
-  color: white;
-`;
 
 const ContextMenuBackdrop = styled.div`
   position: fixed;

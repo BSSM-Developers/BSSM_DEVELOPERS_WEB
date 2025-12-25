@@ -7,6 +7,7 @@ export type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "UPDATE";
 type HttpMethodTagProps = {
   method: HttpMethod;
   className?: string;
+  size?: "small" | "medium";
 };
 
 const colorMap: Record<HttpMethod, { bg: string; text: string; bgHover?: string }> = {
@@ -18,28 +19,38 @@ const colorMap: Record<HttpMethod, { bg: string; text: string; bgHover?: string 
   UPDATE: { bg: "#E0F2FE", text: "#0284C7" }
 };
 
-export function HttpMethodTag({ method, className }: HttpMethodTagProps) {
+export function HttpMethodTag({ method, className, size = "medium" }: HttpMethodTagProps) {
   return (
-    <StyledTag method={method} className={className}>
+    <StyledTag method={method} className={className} size={size}>
       {method}
     </StyledTag>
   );
 }
 
-const StyledTag = styled.span<{ method: HttpMethod }>`
+const StyledTag = styled.span<{ method: HttpMethod; size: "small" | "medium" }>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 0;
-  width: 72px;
-  height: 24px;
-  border-radius: 3px;
+  border-radius: 4px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-weight: 500;
-  font-size: 12px;
   line-height: 1;
   text-align: center;
-  letter-spacing: -0.6px;
+  
+  ${({ size }) => size === "medium" ? `
+    padding: 8px 12px;
+    min-width: 80px;
+    height: 32px;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: -0.3px;
+  ` : `
+    padding: 2px 6px;
+    min-width: 40px;
+    height: 20px;
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0;
+  `}
 
   background: ${({ method }) => colorMap[method].bg};
   color: ${({ method }) => colorMap[method].text};

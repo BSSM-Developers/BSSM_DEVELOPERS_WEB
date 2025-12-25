@@ -6,11 +6,12 @@ import styled from "@emotion/styled";
 interface DocsHeaderProps {
   title: string;
   breadcrumb?: string[];
+  isApi?: boolean;
 }
 
-export function DocsHeader({ title, breadcrumb = [] }: DocsHeaderProps) {
+export function DocsHeader({ title, breadcrumb = [], isApi = false }: DocsHeaderProps) {
   return (
-    <Header>
+    <Header isApi={isApi}>
       <BreadcrumbAndTitle>
         {breadcrumb.length > 0 && (
           <Breadcrumb>
@@ -23,8 +24,8 @@ export function DocsHeader({ title, breadcrumb = [] }: DocsHeaderProps) {
   );
 }
 
-const Header = styled.header`
-  margin-bottom: 48px;
+const Header = styled.header<{ isApi?: boolean }>`
+  margin-bottom: ${({ isApi }) => (isApi ? "24px" : "48px")};
 `;
 
 const BreadcrumbAndTitle = styled.div`

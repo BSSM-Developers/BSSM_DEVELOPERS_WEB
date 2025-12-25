@@ -4,23 +4,54 @@ import styled from "@emotion/styled";
 import { DocsSidebar } from "./DocsSidebar";
 import { useState } from "react";
 import { TopNav } from "./TopNav";
-import { useDocsStore } from "@/store/docsStore";
+import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
-const testItems = [
-  { id: "doc-1", label: "시작하기", module: "default" } as any,
+const testItems: SidebarNode[] = [
+  { id: "perseus", label: "페르세우스", module: "main" },
+  { id: "doc-1", label: "시작하기", module: "default" },
+  { id: "api-description", label: "API 설명", module: "default" },
+  { id: "api-spec", label: "API 명세서", module: "collapse", childrenItems: [] },
   {
-    id: "group-1",
-    label: "개발자",
+    id: "user",
+    label: "user",
     module: "collapse",
     childrenItems: [
-      { id: "doc-2", label: "박동현", module: "small" } as any,
-      { id: "doc-3", label: "류승찬", module: "small" } as any,
-    ],
-  } as any,
+      { id: "user-add", label: "추가 정보 입력", module: "api", method: "POST" },
+      { id: "user-profile", label: "프로필 조회", module: "api", method: "GET" }
+    ]
+  },
+  {
+    id: "auth",
+    label: "auth",
+    module: "collapse",
+    childrenItems: [
+      { id: "google-login", label: "구글 로그인", module: "api", method: "POST" },
+      { id: "google-url", label: "구글 로그인 url 조회", module: "api", method: "GET" },
+      { id: "token-refresh", label: "토큰 재발급", module: "api", method: "GET" },
+      { id: "logout", label: "로그아웃", module: "api", method: "GET" }
+    ]
+  },
+  {
+    id: "fact",
+    label: "fact",
+    module: "collapse",
+    childrenItems: [
+      { id: "fact-create", label: "사실 작성", module: "api", method: "POST" },
+      { id: "fact-delete", label: "사실 제거", module: "api", method: "DELETE" }
+    ]
+  },
+  {
+    id: "fact-update",
+    label: "fact update",
+    module: "collapse",
+    childrenItems: [
+      { id: "fact-update-create", label: "인지 왜곡 수정 글 작성", module: "api", method: "POST" },
+      { id: "fact-update-view", label: "인지 왜곡 수정 글 조회", module: "api", method: "GET" }
+    ]
+  }
 ];
 
 export function DocsLayout({ children }: { children: React.ReactNode }) {
-  const selectedDocId = useDocsStore((s: any) => s.selected)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
@@ -34,11 +65,13 @@ export function DocsLayout({ children }: { children: React.ReactNode }) {
             <ToggleButton onClick={toggleSidebar}>
               {sidebarCollapsed ? "→" : "←"}
             </ToggleButton>
-            {!sidebarCollapsed && <SidebarTitle>문서</SidebarTitle>}
+            {!sidebarCollapsed && <SidebarTitle>API 문서</SidebarTitle>}
           </SidebarHeader>
-          {!sidebarCollapsed && <DocsSidebar items = {testItems} editable={true} />}
+          {!sidebarCollapsed && <DocsSidebar items={testItems} editable={true} />}
         </Sidebar>
-        <Content data-selected={selectedDocId}>{children}</Content>
+        <Content>
+          {children}
+        </Content>
       </Body>
     </Wrapper>
   );
@@ -100,7 +133,9 @@ const SidebarTitle = styled.h2`
 
 const Content = styled.main`
   flex: 1;
-  padding: 48px;
   overflow-y: auto;
   background: ${({ theme }) => theme.colors.background};
+  padding: 40px 30px;
 `;
+
+

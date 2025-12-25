@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import styled from "@emotion/styled";
@@ -79,7 +80,7 @@ const SortableNode = ({
 export function DocsSidebar({
   items = [],
   editable = false, onChange
- }: DocsSidebarProps) {
+}: DocsSidebarProps) {
   const propItems = Array.isArray(items) ? items : [];
   const [localItems, setLocalItems] = useState<SidebarNode[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -125,7 +126,6 @@ export function DocsSidebar({
 
     switch (e.key) {
       case 'Delete':
-        // TODO: 현재 선택된 아이템 삭제 (추후 selection 상태 관리 필요)
         break;
       case 'n':
         if (e.ctrlKey || e.metaKey) {
@@ -137,7 +137,6 @@ export function DocsSidebar({
       case 'd':
         if (e.ctrlKey || e.metaKey) {
           e.preventDefault();
-          // TODO: 현재 선택된 아이템 복제
         }
         break;
     }
@@ -164,7 +163,32 @@ export function DocsSidebar({
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
-    <Nav>
+      {editable && (
+        <EditModeControls>
+          <EditModeButton
+            onClick={() => {
+              if (confirm('변경사항을 취소하시겠습니까?')) {
+                setLocalItems(propItems);
+              }
+            }}
+            variant="cancel"
+          >
+            취소
+          </EditModeButton>
+          <EditModeButton
+            onClick={() => {
+              if (onChange) {
+                onChange(localItems);
+              }
+              alert('변경사항이 저장되었습니다.');
+            }}
+            variant="complete"
+          >
+            완료
+          </EditModeButton>
+        </EditModeControls>
+      )}
+      <Nav>
         <SortableContext items={effectiveItems.map((n: any) => n.id)}>
           {effectiveItems.map((node: any) => (
             <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} overIntent={overIntent} />
@@ -189,8 +213,8 @@ export function DocsSidebar({
             ))}
           </Picker>
         )}
-        
-    </Nav>
+
+      </Nav>
     </DndContext>
   );
 }
@@ -307,4 +331,38 @@ const SiblingDropIndicator = styled.div`
     font-weight: 600;
     white-space: nowrap;
   }
+`;
+
+const EditModeControls = styled.div`
+  display: flex;
+  gap: 8px;
+  padding: 16px;
+  border-bottom: 1px solid #E5E7EB;
+`;
+
+const EditModeButton = styled.button<{ variant: 'cancel' | 'complete' }>`
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  ${({ variant, theme }) => variant === 'cancel' ? `
+    background: #F3F4F6;
+    color: #6B7280;
+    
+    &:hover {
+      background: #E5E7EB;
+    }
+  ` : `
+    background: ${theme.colors.bssmDarkBlue};
+    color: white;
+    
+    &:hover {
+      opacity: 0.9;
+    }
+  `}
 `;

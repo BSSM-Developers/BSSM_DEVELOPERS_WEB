@@ -18,7 +18,7 @@ export const docsModules = {
   `,
 
   list: (theme: Theme) => css`
-    margin: 12px 0;
+    margin: 8px 0;
     padding-left: 20px;
     li {
       list-style: disc;
@@ -43,7 +43,22 @@ export const docsModules = {
       max-width: 100%;
     }
   `,
-  
+
+  api: (theme: Theme) => css`
+    margin: 12px 0;
+    width: 100%;
+  `,
+
+  big_space: (theme: Theme) => css`
+    height: 48px;
+    width: 100%;
+  `,
+
+  space: (theme: Theme) => css`
+    height: 16px;
+    width: 100%;
+  `,
+
 };
 
 export type DocsModuleType = keyof typeof docsModules;

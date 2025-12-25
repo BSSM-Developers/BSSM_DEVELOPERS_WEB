@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { DragEndEvent, DragOverEvent, DragStartEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { DragEndEvent, DragOverEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { findParentId, removeNodeWithReturn, applySiblings } from "@/components/layout/treeUtils";
@@ -48,38 +48,18 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     return [] as any;
   };
 
-  const onDragStart = (evt: DragStartEvent) => {
-    setOverIntent(null);
-  };
-
   const onDragOver = (evt: DragOverEvent) => {
-    const { over, active } = evt;
-    if (!over) {
-      setOverIntent(null);
-      return;
-    }
+    const { over } = evt;
+    if (!over) return;
     const targetId = String(over.id);
     const target = findNodeById(effectiveItems as Node[], targetId);
-    if (!target) {
-      setOverIntent(null);
-      return;
-    }
-
-    // 드래그되는 아이템 찾기
-    const draggedItem = findNodeById(effectiveItems as Node[], String(active.id));
-
-    // collapse 모듈 위에 드롭하려고 할 때, 드래그되는 아이템이 small이 아니면 자식 모드 차단
-    if (target.module === "collapse") {
-      const mode = draggedItem?.module === "small" ? "child" : "sibling";
-      setOverIntent({ id: targetId, mode });
-    } else {
-      setOverIntent({ id: targetId, mode: "sibling" });
-    }
+    if (!target) return;
+    const mode = target.module === "collapse" ? "child" : "sibling";
+    setOverIntent({ id: targetId, mode });
   };
 
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
-    setOverIntent(null);
     if (!over || active.id === over.id) return;
 
     const targetId = String(over.id);
@@ -89,12 +69,9 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       const { tree: afterRemove, removed } =
         removeNodeWithReturn(effectiveItems as any, String(active.id));
       if (!removed) return;
-
-      // small 모듈이 아니면 자식으로 추가 차단
-      if (removed.module !== "small") return;
-
       const next = appendChild(afterRemove as any, targetId, removed as any);
       onChange(next as any);
+      setOverIntent(null);
       return;
     }
 
@@ -108,6 +85,7 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       if (!removed) return;
       const next = insertAfter(afterRemove as any, targetId, removed as any);
       onChange(next as any);
+      setOverIntent(null);
       return;
     }
 
@@ -119,11 +97,11 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     const moved = arrayMove(siblings, fromIdx, toIdx);
     const next = applySiblings(effectiveItems as any, fromParent, moved as any);
     onChange(next as any);
+    setOverIntent(null);
   };
 
   return {
     sensors,
-    onDragStart,
     onDragOver,
     onDragEnd,
     overIntent,

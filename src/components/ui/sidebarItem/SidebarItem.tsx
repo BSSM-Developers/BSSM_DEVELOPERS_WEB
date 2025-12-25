@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useRef, useEffect } from "react";
 import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
 import { useDocsStore } from "@/store/docsStore";
+import { HttpMethodTag } from "@/components/ui/httpMethod/HttpMethodTag";
 
 type Mutators = {
-  addSibling: (targetId: string, node: Omit<SidebarNode,"id">) => void;
-  addChild: (parentId: string, node: Omit<SidebarNode,"id">) => void;
+  addSibling: (targetId: string, node: Omit<SidebarNode, "id">) => void;
+  addChild: (parentId: string, node: Omit<SidebarNode, "id">) => void;
   rename: (id: string, label: string) => void;
   remove: (id: string) => void;
 };
@@ -26,15 +28,17 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const [label, setLabel] = useState(node.label);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const selectedDocId = useDocsStore((s: any) => s.selected)
-  const isFolder = node.module === "collapse";
+  const isFolder = node.module === "collapse" || node.module === "main";
   const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedDocId);
   const isActive = selectedDocId === node.id || childHasActive;
 
   const handleClick = () => {
+    // 항상 선택 상태 업데이트
+    useDocsStore.setState({ selected: node.id });
+
+    // collapse 타입이면 토글도 수행
     if (isFolder) {
       setOpen(p => !p);
-    } else {
-      useDocsStore.setState({ selected: node.id });
     }
   };
 
@@ -88,7 +92,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
           <>
             <Label>{node.label}</Label>
             {node.module === "api" && node.method && (
-              <MethodBadge method={node.method}>{node.method}</MethodBadge>
+              <HttpMethodTag method={node.method as any} size="small" />
             )}
           </>
         )}
@@ -172,25 +176,6 @@ const DeleteButton = styled.button`
   cursor: pointer;
 `;
 const SubMenu = styled.div` display: flex; flex-direction: column; margin-left: 16px; `;
-
-const MethodBadge = styled.span<{ method: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" }>`
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: ${({ method }) => {
-    switch (method) {
-      case "GET": return "#10B981";
-      case "POST": return "#3B82F6";
-      case "DELETE": return "#EF4444";
-      case "PUT": return "#F59E0B";
-      case "PATCH": return "#8B5CF6";
-      default: return "#6B7280";
-    }
-  }};
-  color: white;
-`;
 
 const ContextMenuBackdrop = styled.div`
   position: fixed;

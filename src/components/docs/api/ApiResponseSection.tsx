@@ -60,8 +60,11 @@ export function ApiResponseSection({
               <Label>Status Code</Label>
               <EditInput
                 type="number"
-                value={status}
-                onChange={(e) => onStatusChange?.(parseInt(e.target.value))}
+                value={isNaN(status) ? '' : status}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  onStatusChange?.(isNaN(val) ? 0 : val);
+                }}
               />
             </div>
             <div style={{ flex: 2 }}>
@@ -118,6 +121,7 @@ const EditInput = styled.input`
   font-size: 14px;
   outline: none;
   background: white;
+  color: #191F28;
   &:focus {
     border-color: #58A6FF;
   }
@@ -134,6 +138,7 @@ const EditTextarea = styled.textarea`
   outline: none;
   background: white;
   resize: vertical;
+  color: #191F28;
   &:focus {
     border-color: #58A6FF;
   }

@@ -28,7 +28,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const [label, setLabel] = useState(node.label);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const selectedDocId = useDocsStore((s: any) => s.selected)
-  const isFolder = node.module === "collapse";
+  const isFolder = node.module === "collapse" || node.module === "main";
   const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedDocId);
   const isActive = selectedDocId === node.id || childHasActive;
 

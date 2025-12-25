@@ -34,46 +34,52 @@ const findSidebarNodeWithPath = (items: SidebarItem[], id: string, path: string[
 
 // Need to import sidebar items to check if selected is API
 const sidebarItems: SidebarItem[] = [
-  { id: "perseus", label: "페르세우스", module: "main" },
-  { id: "doc-1", label: "시작하기", module: "default" },
-  { id: "api-description", label: "API 설명", module: "default" },
-  { id: "api-spec", label: "API 명세서", module: "collapse", childrenItems: [] },
   {
-    id: "user",
-    label: "user",
-    module: "collapse",
+    id: "perseus",
+    label: "페르세우스",
+    module: "main",
     childrenItems: [
-      { id: "user-add", label: "추가 정보 입력", module: "api", method: "POST" },
-      { id: "user-profile", label: "프로필 조회", module: "api", method: "GET" }
-    ]
-  },
-  {
-    id: "auth",
-    label: "auth",
-    module: "collapse",
-    childrenItems: [
-      { id: "google-login", label: "구글 로그인", module: "api", method: "POST" },
-      { id: "google-url", label: "구글 로그인 url 조회", module: "api", method: "GET" },
-      { id: "token-refresh", label: "토큰 재발급", module: "api", method: "GET" },
-      { id: "logout", label: "로그아웃", module: "api", method: "GET" }
-    ]
-  },
-  {
-    id: "fact",
-    label: "fact",
-    module: "collapse",
-    childrenItems: [
-      { id: "fact-create", label: "사실 작성", module: "api", method: "POST" },
-      { id: "fact-delete", label: "사실 제거", module: "api", method: "DELETE" }
-    ]
-  },
-  {
-    id: "fact-update",
-    label: "fact update",
-    module: "collapse",
-    childrenItems: [
-      { id: "fact-update-create", label: "인지 왜곡 수정 글 작성", module: "api", method: "POST" },
-      { id: "fact-update-view", label: "인지 왜곡 수정 글 조회", module: "api", method: "GET" }
+      { id: "doc-1", label: "시작하기", module: "default" },
+      { id: "api-description", label: "API 설명", module: "default" },
+      { id: "api-spec", label: "API 명세서", module: "collapse", childrenItems: [] },
+      {
+        id: "user",
+        label: "user",
+        module: "collapse",
+        childrenItems: [
+          { id: "user-add", label: "추가 정보 입력", module: "api", method: "POST" },
+          { id: "user-profile", label: "프로필 조회", module: "api", method: "GET" }
+        ]
+      },
+      {
+        id: "auth",
+        label: "auth",
+        module: "collapse",
+        childrenItems: [
+          { id: "google-login", label: "구글 로그인", module: "api", method: "POST" },
+          { id: "google-url", label: "구글 로그인 url 조회", module: "api", method: "GET" },
+          { id: "token-refresh", label: "토큰 재발급", module: "api", method: "GET" },
+          { id: "logout", label: "로그아웃", module: "api", method: "GET" }
+        ]
+      },
+      {
+        id: "fact",
+        label: "fact",
+        module: "collapse",
+        childrenItems: [
+          { id: "fact-create", label: "사실 작성", module: "api", method: "POST" },
+          { id: "fact-delete", label: "사실 제거", module: "api", method: "DELETE" }
+        ]
+      },
+      {
+        id: "fact-update",
+        label: "fact update",
+        module: "collapse",
+        childrenItems: [
+          { id: "fact-update-create", label: "인지 왜곡 수정 글 작성", module: "api", method: "POST" },
+          { id: "fact-update-view", label: "인지 왜곡 수정 글 조회", module: "api", method: "GET" }
+        ]
+      }
     ]
   }
 ];

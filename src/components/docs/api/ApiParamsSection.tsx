@@ -31,6 +31,7 @@ export function ApiParamsSection({
   editable = false,
   onParamsChange
 }: ApiParamsSectionProps) {
+  const [isOpen, setIsOpen] = useState(true);
   const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: Record<string, string[]> }>({
     isValid: true,
     errors: {}
@@ -48,6 +49,7 @@ export function ApiParamsSection({
   const handleAddParam = (type: string = "string") => {
     const newParam: ApiParam = { name: "", type, description: "", required: false };
     onParamsChange?.([...params, newParam]);
+    if (!isOpen) setIsOpen(true);
   };
 
   const handleUpdateParam = (index: number, updated: ApiParam) => {
@@ -74,8 +76,11 @@ export function ApiParamsSection({
 
   return (
     <ParamSection>
-      <ParamSectionHeader>
-        <ParamSectionTitle>{title}</ParamSectionTitle>
+      <ParamSectionHeader onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ChevronIcon isOpen={isOpen}>▼</ChevronIcon>
+          <ParamSectionTitle>{title}</ParamSectionTitle>
+        </div>
         {showValidation && (
           <ValidationIndicator isValid={validationResult.isValid}>
             {validationResult.isValid ? '✓ 유효' : '⚠ 오류'}
@@ -83,40 +88,44 @@ export function ApiParamsSection({
         )}
       </ParamSectionHeader>
 
-      {showValidation && !validationResult.isValid && (
-        <ValidationErrors>
-          {Object.entries(validationResult.errors).map(([key, errors]) => (
-            <ErrorItem key={key}>
-              <ErrorLabel>{key}:</ErrorLabel>
-              <ErrorList>
-                {errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ErrorList>
-            </ErrorItem>
-          ))}
-        </ValidationErrors>
-      )}
-
-      <ParamCard large={large}>
-        <ParamList style={{ marginTop: 0 }}>
-          {params.map((param, index) => (
-            <ParamItem
-              key={index}
-              name={param.name}
-              type={param.type}
-              description={param.description}
-              required={param.required}
-              editable={editable}
-              onChange={(updated) => handleUpdateParam(index, updated)}
-              onDelete={() => handleDeleteParam(index)}
-            />
-          ))}
-          {editable && (
-            <AddParamMenu onAdd={(type) => handleAddParam(type)} />
+      {isOpen && (
+        <>
+          {showValidation && !validationResult.isValid && (
+            <ValidationErrors>
+              {Object.entries(validationResult.errors).map(([key, errors]) => (
+                <ErrorItem key={key}>
+                  <ErrorLabel>{key}:</ErrorLabel>
+                  <ErrorList>
+                    {errors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ErrorList>
+                </ErrorItem>
+              ))}
+            </ValidationErrors>
           )}
-        </ParamList>
-      </ParamCard>
+
+          <ParamCard large={large}>
+            <ParamList style={{ marginTop: 0 }}>
+              {params.map((param, index) => (
+                <ParamItem
+                  key={index}
+                  name={param.name}
+                  type={param.type}
+                  description={param.description}
+                  required={param.required}
+                  editable={editable}
+                  onChange={(updated) => handleUpdateParam(index, updated)}
+                  onDelete={() => handleDeleteParam(index)}
+                />
+              ))}
+              {editable && (
+                <AddParamMenu onAdd={(type) => handleAddParam(type)} />
+              )}
+            </ParamList>
+          </ParamCard>
+        </>
+      )}
       <ConfirmDialog />
     </ParamSection>
   );
@@ -231,6 +240,14 @@ const ParamSectionTitle = styled.h3`
   color: black;
   letter-spacing: -0.7px;
   margin: 0;
+`;
+
+const ChevronIcon = styled.span<{ isOpen: boolean }>`
+  display: inline-block;
+  font-size: 10px;
+  color: #9CA3AF;
+  transform: ${({ isOpen }) => isOpen ? 'rotate(0deg)' : 'rotate(-90deg)'};
+  transition: transform 0.2s ease;
 `;
 
 const ValidationIndicator = styled.span<{ isValid: boolean }>`

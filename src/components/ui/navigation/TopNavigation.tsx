@@ -21,7 +21,7 @@ export function TopNavigation({
   logoSrc = "/images/ci-logo.png",
   title = "Developers",
   navItems = [
-    { label: "API 둘러보기", href: "/api", active: true },
+    { label: "API 둘러보기", href: "/apis", active: true },
     { label: "API 정적처리", href: "/static" },
     { label: "API 사용하기", href: "/usage" },
     { label: "가이드", href: "/guide" }
@@ -55,20 +55,21 @@ export function TopNavigation({
 
 const Container = styled.div`
   display: flex;
-  gap: 260px;
   align-items: center;
+  justify-content: space-between;
   height: 69px;
-  padding: 0 30px 0 30px;
+  padding: 0 30px;
   border-bottom: 0.5px solid rgba(115, 124, 151, 0.3);
   background: white;
-  width: 1920px;
+  width: 100%;
+  min-width: 1200px; /* Ensure it doesn't break on very small screens if needed, or just 100% */
 `;
 
 const Nav = styled.nav`
   display: flex;
   align-items: center;
   height: 58px;
-  width: 1447px;
+  flex: 1;
 `;
 
 const LogoSection = styled.div`

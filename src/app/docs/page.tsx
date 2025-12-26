@@ -63,6 +63,33 @@ const sidebarItems: SidebarItem[] = [
         ]
       },
       {
+        id: "docs-api",
+        label: "docs",
+        module: "collapse",
+        childrenItems: [
+          { id: "docs-create", label: "문서 생성", module: "api", method: "POST" },
+          { id: "docs-view", label: "문서 조회", module: "api", method: "GET" }
+        ]
+      },
+      {
+        id: "api-token",
+        label: "api token",
+        module: "collapse",
+        childrenItems: [
+          { id: "token-create", label: "토큰 생성", module: "api", method: "POST" },
+          { id: "token-usage", label: "사용량 조회", module: "api", method: "GET" }
+        ]
+      },
+      {
+        id: "system",
+        label: "system",
+        module: "collapse",
+        childrenItems: [
+          { id: "health-check", label: "Health Check", module: "api", method: "GET" },
+          { id: "server-usage", label: "서버 사용량", module: "api", method: "GET" }
+        ]
+      },
+      {
         id: "fact",
         label: "fact",
         module: "collapse",

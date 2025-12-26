@@ -1,16 +1,57 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { TopNav } from "@/components/layout/TopNav";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
-import { popularApis, originalApis, customApis, type ApiItem } from "./mockData";
+import { popularApis, originalApis as mockOriginalApis, customApis, type ApiItem } from "./mockData";
+import { api } from "@/lib/api";
 
 export default function ApiExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
+
+  const [realOriginalApis, setRealOriginalApis] = useState<ApiItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchApis = async () => {
+      try {
+        setIsLoading(true);
+        // 1. Get Docs List
+        const response: any = await api.docs.getList();
+
+        // Check if response has data.values structure
+        if (response && response.data && Array.isArray(response.data.values)) {
+          const docsList = response.data.values;
+
+          const mappedApis: ApiItem[] = docsList.map((item: any) => ({
+            id: item.docsId || Math.random().toString(),
+            title: item.title || "Untitled API",
+            description: item.description || "설명이 없습니다.",
+            tags: [item.writer || "Unknown"],
+            type: "ORIGINAL",
+            author: item.writer || "Unknown"
+          }));
+
+          setRealOriginalApis(mappedApis);
+        } else {
+          console.log("No docs found or invalid response structure", response);
+        }
+      } catch (error) {
+        console.error("Failed to fetch APIs:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchApis();
+  }, []);
+
+  // Use real data if available, otherwise empty
+  const displayOriginalApis = realOriginalApis;
 
   // 검색어 기반 필터링
   const searchItems = (items: ApiItem[]) => {
@@ -25,8 +66,8 @@ export default function ApiExplorePage() {
 
   // 전체 아이템 병합
   const allItems = useMemo(() => {
-    return [...popularApis, ...originalApis, ...customApis];
-  }, []);
+    return [...displayOriginalApis];
+  }, [displayOriginalApis]);
 
   // 필터링된 리스트 (단일 뷰용)
   const filteredList = useMemo(() => {
@@ -54,9 +95,9 @@ export default function ApiExplorePage() {
   }, [filterType, sortType, searchQuery, allItems]);
 
   // 기본 뷰용 섹션 데이터
-  const displayPopular = useMemo(() => searchItems(popularApis), [searchQuery]);
-  const displayOriginal = useMemo(() => searchItems(originalApis), [searchQuery]);
-  const displayCustom = useMemo(() => searchItems(customApis), [searchQuery]);
+  const displayPopular = useMemo(() => [], [searchQuery]);
+  const displayOriginal = useMemo(() => searchItems(displayOriginalApis), [searchQuery, displayOriginalApis]);
+  const displayCustom = useMemo(() => [], [searchQuery]);
 
   const isFilteredView = filterType !== "ALL";
 

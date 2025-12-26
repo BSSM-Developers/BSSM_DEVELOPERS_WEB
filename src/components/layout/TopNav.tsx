@@ -2,25 +2,26 @@
 
 import styled from "@emotion/styled";
 import Image from "next/image";
+import Link from "next/link";
 
 export function TopNav() {
   return (
     <Header>
       <Nav>
-      <LogoWrapper>
-        <Image
-          src="/BSM_DEV_LOGO.svg"
-          alt="BSSM Developers"
-          width={394}
-          height={79}
-          priority
-        />
-      </LogoWrapper>
+        <LogoWrapper href="/">
+          <Image
+            src="/BSM_DEV_LOGO.svg"
+            alt="BSSM Developers"
+            width={394}
+            height={79}
+            priority
+          />
+        </LogoWrapper>
 
-        <a href="#">API 둘러보기</a>
-        <a href="#">API 공유하기</a>
-        <a href="#">API 사용하기</a>
-        <a href="#">가이드</a>
+        <Link href="/apis">API 둘러보기</Link>
+        <Link href="/static">API 정적처리</Link>
+        <Link href="/usage">API 사용하기</Link>
+        <Link href="/guide">가이드</Link>
       </Nav>
 
       <LoginButton>로그인</LoginButton>
@@ -38,7 +39,7 @@ const Header = styled.header`
   background: ${({ theme }) => theme.colors.background};
 `;
 
-const LogoWrapper = styled.div`
+const LogoWrapper = styled(Link)`
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -51,7 +52,7 @@ const LogoWrapper = styled.div`
 const Nav = styled.nav`
   display: flex;
   align-items: center;
-  width:1447px;
+  width: 1447px;
   gap: 69px;
 
   a {
@@ -65,8 +66,8 @@ const Nav = styled.nav`
 const LoginButton = styled.button`
   border: none;
   background: none;
-  width:65px;
-  height:35px;
+  width: 65px;
+  height: 35px;
   color: ${({ theme }) => theme.colors.bssmGrey};
   font-weight: 500;
   font-size: 15px;

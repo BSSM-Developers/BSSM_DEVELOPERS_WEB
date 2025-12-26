@@ -56,6 +56,9 @@ export const api = {
     },
     getSidebar: async (docsId: string) => {
       return api.get<any>(`/docs/${docsId}/sidebar`);
+    },
+    getDetail: async (docsId: string) => {
+      return api.get<any>(`/docs/${docsId}`);
     }
   }
 };

@@ -3,8 +3,19 @@
 import styled from "@emotion/styled";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export function TopNav() {
+  const pathname = usePathname();
+
+  const isActive = (path: string) => {
+    if (path === "/apis" && pathname.startsWith("/apis")) return true;
+    if (path === "/static" && pathname.startsWith("/static")) return true;
+    if (path === "/usage" && pathname.startsWith("/usage")) return true;
+    if (path === "/guide" && pathname.startsWith("/guide")) return true;
+    return false;
+  };
+
   return (
     <Header>
       <Nav>
@@ -18,10 +29,18 @@ export function TopNav() {
           />
         </LogoWrapper>
 
-        <Link href="/apis">API 둘러보기</Link>
-        <Link href="/static">API 정적처리</Link>
-        <Link href="/usage">API 사용하기</Link>
-        <Link href="/guide">가이드</Link>
+        <Link href="/apis" passHref legacyBehavior>
+          <NavLink active={isActive("/apis")}>API 둘러보기</NavLink>
+        </Link>
+        <Link href="/static" passHref legacyBehavior>
+          <NavLink active={isActive("/static")}>API 정적처리</NavLink>
+        </Link>
+        <Link href="/usage" passHref legacyBehavior>
+          <NavLink active={isActive("/usage")}>API 사용하기</NavLink>
+        </Link>
+        <Link href="/guide" passHref legacyBehavior>
+          <NavLink active={isActive("/guide")}>가이드</NavLink>
+        </Link>
       </Nav>
 
       <LoginButton>로그인</LoginButton>
@@ -54,12 +73,18 @@ const Nav = styled.nav`
   align-items: center;
   width: 1447px;
   gap: 69px;
+`;
 
-  a {
-    font-size: 16px;
-    font-weight: 500;
-    color: ${({ theme }) => theme.colors.grey[400]};
-    text-decoration: none;
+const NavLink = styled.a<{ active?: boolean }>`
+  font-size: 16px;
+  font-weight: 500;
+  color: ${({ theme, active }) => active ? theme.colors.text : theme.colors.grey[400]};
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text};
   }
 `;
 

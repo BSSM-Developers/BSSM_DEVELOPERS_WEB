@@ -5,8 +5,31 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { api, tokenManager } from "@/lib/api";
+
 export function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const token = tokenManager.getAccessToken();
+    setIsLoggedIn(!!token);
+  }, [pathname]); // Re-check on path change
+
+  const handleLogout = async () => {
+    try {
+      await api.auth.logout();
+    } catch (e) {
+      console.error("Logout failed", e);
+    } finally {
+      tokenManager.clearTokens();
+      setIsLoggedIn(false);
+      router.push("/");
+    }
+  };
 
   const isActive = (path: string) => {
     if (path === "/apis" && pathname.startsWith("/apis")) return true;
@@ -43,7 +66,18 @@ export function TopNav() {
         </Link>
       </Nav>
 
-      <LoginButton>로그인</LoginButton>
+      {isLoggedIn ? (
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <Link href="/sign-up" passHref legacyBehavior>
+            <NavLink active={isActive("/sign-up")} style={{ fontSize: '14px' }}>신청내역</NavLink>
+          </Link>
+          <LoginButton onClick={handleLogout}>로그아웃</LoginButton>
+        </div>
+      ) : (
+        <Link href="/login">
+          <LoginButton>로그인</LoginButton>
+        </Link>
+      )}
     </Header>
   );
 }

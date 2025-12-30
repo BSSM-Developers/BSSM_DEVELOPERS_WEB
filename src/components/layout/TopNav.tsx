@@ -64,6 +64,9 @@ export function TopNav() {
         <Link href="/guide" passHref legacyBehavior>
           <NavLink active={isActive("/guide")}>가이드</NavLink>
         </Link>
+        <Link href="/docs/register" passHref legacyBehavior>
+          <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
+        </Link>
       </Nav>
 
       {isLoggedIn ? (

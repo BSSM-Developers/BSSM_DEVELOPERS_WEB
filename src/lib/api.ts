@@ -177,6 +177,46 @@ export const api = {
     },
     getDetail: async (docsId: string) => {
       return api.get<any>(`/docs/${docsId}`);
+    },
+    createOriginal: async (data: {
+      title: string;
+      description: string;
+      domain: string;
+      repository_url: string;
+      auto_approval: boolean;
+      sidebar: {
+        title: string;
+        sideBarBlocks: Array<{
+          sideBarBlockId: number;
+          title: string;
+          docsId: number;
+        }>;
+      };
+    }) => {
+      return api.post<void>('/docs/original', data);
+    },
+    createCustom: async (data: {
+      title: string;
+      description: string;
+      domain: string;
+      repository_url: string;
+      auto_approval: boolean;
+    }) => {
+      return api.post<void>('/docs/custom', data);
+    },
+    delete: async (docsId: number) => {
+      return api.request<void>('DELETE', `/docs/${docsId}`);
+    },
+    update: async (docsId: number, data: {
+      title?: string;
+      description?: string;
+      domain?: string;
+      repository_url?: string;
+    }) => {
+      return api.patch<void>(`/docs/${docsId}`, data);
+    },
+    toggleAutoApproval: async (docsId: number, autoApproval: boolean) => {
+      return api.patch<void>(`/docs/${docsId}/auto-approval`, { auto_approval: autoApproval });
     }
   }
 };

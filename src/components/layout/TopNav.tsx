@@ -69,7 +69,7 @@ export function TopNav() {
       {isLoggedIn ? (
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <Link href="/sign-up" passHref legacyBehavior>
-            <NavLink active={isActive("/sign-up")} style={{ fontSize: '14px' }}>신청내역</NavLink>
+            <NavLink active={isActive("/sign-up")} style={{ fontSize: '14px' }}>프로필</NavLink>
           </Link>
           <LoginButton onClick={handleLogout}>로그아웃</LoginButton>
         </div>

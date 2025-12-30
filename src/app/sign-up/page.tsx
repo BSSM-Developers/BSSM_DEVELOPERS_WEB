@@ -24,21 +24,19 @@ export default function SignUpPage() {
   const checkStatus = async () => {
     try {
       const response = await api.signUp.getMy();
-      setStatus(response.state);
-      setFormId(response.signupFormId);
-      setFormData({ name: response.name || '', purpose: response.purpose || '' });
+      console.log("SignUp Status Response:", response); // Debug log
 
-      // Assuming REJECTED doesn't come with a separate reason field in the response shown in screenshot, 
-      // but maybe it's in the 'message' or handled differently. 
-      // For now, not setting rejectReason unless I find where it is.
+      setStatus(response.state);
+      // Use signupRequestId if available, otherwise fallback to signupFormId (though user said they are same)
+      const id = response.signupRequestId || response.signupFormId;
+      setFormId(id);
+
+      setFormData({ name: response.name || '', purpose: response.purpose || '' });
 
       if (response.state === 'APPROVED') {
         setTimeout(() => router.push("/"), 2000);
       }
     } catch (error) {
-      // If 404, maybe it means no form exists yet? 
-      // But Apidog suggests /signup/me returns a structure.
-      // If error, we might assume NONE or handle error.
       console.error("Failed to get sign up status:", error);
       setStatus('NONE');
     } finally {
@@ -53,14 +51,17 @@ export default function SignUpPage() {
       return;
     }
 
-    if (formId === null) {
-      alert("신청 폼 ID를 찾을 수 없습니다. 다시 로그인해주세요.");
-      return;
-    }
-
     try {
       setSubmitting(true);
-      await api.signUp.updatePurpose(formId, formData.purpose);
+
+      // Always updatePurpose as we expect an ID now
+      if (formId) {
+        await api.signUp.updatePurpose(formId, formData.purpose);
+      } else {
+        alert("신청서 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
+        return;
+      }
+
       await checkStatus();
       alert("신청이 제출되었습니다.");
     } catch (error) {
@@ -114,10 +115,9 @@ export default function SignUpPage() {
               <Label>이름</Label>
               <Input
                 type="text"
-                placeholder="실명을 입력해주세요"
                 value={formData.name}
-                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                disabled={submitting}
+                disabled={true} // Name is read-only from OAuth
+                style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
               />
             </InputGroup>
           )}

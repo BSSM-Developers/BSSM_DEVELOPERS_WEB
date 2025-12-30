@@ -157,10 +157,12 @@ const Card = styled.div`
 `;
 
 const Title = styled.h1`
-  font-size: 24px;
+  font-size: 36px;
   font-weight: 700;
-  color: #111827;
-  margin-bottom: 8px;
+  color: ${({ theme }) => theme.colors.text};
+  margin-bottom: 40px;
+  text-align: center;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const Description = styled.p`
@@ -169,18 +171,15 @@ const Description = styled.p`
   line-height: 1.5;
 `;
 
-const InfoText = styled.p`
-  color: #3b82f6;
-  background: #eff6ff;
-  padding: 12px;
-  border-radius: 8px;
-  font-size: 14px;
-`;
-
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+  background: ${({ theme }) => theme.colors.background};
+  padding: 40px;
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 `;
 
 const InputGroup = styled.div`
@@ -190,55 +189,114 @@ const InputGroup = styled.div`
 `;
 
 const Label = styled.label`
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: ${({ theme }) => theme.colors.grey[700]};
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const Input = styled.input`
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-size: 16px;
-  
+  transition: all 0.2s;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+
   &:focus {
     outline: none;
-    border-color: #3b82f6;
-    ring: 2px solid #3b82f6;
+    border-color: ${({ theme }) => theme.colors.bssmBlue};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.bssmBlue}20;
+  }
+
+  &:read-only {
+    background-color: ${({ theme }) => theme.colors.grey[100]};
+    color: ${({ theme }) => theme.colors.grey[500]};
+    cursor: not-allowed;
   }
 `;
 
 const TextArea = styled.textarea`
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-size: 16px;
+  min-height: 150px;
   resize: vertical;
+  transition: all 0.2s;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  line-height: 1.6;
 
   &:focus {
     outline: none;
-    border-color: #3b82f6;
-    ring: 2px solid #3b82f6;
+    border-color: ${({ theme }) => theme.colors.bssmBlue};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.bssmBlue}20;
   }
 `;
 
 const SubmitButton = styled.button`
-  padding: 14px;
-  background-color: #2563eb;
+  margin-top: 16px;
+  padding: 16px;
+  background-color: ${({ theme }) => theme.colors.bssmBlue};
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-size: 18px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 
-  &:hover {
-    background-color: #1d4ed8;
+  &:hover:not(:disabled) {
+    background-color: #005694;
+    transform: translateY(-1px);
   }
 
   &:disabled {
-    background-color: #93c5fd;
+    background-color: ${({ theme }) => theme.colors.grey[400]};
     cursor: not-allowed;
+  }
+`;
+
+const StatusMessage = styled.div`
+  text-align: center;
+  padding: 60px 20px;
+  background: ${({ theme }) => theme.colors.background};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+`;
+
+const StatusTitle = styled.h2`
+  font-size: 24px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text};
+  margin-bottom: 16px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+`;
+
+const StatusDescription = styled.p`
+  color: ${({ theme }) => theme.colors.grey[600]};
+  font-size: 16px;
+  line-height: 1.6;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+`;
+
+const EditButton = styled.button`
+  margin-top: 24px;
+  padding: 12px 24px;
+  background-color: white;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  color: ${({ theme }) => theme.colors.grey[700]};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.grey[50]};
+    border-color: ${({ theme }) => theme.colors.grey[400]};
   }
 `;

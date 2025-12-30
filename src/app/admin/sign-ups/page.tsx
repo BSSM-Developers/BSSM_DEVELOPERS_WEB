@@ -135,102 +135,129 @@ export default function AdminSignUpsPage() {
 }
 
 const Container = styled.div`
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 60px 20px;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
 `;
 
 const Title = styled.h1`
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
-  color: #111827;
+  color: ${({ theme }) => theme.colors.text};
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const RefreshButton = styled.button`
-  padding: 8px 16px;
-  background-color: #f3f4f6;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
+  padding: 10px 20px;
+  background-color: ${({ theme }) => theme.colors.grey[100]};
+  color: ${({ theme }) => theme.colors.grey[700]};
+  border: none;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  font-weight: 500;
   cursor: pointer;
-  &:hover { background-color: #e5e7eb; }
+  transition: all 0.2s;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.grey[200]};
+  }
 `;
 
 const List = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  color: #6b7280;
-  padding: 40px;
+  color: ${({ theme }) => theme.colors.grey[500]};
+  padding: 80px;
+  background: ${({ theme }) => theme.colors.grey[50]};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  font-size: 18px;
 `;
 
 const RequestCard = styled.div`
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: ${({ theme }) => theme.colors.background};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.lg};
+  padding: 32px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  }
 `;
 
 const UserInfo = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.grey[100]};
 `;
 
 const Name = styled.span`
-  font-size: 18px;
-  font-weight: 600;
-  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+  color: ${({ theme }) => theme.colors.text};
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const Email = styled.span`
-  color: #6b7280;
-  font-size: 14px;
+  color: ${({ theme }) => theme.colors.grey[500]};
+  font-size: 15px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const Status = styled.span<{ badge: string }>`
-  padding: 4px 8px;
+  padding: 6px 12px;
   border-radius: 9999px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  background-color: ${({ badge }) =>
-    badge === 'APPROVED' ? '#dcfce7' :
-      badge === 'REJECTED' ? '#fee2e2' : '#fef3c7'};
-  color: ${({ badge }) =>
-    badge === 'APPROVED' ? '#166534' :
-      badge === 'REJECTED' ? '#991b1b' : '#92400e'};
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  
+  background-color: ${({ badge, theme }) =>
+    badge === 'APPROVED' ? `${theme.colors.bssmGreen}15` :
+      badge === 'REJECTED' ? `${theme.colors.bssmRed}15` : `${theme.colors.bssmYellow}15`};
+  
+  color: ${({ badge, theme }) =>
+    badge === 'APPROVED' ? theme.colors.bssmGreen :
+      badge === 'REJECTED' ? theme.colors.bssmRed : theme.colors.bssmYellow};
 `;
 
 const PurposeBox = styled.div`
-  background-color: #f9fafb;
-  padding: 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  background-color: ${({ theme }) => theme.colors.grey[50]};
+  padding: 20px;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  margin-bottom: 24px;
 `;
 
 const Label = styled.div`
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
-  margin-bottom: 4px;
+  color: ${({ theme }) => theme.colors.grey[500]};
+  margin-bottom: 8px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const Purpose = styled.p`
-  color: #374151;
-  line-height: 1.5;
+  color: ${({ theme }) => theme.colors.grey[800]};
+  line-height: 1.6;
   white-space: pre-wrap;
+  font-size: 16px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const ActionButtons = styled.div`
@@ -240,23 +267,34 @@ const ActionButtons = styled.div`
 `;
 
 const Button = styled.button`
-  padding: 8px 20px;
-  border-radius: 6px;
+  padding: 10px 24px;
+  border-radius: ${({ theme }) => theme.borderRadius.md};
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: opacity 0.2s;
-  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  transition: all 0.2s;
+  font-size: 15px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  
+  &:disabled { 
+    opacity: 0.5; 
+    cursor: not-allowed; 
+  }
 `;
 
 const ApproveButton = styled(Button)`
-  background-color: #2563eb;
+  background-color: ${({ theme }) => theme.colors.bssmBlue};
   color: white;
-  &:hover:not(:disabled) { background-color: #1d4ed8; }
+  &:hover:not(:disabled) { 
+    background-color: #005694; 
+    transform: translateY(-1px);
+  }
 `;
 
 const RejectButton = styled(Button)`
-  background-color: #ef4444;
-  color: white;
-  &:hover:not(:disabled) { background-color: #dc2626; }
+  background-color: ${({ theme }) => theme.colors.grey[200]};
+  color: ${({ theme }) => theme.colors.grey[700]};
+  &:hover:not(:disabled) { 
+    background-color: ${({ theme }) => theme.colors.grey[300]}; 
+  }
 `;

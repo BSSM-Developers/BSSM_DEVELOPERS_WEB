@@ -32,15 +32,15 @@ export default function GoogleCallbackPage() {
         let response;
         try {
           response = await api.auth.loginWithGoogle(code, codeVerifier);
+          console.log("Login response:", response); // Debug log
         } catch (error) {
           console.log("Login failed (likely new user), redirecting to sign-up:", error);
-          // If login fails (e.g. 401), it implies we need to sign up.
-          // The backend should have set the signup-token cookie.
           router.push("/sign-up");
           return;
         }
 
-        const { accessToken } = response;
+        // Safely access accessToken
+        const accessToken = response?.accessToken;
 
         // Clear verifier
         sessionStorage.removeItem('codeVerifier');

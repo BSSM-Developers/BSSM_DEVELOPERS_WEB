@@ -68,6 +68,11 @@ export function TopNav() {
 
       {isLoggedIn ? (
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {tokenManager.getUserRole() === 'ROLE_ADMIN' && (
+            <Link href="/admin/sign-ups" passHref legacyBehavior>
+              <NavLink active={isActive("/admin/sign-ups")} style={{ fontSize: '14px', color: '#ef4444' }}>Admin</NavLink>
+            </Link>
+          )}
           <Link href="/sign-up" passHref legacyBehavior>
             <NavLink active={isActive("/sign-up")} style={{ fontSize: '14px' }}>프로필</NavLink>
           </Link>

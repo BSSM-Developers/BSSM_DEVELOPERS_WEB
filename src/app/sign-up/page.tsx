@@ -87,26 +87,21 @@ export default function SignUpPage() {
     );
   }
 
-  if (status === 'PENDING') {
-    return (
-      <Container>
-        <Card>
-          <Title>승인 대기 중</Title>
-          <Description>관리자의 승인을 기다리고 있습니다.</Description>
-          <InfoText>신청 내용 검토 후 승인 처리가 진행됩니다.</InfoText>
-        </Card>
-      </Container>
-    );
-  }
+  // Removed PENDING early return to allow editing
 
   return (
     <Container>
       <Card>
-        <Title>{status === 'REJECTED' ? '가입 신청 수정' : '회원가입 신청'}</Title>
+        <Title>
+          {status === 'REJECTED' ? '가입 신청 수정' :
+            status === 'PENDING' ? '신청 내역 수정' : '회원가입 신청'}
+        </Title>
         <Description>
           {status === 'REJECTED'
             ? `거절 사유: ${rejectReason || '사유 없음'}`
-            : 'BSSM Developers 서비스 이용을 위해 가입 신청이 필요합니다.'}
+            : status === 'PENDING'
+              ? '승인 대기 중입니다. 신청 사유를 수정할 수 있습니다.'
+              : 'BSSM Developers 서비스 이용을 위해 가입 신청이 필요합니다.'}
         </Description>
 
         <Form onSubmit={handleSubmit}>
@@ -134,7 +129,8 @@ export default function SignUpPage() {
           </InputGroup>
 
           <SubmitButton type="submit" disabled={submitting}>
-            {submitting ? "제출 중..." : (status === 'REJECTED' ? "수정하여 다시 제출" : "신청하기")}
+            {submitting ? "제출 중..." :
+              (status === 'REJECTED' || status === 'PENDING' ? "수정하여 다시 제출" : "신청하기")}
           </SubmitButton>
         </Form>
       </Card>

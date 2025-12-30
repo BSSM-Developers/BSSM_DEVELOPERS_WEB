@@ -32,6 +32,18 @@ const testItems: SidebarNode[] = [
     ]
   },
   {
+    id: "sign-up",
+    label: "sign up",
+    module: "collapse",
+    childrenItems: [
+      { id: "sign-up-my", label: "나의 회원가입 신청 조회", module: "api", method: "GET" },
+      { id: "sign-up-list", label: "회원가입 신청 조회 by 커서 기반 페이지네이션", module: "api", method: "GET" },
+      { id: "sign-up-update", label: "회원가입 신청 목적 업데이트", module: "api", method: "PATCH" },
+      { id: "sign-up-approve", label: "어드민 - 회원가입 신청 승인", module: "api", method: "PATCH" },
+      { id: "sign-up-reject", label: "어드민 - 회원가입 신청 거절", module: "api", method: "PATCH" }
+    ]
+  },
+  {
     id: "fact",
     label: "fact",
     module: "collapse",
@@ -51,10 +63,13 @@ const testItems: SidebarNode[] = [
   }
 ];
 
-export function DocsLayout({ children }: { children: React.ReactNode }) {
+export function DocsLayout({ children, sidebarItems }: { children: React.ReactNode; sidebarItems?: SidebarNode[] }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
+
+  // Use passed sidebarItems or fallback to testItems
+  const items = sidebarItems || testItems;
 
   return (
     <Wrapper>
@@ -67,7 +82,7 @@ export function DocsLayout({ children }: { children: React.ReactNode }) {
             </ToggleButton>
             {!sidebarCollapsed && <SidebarTitle>API 문서</SidebarTitle>}
           </SidebarHeader>
-          {!sidebarCollapsed && <DocsSidebar items={testItems} editable={true} />}
+          {!sidebarCollapsed && <DocsSidebar items={items} editable={true} />}
         </Sidebar>
         <Content>
           {children}

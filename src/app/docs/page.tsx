@@ -12,16 +12,10 @@ import { useDocsStore, DocsStoreState } from "@/store/docsStore";
 
 type BlockWithId = DocsBlock & { id: string };
 
-interface SidebarItem {
-  id: string;
-  label: string;
-  module: string;
-  childrenItems?: SidebarItem[];
-  method?: string;
-}
+import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
 // Helper function to find the sidebar node and its path
-const findSidebarNodeWithPath = (items: SidebarItem[], id: string, path: string[] = []): { node: SidebarItem; path: string[] } | null => {
+const findSidebarNodeWithPath = (items: SidebarNode[], id: string, path: string[] = []): { node: SidebarNode; path: string[] } | null => {
   for (const item of items) {
     if (item.id === id) return { node: item, path };
     if (item.childrenItems) {
@@ -33,7 +27,7 @@ const findSidebarNodeWithPath = (items: SidebarItem[], id: string, path: string[
 };
 
 // Need to import sidebar items to check if selected is API
-const sidebarItems: SidebarItem[] = [
+const sidebarItems: SidebarNode[] = [
   {
     id: "perseus",
     label: "페르세우스",
@@ -60,6 +54,18 @@ const sidebarItems: SidebarItem[] = [
           { id: "google-url", label: "구글 로그인 url 조회", module: "api", method: "GET" },
           { id: "token-refresh", label: "토큰 재발급", module: "api", method: "GET" },
           { id: "logout", label: "로그아웃", module: "api", method: "GET" }
+        ]
+      },
+      {
+        id: "sign-up",
+        label: "sign up",
+        module: "collapse",
+        childrenItems: [
+          { id: "sign-up-my", label: "나의 회원가입 신청 조회", module: "api", method: "GET" },
+          { id: "sign-up-list", label: "회원가입 신청 조회 by 커서 기반 페이지네이션", module: "api", method: "GET" },
+          { id: "sign-up-update", label: "회원가입 신청 목적 업데이트", module: "api", method: "PATCH" },
+          { id: "sign-up-approve", label: "어드민 - 회원가입 신청 승인", module: "api", method: "PATCH" },
+          { id: "sign-up-reject", label: "어드민 - 회원가입 신청 거절", module: "api", method: "PATCH" }
         ]
       },
       {
@@ -112,6 +118,8 @@ const sidebarItems: SidebarItem[] = [
 ];
 
 export default function DocsEditPage() {
+  console.log("Sidebar Items:", sidebarItems);
+  // Trigger HMR update
   const selected = useDocsStore((s: DocsStoreState) => s.selected);
   const docsData = useDocsStore((s: DocsStoreState) => s.docsData);
   const apiData = useDocsStore((s: DocsStoreState) => s.apiData);
@@ -193,7 +201,7 @@ export default function DocsEditPage() {
   const breadcrumb = result?.path || ["가이드"];
 
   return (
-    <DocsLayout>
+    <DocsLayout sidebarItems={sidebarItems}>
       <DocsHeader title={title} breadcrumb={breadcrumb} isApi={isApiDoc} />
 
       <div

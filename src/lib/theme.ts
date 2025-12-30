@@ -9,6 +9,7 @@ export interface CustomTheme {
     bssmYellow: string;
     bssmGreen: string;
     grey: {
+      50: string;
       100: string;
       200: string;
       300: string;
@@ -58,6 +59,7 @@ export const lightTheme: CustomTheme = {
     bssmGreen: "#00A9A4",
 
     grey: {
+      50: "#F9FAFB",
       100: "#F2F4F6",
       200: "#E5E8EB",
       300: "#D1D6DB",

@@ -246,4 +246,97 @@ export const apiMockData: Record<string, ApiDoc> = {
       },
     ],
   },
+  "sign-up-my": {
+    id: "sign-up-my",
+    name: "나의 회원가입 신청 조회",
+    method: "GET",
+    endpoint: "/sign-up/my",
+    description: "나의 회원가입 신청 내역을 조회합니다",
+    headerParams: [
+      {
+        name: "access-token",
+        type: "string",
+        description: "액세스 토큰",
+        required: true,
+      },
+    ],
+    responseParams: [
+      { name: "id", type: "number", description: "신청 ID" },
+      { name: "status", type: "string", description: "신청 상태 (PENDING, APPROVED, REJECTED)" },
+      { name: "purpose", type: "string", description: "가입 목적" },
+    ]
+  },
+  "sign-up-list": {
+    id: "sign-up-list",
+    name: "회원가입 신청 조회 by 커서 기반 페이지네이션",
+    method: "GET",
+    endpoint: "/sign-up",
+    description: "회원가입 신청 목록을 조회합니다 (커서 기반)",
+    headerParams: [
+      {
+        name: "access-token",
+        type: "string",
+        description: "액세스 토큰 (Admin)",
+        required: true,
+      },
+    ],
+    queryParams: [
+      { name: "cursor", type: "number", description: "커서 ID", required: false },
+      { name: "size", type: "number", description: "페이지 크기", required: false },
+    ],
+  },
+  "sign-up-update": {
+    id: "sign-up-update",
+    name: "회원가입 신청 목적 업데이트",
+    method: "PATCH",
+    endpoint: "/sign-up",
+    description: "회원가입 신청 목적을 수정합니다",
+    headerParams: [
+      {
+        name: "access-token",
+        type: "string",
+        description: "액세스 토큰",
+        required: true,
+      },
+    ],
+    bodyParams: [
+      { name: "purpose", type: "string", description: "수정할 가입 목적", required: true },
+    ],
+  },
+  "sign-up-approve": {
+    id: "sign-up-approve",
+    name: "어드민 - 회원가입 신청 승인",
+    method: "PATCH",
+    endpoint: "/sign-up/:id/approve",
+    description: "회원가입 신청을 승인합니다",
+    headerParams: [
+      {
+        name: "access-token",
+        type: "string",
+        description: "액세스 토큰 (Admin)",
+        required: true,
+      },
+    ],
+    pathParams: [
+      { name: "id", type: "number", description: "신청 ID", required: true },
+    ],
+  },
+  "sign-up-reject": {
+    id: "sign-up-reject",
+    name: "어드민 - 회원가입 신청 거절",
+    method: "PATCH",
+    endpoint: "/sign-up/:id/reject",
+    description: "회원가입 신청을 거절합니다",
+    headerParams: [
+      {
+        name: "access-token",
+        type: "string",
+        description: "액세스 토큰 (Admin)",
+        required: true,
+      },
+    ],
+    pathParams: [
+      { name: "id", type: "number", description: "신청 ID", required: true },
+    ],
+  },
 };

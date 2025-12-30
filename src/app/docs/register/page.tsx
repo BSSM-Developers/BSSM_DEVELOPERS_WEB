@@ -114,7 +114,7 @@ export default function DocsRegisterPage() {
           </LeftPanel>
 
           <RightPanel>
-            {formData.title && (
+            {(formData.title || formData.description) && (
               <PreviewCardWrapper>
                 <ApiCard
                   id="preview"

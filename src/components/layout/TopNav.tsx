@@ -15,9 +15,28 @@ export function TopNav() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    const token = tokenManager.getAccessToken();
-    setIsLoggedIn(!!token);
-  }, [pathname]); // Re-check on path change
+    const checkAuth = async () => {
+      const token = tokenManager.getAccessToken();
+      if (token) {
+        setIsLoggedIn(true);
+        // 캐시된 이름이 없으면 가져와서 저장
+        if (!tokenManager.getUserName()) {
+          try {
+            const userData = await api.signUp.getMy({ suppressLogout: true });
+            tokenManager.setUserName(userData.name);
+          } catch (e: any) {
+            // 401 에러는 suppressLogout으로 인해 발생할 수 있으므로 조용히 무시하거나 경고만 남김
+            if (!e.message?.includes('401')) {
+              console.warn("Failed to fetch user info", e);
+            }
+          }
+        }
+      } else {
+        setIsLoggedIn(false);
+      }
+    };
+    checkAuth();
+  }, []); // Re-check on path change
 
   const handleLogout = async () => {
     try {
@@ -52,19 +71,19 @@ export function TopNav() {
           />
         </LogoWrapper>
 
-        <Link href="/apis" passHref legacyBehavior>
+        <Link href="/apis">
           <NavLink active={isActive("/apis")}>API 둘러보기</NavLink>
         </Link>
-        <Link href="/static" passHref legacyBehavior>
+        <Link href="/static">
           <NavLink active={isActive("/static")}>API 정적처리</NavLink>
         </Link>
-        <Link href="/usage" passHref legacyBehavior>
+        <Link href="/usage">
           <NavLink active={isActive("/usage")}>API 사용하기</NavLink>
         </Link>
-        <Link href="/guide" passHref legacyBehavior>
+        <Link href="/guide">
           <NavLink active={isActive("/guide")}>가이드</NavLink>
         </Link>
-        <Link href="/docs/register" passHref legacyBehavior>
+        <Link href="/docs/register">
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
         </Link>
       </Nav>
@@ -72,11 +91,11 @@ export function TopNav() {
       {isLoggedIn ? (
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {tokenManager.getUserRole() === 'ROLE_ADMIN' && (
-            <Link href="/admin/sign-ups" passHref legacyBehavior>
+            <Link href="/admin/sign-ups">
               <NavLink active={isActive("/admin/sign-ups")} style={{ fontSize: '14px', color: '#ef4444' }}>Admin</NavLink>
             </Link>
           )}
-          <Link href="/sign-up" passHref legacyBehavior>
+          <Link href="/sign-up">
             <NavLink active={isActive("/sign-up")} style={{ fontSize: '14px' }}>프로필</NavLink>
           </Link>
           <LoginButton onClick={handleLogout}>로그아웃</LoginButton>
@@ -117,7 +136,7 @@ const Nav = styled.nav`
   gap: 69px;
 `;
 
-const NavLink = styled.a<{ active?: boolean }>`
+const NavLink = styled.span<{ active?: boolean }>`
   font-size: 16px;
   font-weight: 500;
   color: ${({ theme, active }) => active ? theme.colors.text : theme.colors.grey[400]};

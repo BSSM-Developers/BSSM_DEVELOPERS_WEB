@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, tokenManager } from "@/lib/api";
 import styled from "@emotion/styled";
@@ -10,7 +10,12 @@ export default function GoogleCallbackPage() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("인증 처리 중...");
 
+  const isProcessing = useRef(false);
+
   useEffect(() => {
+    if (isProcessing.current) return;
+    isProcessing.current = true;
+
     const code = searchParams.get("code");
 
     if (!code) {
@@ -47,12 +52,17 @@ export default function GoogleCallbackPage() {
 
         if (accessToken) {
           // Existing user
-          tokenManager.setTokens(accessToken);
+          tokenManager.setTokens(accessToken, response.refreshToken);
           setStatus("로그인 성공! 이동 중...");
 
           // Check status just in case, or go straight to home
           try {
             const mySignUp = await api.signUp.getMy();
+            // Cache user name immediately
+            if (mySignUp.name) {
+              tokenManager.setUserName(mySignUp.name);
+            }
+
             if (mySignUp.state === 'APPROVED') {
               router.push("/");
             } else {

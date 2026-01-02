@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import styled from "@emotion/styled";
 import { api } from "@/lib/api";
@@ -20,6 +20,37 @@ export default function DocsRegisterPage() {
     repository_url: '',
     auto_approval: false
   });
+
+  const [userName, setUserName] = useState<string>('');
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      // 1. Try localStorage first
+      const cachedName = typeof window !== 'undefined' ? localStorage.getItem('userName') : null;
+      if (cachedName) {
+        setUserName(cachedName);
+        return;
+      }
+
+      // 2. If not found, fetch from API
+      try {
+        const mySignUp = await api.signUp.getMy();
+        if (mySignUp.name) {
+          setUserName(mySignUp.name);
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('userName', mySignUp.name);
+          }
+        } else {
+          setUserName('User');
+        }
+      } catch (e) {
+        console.error("Failed to fetch user name:", e);
+        setUserName('User');
+      }
+    };
+
+    fetchUserName();
+  }, []);
 
   const handleNext = () => {
     if (!formData.title || !formData.domain || !formData.repository_url) {
@@ -120,7 +151,7 @@ export default function DocsRegisterPage() {
                   id="preview"
                   title={formData.title}
                   description={formData.description || ''}
-                  tags={['REST API', 'V1']}
+                  tags={[userName]}
                   onExplore={() => { }}
                   onUse={() => { }}
                 />
@@ -138,7 +169,7 @@ export default function DocsRegisterPage() {
               id="preview-confirm"
               title={formData.title || 'BSSM DEVELOPERS'}
               description={formData.description || '2025 BSSM 해커톤 시즌 1 - BSSM Developers 공식 문서입니다.'}
-              tags={['REST API', 'V1']}
+              tags={[userName]}
               onExplore={() => { }}
               onUse={() => { }}
             />

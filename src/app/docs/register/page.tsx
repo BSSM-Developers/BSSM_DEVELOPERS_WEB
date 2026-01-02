@@ -66,14 +66,23 @@ export default function DocsRegisterPage() {
       // Default to ORIGINAL for now as per design assumption, or we could add a toggle if needed.
       // The design shows "API 초기 세팅" which implies a standard flow.
       // We'll use createOriginal as default.
-      await api.docs.createOriginal({
-        ...formData,
-        sidebar: {
-          title: formData.title,
-          sideBarBlocks: []
-        }
-      });
-      setStep('SUCCESS');
+
+      // MOCKING: Server is down, simulating success and redirecting to edit mode
+      // await api.docs.createOriginal({
+      //   ...formData,
+      //   sidebar: {
+      //     title: formData.title,
+      //     sideBarBlocks: []
+      //   }
+      // });
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Redirect to mock edit page
+      router.push('/docs/1/edit');
+
+      // setStep('SUCCESS'); // Skip success step in register page, go to edit
     } catch (error) {
       console.error("Failed to register docs:", error);
       alert("문서 등록에 실패했습니다.");

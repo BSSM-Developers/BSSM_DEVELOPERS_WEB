@@ -281,6 +281,21 @@ export const api = {
     },
     getPage: async (docsId: number, mappedId: string) => {
       return api.get<any>(`/docs/${docsId}/page/${mappedId}`);
+    },
+    updatePage: async (docsId: number, mappedId: string, docsBlocks: any[]) => {
+      return api.request<void>('PUT', `/docs/${docsId}/page/${mappedId}`, { docsBlocks });
+    },
+    updateSidebar: async (docsId: number, sideBarBlocks: any[]) => {
+      return api.request<void>('PUT', `/docs/${docsId}/sidebar`, { sideBarBlocks });
+    },
+    replace: async (docsId: number, data: {
+      title: string;
+      description: string;
+      domain: string;
+      repository_url: string;
+      auto_approval: boolean;
+    }) => {
+      return api.request<void>('PUT', `/docs/${docsId}`, data);
     }
   },
 
@@ -301,6 +316,20 @@ export const api = {
     },
     registerApi: async (apiTokenId: number, apiId: string, apiUseReason: string) => {
       return api.post<void>(`/api/${apiTokenId}/use-reason`, { apiId, apiUseReason });
+    },
+    reissueSecret: async (apiTokenId: number) => {
+      return api.patch<{ message: string; data: { secretKey: string } }>(`/api/token/${apiTokenId}/secret`, {});
+    },
+    updateName: async (apiTokenId: number, name: string) => {
+      return api.patch<void>(`/api/token/${apiTokenId}/name`, { name });
+    },
+    updateUsageEndpoint: async (apiUsageId: number, endpoint: string) => {
+      return api.patch<void>(`/api/usage/${apiUsageId}/endpoint`, { endpoint });
     }
+  },
+
+  // 헬스체크
+  healthCheck: async (endpoint: string, method: string) => {
+    return api.post<{ message: string; data: { healthy: boolean } }>('/api/healthy', { endpoint, method });
   }
 };

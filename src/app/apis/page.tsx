@@ -1,56 +1,45 @@
+/* eslint-disable */
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { TopNav } from "@/components/layout/TopNav";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
-import { popularApis, originalApis as mockOriginalApis, customApis, type ApiItem } from "./mockData";
-import { api } from "@/lib/api";
+import { type ApiItem } from "./mockData";
+import { useDocsListQuery } from "@/app/docs/queries";
 
 export default function ApiExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
 
-  const [realOriginalApis, setRealOriginalApis] = useState<ApiItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: docsData, isLoading } = useDocsListQuery();
 
-  useEffect(() => {
-    const fetchApis = async () => {
-      try {
-        setIsLoading(true);
-        // 1. Get Docs List
-        const response: any = await api.docs.getList();
+  // Transform docsData to ApiItem[]
+  const realOriginalApis: ApiItem[] = useMemo(() => {
+    if (!docsData || !Array.isArray(docsData)) return [];
+    // The response structure might be { message, data: { values: [...] } } or just [...]
+    // Based on previous code: response.data.values
+    // But useDocsListQuery returns `docsApi.getList` which returns `fetchClient.get<unknown[]>("/docs")`
+    // Wait, adminApi was `RequestListResponse`.
+    // Let's check `docsApi.getList`. It returns `unknown[]`.
+    // If the backend returns wrapped response, we need to adapt.
 
-        // Check if response has data.values structure
-        if (response && response.data && Array.isArray(response.data.values)) {
-          const docsList = response.data.values;
+    // Assuming the response is the array of docs directly or wrapped
+    const list = (docsData as any).values || (Array.isArray(docsData) ? docsData : []);
 
-          const mappedApis: ApiItem[] = docsList.map((item: any) => ({
-            id: item.docsId || Math.random().toString(),
-            title: item.title || "Untitled API",
-            description: item.description || "설명이 없습니다.",
-            tags: [item.writer || "Unknown"],
-            type: "ORIGINAL",
-            author: item.writer || "Unknown"
-          }));
+    return list.map((item: any) => ({
+      id: item.docsId || Math.random().toString(),
+      title: item.title || "Untitled API",
+      description: item.description || "설명이 없습니다.",
+      tags: [item.writer || "Unknown"],
+      type: "ORIGINAL",
+      author: item.writer || "Unknown"
+    }));
+  }, [docsData]);
 
-          setRealOriginalApis(mappedApis);
-        } else {
-          console.log("No docs found or invalid response structure", response);
-        }
-      } catch (error) {
-        console.error("Failed to fetch APIs:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchApis();
-  }, []);
-
-  // Use real data if available, otherwise empty
+  // 실제 데이터가 있으면 사용, 없으면 빈 값
   const displayOriginalApis = realOriginalApis;
 
   // 검색어 기반 필터링

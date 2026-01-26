@@ -3,7 +3,6 @@
 import styled from "@emotion/styled";
 import { DocsSidebar } from "./DocsSidebar";
 import { useState } from "react";
-import { TopNav } from "./TopNav";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
 const testItems: SidebarNode[] = [
@@ -63,27 +62,29 @@ const testItems: SidebarNode[] = [
   }
 ];
 
-export function DocsLayout({ children, sidebarItems }: { children: React.ReactNode; sidebarItems?: SidebarNode[] }) {
+export function DocsLayout({ children, sidebarItems, showSidebar = true, onSidebarChange }: { children: React.ReactNode; sidebarItems?: SidebarNode[]; showSidebar?: boolean; onSidebarChange?: (items: SidebarNode[]) => void }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
 
-  // Use passed sidebarItems or fallback to testItems
+  // 전달된 항목 사용 또는 테스트 항목 사용로 대체
   const items = sidebarItems || testItems;
 
   return (
     <Wrapper>
-      <TopNav />
+      {/* TopNav는 이미 RootLayout에 포함됨 */}
       <Body>
-        <Sidebar collapsed={sidebarCollapsed}>
-          <SidebarHeader>
-            <ToggleButton onClick={toggleSidebar}>
-              {sidebarCollapsed ? "→" : "←"}
-            </ToggleButton>
-            {!sidebarCollapsed && <SidebarTitle>API 문서</SidebarTitle>}
-          </SidebarHeader>
-          {!sidebarCollapsed && <DocsSidebar items={items} editable={true} />}
-        </Sidebar>
+        {showSidebar && (
+          <Sidebar collapsed={sidebarCollapsed}>
+            <SidebarHeader>
+              <ToggleButton onClick={toggleSidebar}>
+                {sidebarCollapsed ? "→" : "←"}
+              </ToggleButton>
+              {!sidebarCollapsed && <SidebarTitle>API 문서</SidebarTitle>}
+            </SidebarHeader>
+            {!sidebarCollapsed && <DocsSidebar items={items} editable={true} onChange={onSidebarChange} />}
+          </Sidebar>
+        )}
         <Content>
           {children}
         </Content>

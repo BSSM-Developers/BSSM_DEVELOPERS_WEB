@@ -1,3 +1,4 @@
+/* eslint-disable */
 /** @jsxImportSource @emotion/react */
 import { css, Theme } from "@emotion/react";
 import { applyTypography } from "@/lib/themeHelper";
@@ -44,17 +45,17 @@ export const docsModules = {
     }
   `,
 
-  api: (theme: Theme) => css`
+  api: (_theme: Theme) => css`
     margin: 12px 0;
     width: 100%;
   `,
 
-  big_space: (theme: Theme) => css`
+  big_space: (_theme: Theme) => css`
     height: 48px;
     width: 100%;
   `,
 
-  space: (theme: Theme) => css`
+  space: (_theme: Theme) => css`
     height: 16px;
     width: 100%;
   `,

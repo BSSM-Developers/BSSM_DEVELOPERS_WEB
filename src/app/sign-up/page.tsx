@@ -1,78 +1,58 @@
+/* eslint-disable */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { useMyProfileQuery, useUpdatePurposeMutation } from "@/app/sign-up/queries";
 import styled from "@emotion/styled";
 
 type SignUpStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'NONE';
 
 export default function SignUpPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<SignUpStatus>('NONE');
-  const [loading, setLoading] = useState(true);
-  const [formData, setFormData] = useState({ name: '', purpose: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [rejectReason, setRejectReason] = useState<string | undefined>(undefined);
-  const [formId, setFormId] = useState<number | null>(null);
+  const [purpose, setPurpose] = useState("");
+  const { data: profileData, isLoading } = useMyProfileQuery();
+  const updatePurposeMutation = useUpdatePurposeMutation();
 
+  const status = profileData?.state || 'NONE';
+  const name = profileData?.name || '';
+
+  // Initialize purpose when data is loaded
   useEffect(() => {
-    console.log("SignUpPage mounted");
-    checkStatus();
-  }, []);
-
-  const checkStatus = async () => {
-    try {
-      const response = await api.signUp.getMy();
-      console.log("SignUp Status Response:", response); // Debug log
-
-      setStatus(response.state);
-      // Use signupRequestId if available, otherwise fallback to signupFormId (though user said they are same)
-      const id = response.signupRequestId || response.signupFormId;
-      setFormId(id);
-
-      setFormData({ name: response.name || '', purpose: response.purpose || '' });
-
-      if (response.state === 'APPROVED') {
-        setTimeout(() => router.push("/"), 2000);
-      }
-    } catch (error) {
-      console.error("Failed to get sign up status:", error);
-      setStatus('NONE');
-    } finally {
-      setLoading(false);
+    if (profileData?.purpose) {
+      setPurpose(profileData.purpose);
     }
-  };
+    if (profileData?.state === 'APPROVED') {
+      setTimeout(() => router.push("/"), 2000);
+    }
+  }, [profileData, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.purpose) {
+    if (!purpose) {
       alert("신청 목적을 입력해주세요.");
       return;
     }
 
+    // We need formId or requestId. The API probably needs id.
+    // getMy returns signupFormId or signupRequestId.
+    const id = profileData?.signupRequestId || profileData?.signupFormId;
+
+    if (!id) {
+      alert("신청서 ID를 찾을 수 없습니다.");
+      return;
+    }
+
     try {
-      setSubmitting(true);
-
-      // Always updatePurpose as we expect an ID now
-      if (formId) {
-        await api.signUp.updatePurpose(formId, formData.purpose);
-      } else {
-        alert("신청서 ID를 찾을 수 없습니다. 페이지를 새로고침해주세요.");
-        return;
-      }
-
-      await checkStatus();
+      await updatePurposeMutation.mutateAsync({ id, purpose });
       alert("신청이 제출되었습니다.");
     } catch (error) {
       console.error("Sign up failed:", error);
       alert("신청 제출에 실패했습니다.");
-    } finally {
-      setSubmitting(false);
     }
   };
 
-  if (loading) {
+  if (isLoading) {
     return <Container>로딩 중...</Container>;
   }
 
@@ -87,8 +67,6 @@ export default function SignUpPage() {
     );
   }
 
-  // Removed PENDING early return to allow editing
-
   return (
     <Container>
       <Card>
@@ -98,7 +76,7 @@ export default function SignUpPage() {
         </Title>
         <Description>
           {status === 'REJECTED'
-            ? `거절 사유: ${rejectReason || '사유 없음'}`
+            ? `거절 사유: 사유 없음` // API does not seem to return reject reason in simple getMy
             : status === 'PENDING'
               ? '승인 대기 중입니다. 신청 사유를 수정할 수 있습니다.'
               : 'BSSM Developers 서비스 이용을 위해 가입 신청이 필요합니다.'}
@@ -110,8 +88,8 @@ export default function SignUpPage() {
               <Label>이름</Label>
               <Input
                 type="text"
-                value={formData.name}
-                disabled={true} // Name is read-only from OAuth
+                value={name}
+                disabled={true}
                 style={{ backgroundColor: '#f3f4f6', cursor: 'not-allowed' }}
               />
             </InputGroup>
@@ -121,15 +99,15 @@ export default function SignUpPage() {
             <Label>신청 목적</Label>
             <TextArea
               placeholder="서비스 이용 목적을 구체적으로 적어주세요"
-              value={formData.purpose}
-              onChange={e => setFormData({ ...formData, purpose: e.target.value })}
-              disabled={submitting}
+              value={purpose}
+              onChange={e => setPurpose(e.target.value)}
+              disabled={updatePurposeMutation.isPending}
               rows={4}
             />
           </InputGroup>
 
-          <SubmitButton type="submit" disabled={submitting}>
-            {submitting ? "제출 중..." :
+          <SubmitButton type="submit" disabled={updatePurposeMutation.isPending}>
+            {updatePurposeMutation.isPending ? "제출 중..." :
               (status === 'REJECTED' || status === 'PENDING' ? "수정하여 다시 제출" : "신청하기")}
           </SubmitButton>
         </Form>

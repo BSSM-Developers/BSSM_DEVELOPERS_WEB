@@ -1,7 +1,8 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
@@ -32,6 +33,9 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedDocId);
   const isActive = selectedDocId === node.id || childHasActive;
 
+  const router = useRouter();
+  const pathname = usePathname();
+
   const handleClick = () => {
     // 항상 선택 상태 업데이트
     useDocsStore.setState({ selected: node.id });
@@ -39,6 +43,16 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
     // collapse 타입이면 토글도 수행
     if (isFolder) {
       setOpen(p => !p);
+    } else {
+      // 문서나 API인 경우 네비게이션 처리
+      // 등록 페이지에서는 네비게이션 방지
+      if (pathname?.includes('/docs/register')) {
+        return;
+      }
+
+      const isEditMode = pathname?.endsWith('/edit');
+      const targetPath = `/docs/${node.id}${isEditMode ? '/edit' : ''}`;
+      router.push(targetPath);
     }
   };
 
@@ -65,7 +79,13 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
 
   return (
     <>
-      <ItemWrapper module={(node.module ?? "default") as keyof typeof sidebarModules} active={isActive} onClick={handleClick} onContextMenu={handleContextMenu}>
+      <ItemWrapper
+        module={(node.module ?? "default") as keyof typeof sidebarModules}
+        active={isActive}
+        onClick={handleClick}
+        onContextMenu={handleContextMenu}
+        onDoubleClick={() => { if (editable) setRenaming(true); }}
+      >
         {editable && (
           <DeleteButton
             aria-label="delete"

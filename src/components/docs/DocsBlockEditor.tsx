@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -66,15 +66,15 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
 
   // 블록 타입 자동 판별
   const detectModuleType = (text: string): { module: DocsBlockType["module"]; content: string; imageSrc?: string } | null => {
-    // Headline 1: "# "
+    // 제목 1: "# "
     if (/^#\s/.test(text)) return { module: "headline_1", content: text.replace(/^#\s*/, "") };
-    // Headline 2: "## "
+    // 제목 2: "## "
     if (/^##\s/.test(text)) return { module: "headline_2", content: text.replace(/^##\s*/, "") };
-    // List: "- "
+    // 목록: "- "
     if (/^-\s/.test(text)) return { module: "list", content: text.replace(/^-\s*/, "") };
-    // Code: "``` " (trigger on space after backticks)
+    // 코드: "``` "
     if (/^```\s/.test(text)) return { module: "code", content: text.replace(/^```\s*/, "") };
-    // Image: "![] " or "![url] "
+    // 이미지: "![] " 또는 "![url] "
     if (/^!\[(.*)\]\s/.test(text)) {
       const match = text.match(/^!\[(.*)\]\s/);
       return { module: "image", content: "", imageSrc: match ? match[1] : "" };
@@ -111,7 +111,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
         return;
       }
     } else if (text.trim() === "") {
-      // Reset to docs_1 if cleared
+      // 비워지면 docs_1로 초기화
       setValue("");
       onChange(index, { ...block, module: "docs_1", content: "" });
       return;
@@ -187,7 +187,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   // API 블록인 경우 특별한 렌더링
   if (block.module === "api" && block.apiData) {
     return (
-      <BlockContainer>
+      <BlockContainer style={{ zIndex: 1000 - index }}>
         <ApiBlock
           apiData={block.apiData}
           editable={true}
@@ -201,7 +201,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   // 이미지 블록인 경우
   if (block.module === "image") {
     return (
-      <BlockContainer>
+      <BlockContainer style={{ zIndex: 1000 - index }}>
         <DocsBlock module="image">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
             {block.imageSrc && <img src={block.imageSrc} alt="Preview" style={{ maxWidth: '100%', borderRadius: '8px' }} />}
@@ -232,7 +232,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   const isList = block.module === "list";
 
   return (
-    <BlockContainer>
+    <BlockContainer style={{ zIndex: 1000 - index }}>
       <DocsBlock module={block.module}>
         {isList ? (
           <li style={{ width: "100%" }}>
@@ -370,8 +370,18 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                 color: "inherit",
                 outline: "none",
                 margin: 0,
+                transition: "box-shadow 0.2s",
               }}
+              className="docs-block-input"
             />
+            <style jsx>{`
+              .docs-block-input:hover {
+                box-shadow: 0 0 0 1px #E5E7EB;
+              }
+              .docs-block-input:focus {
+                box-shadow: none;
+              }
+            `}</style>
             {showMenu && filteredOptions.length > 0 && (
               <MenuContainer>
                 {filteredOptions.map((opt, i) => (
@@ -401,27 +411,28 @@ const BlockContainer = styled.div`
   padding: 0;
   &:hover > .add-block-area {
     opacity: 1;
+    pointer-events: auto;
   }
 `;
 
 const AddBlockButton = ({ onClick }: { onClick: () => void }) => (
   <AddBlockArea className="add-block-area">
-    <AddCircle onClick={onClick}>+</AddCircle>
+    <AddCircle onClick={onClick} className="add-block-button">+</AddCircle>
   </AddBlockArea>
 );
 
 const AddBlockArea = styled.div`
   position: absolute;
-  bottom: -12px;
+  bottom: -16px;
   left: 0;
   right: 0;
-  height: 24px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   transition: opacity 0.2s ease;
-  z-index: 10;
+  z-index: 100;
   pointer-events: none;
 `;
 

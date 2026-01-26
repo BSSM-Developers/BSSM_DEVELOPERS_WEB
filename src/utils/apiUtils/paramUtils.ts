@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { ApiDoc } from "@/types/docs";
 
 export interface ApiParam {

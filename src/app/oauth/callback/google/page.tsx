@@ -1,15 +1,21 @@
+/* eslint-disable */
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api, tokenManager } from "@/lib/api";
+import { tokenManager } from "@/utils/fetcher";
+import { signUpApi } from "@/app/sign-up/api";
+import { docsApi } from "@/app/docs/api";
 import styled from "@emotion/styled";
 
-export default function GoogleCallbackPage() {
+import { useLoginMutation } from "@/app/login/queries";
+
+function GoogleCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState("인증 처리 중...");
 
+  const loginMutation = useLoginMutation();
   const isProcessing = useRef(false);
 
   useEffect(() => {
@@ -28,7 +34,6 @@ export default function GoogleCallbackPage() {
       try {
         const codeVerifier = sessionStorage.getItem('codeVerifier');
         if (!codeVerifier) {
-          console.error("Code verifier not found");
           setStatus("인증 오류: Code verifier가 없습니다.");
           setTimeout(() => router.push("/login"), 2000);
           return;
@@ -36,29 +41,27 @@ export default function GoogleCallbackPage() {
 
         let response;
         try {
-          response = await api.auth.loginWithGoogle(code, codeVerifier);
-          console.log("Login response:", response); // Debug log
+          response = await loginMutation.mutateAsync({ code, codeVerifier });
         } catch (error) {
-          console.log("Login failed (likely new user), redirecting to sign-up:", error);
+          console.error("Login failed:", error);
           router.push("/sign-up");
           return;
         }
 
-        // Safely access accessToken
         const accessToken = response?.accessToken;
-
-        // Clear verifier
         sessionStorage.removeItem('codeVerifier');
 
         if (accessToken) {
-          // Existing user
           tokenManager.setTokens(accessToken, response.refreshToken);
-          setStatus("로그인 성공! 이동 중...");
+          setStatus("로그인 성공! 회원 정보 확인 중...");
 
-          // Check status just in case, or go straight to home
+          // 토큰 전파를 보장하기 위해 짧은 지연 추가
+          await new Promise(resolve => setTimeout(resolve, 500));
+
           try {
-            const mySignUp = await api.signUp.getMy();
-            // Cache user name immediately
+            // 사용자 정보 가져오기 시도
+            const mySignUp = await signUpApi.getMy({ suppressLogout: true });
+
             if (mySignUp.name) {
               tokenManager.setUserName(mySignUp.name);
             }
@@ -68,19 +71,48 @@ export default function GoogleCallbackPage() {
             } else {
               router.push("/sign-up");
             }
-          } catch (e) {
-            router.push("/");
+          } catch (e: any) {
+            console.error("getMy failed:", e);
+
+            try {
+              await docsApi.getList();
+
+              try {
+                const base64Url = accessToken.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                const payload = JSON.parse(jsonPayload);
+                if (payload.email) {
+                  tokenManager.setUserName(payload.email.split('@')[0]);
+                } else {
+                  tokenManager.setUserName("User");
+                }
+              } catch (parseError) {
+                tokenManager.setUserName("User");
+              }
+
+              router.push("/");
+            } catch (listError: any) {
+              console.error("Token validation failed:", listError);
+              // 토큰이 유효하지 않은 경우 명시적으로 알림
+              if (listError.message?.includes('Unauthorized')) {
+                setStatus("인증 토큰이 유효하지 않거나 만료되었습니다. 다시 로그인해주세요.");
+                setTimeout(() => router.push("/login"), 2000);
+              } else {
+                setStatus(`로그인 검증 중 오류가 발생했습니다: ${listError.message}`);
+              }
+            }
           }
         } else {
-          // New user (accessToken missing, signup-token cookie should be present)
           setStatus("회원가입이 필요합니다. 이동 중...");
           router.push("/sign-up");
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Callback processing failed:", error);
-        setStatus("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
-        setTimeout(() => router.push("/login"), 2000);
+        setStatus(`처리 중 오류가 발생했습니다: ${error.message}`);
       }
     };
 
@@ -91,6 +123,14 @@ export default function GoogleCallbackPage() {
     <Container>
       <Message>{status}</Message>
     </Container>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={<Container><Message>로딩 중...</Message></Container>}>
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }
 

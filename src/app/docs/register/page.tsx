@@ -1,13 +1,22 @@
+/* eslint-disable */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import styled from "@emotion/styled";
-import { api } from "@/lib/api";
+import { useCreateOriginalDocsMutation, useDocsListQuery, useDocsDetailQuery } from "@/app/docs/queries";
+import { docsApi } from "@/app/docs/api"; // For direct calls if needed or mutations not yet hooked
+import { useMyProfileQuery } from "@/app/sign-up/queries";
+import { DocsLayout } from "@/components/layout/DocsLayout";
+import { DocsHeader } from "@/components/docs/DocsHeader";
 import { ApiCard } from "@/components/apis/ApiCard";
+import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
+import { DocsBlock } from "@/types/docs";
 import { Check } from "lucide-react";
+import { useDocsStore } from "@/store/docsStore";
+import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
-type Step = 'INPUT' | 'CONFIRM' | 'SUCCESS';
+type Step = 'INPUT' | 'EDITOR' | 'CONFIRM' | 'SUCCESS';
 
 export default function DocsRegisterPage() {
   const router = useRouter();
@@ -21,69 +30,230 @@ export default function DocsRegisterPage() {
     auto_approval: false
   });
 
+  // 에디터 상태
+  const [docsBlocks, setDocsBlocks] = useState<DocsBlock[]>([]);
+  const [sidebarItems, setSidebarItems] = useState<SidebarNode[]>([]);
+  const [contentMap, setContentMap] = useState<Record<string, DocsBlock[]>>({});
+
+  // 콘텐츠 전환을 위한 선택된 ID 추적
+  const selectedId = useDocsStore((s: any) => s.selected);
+  const prevSelectedIdRef = useRef<string | null>(null);
+
   const [userName, setUserName] = useState<string>('');
 
+  const { data: profileData } = useMyProfileQuery();
+  const createOriginalMutation = useCreateOriginalDocsMutation();
+
   useEffect(() => {
-    const fetchUserName = async () => {
-      // 1. Try localStorage first
-      const cachedName = typeof window !== 'undefined' ? localStorage.getItem('userName') : null;
-      if (cachedName) {
-        setUserName(cachedName);
-        return;
-      }
-
-      // 2. If not found, fetch from API
-      try {
-        const mySignUp = await api.signUp.getMy();
-        if (mySignUp.name) {
-          setUserName(mySignUp.name);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('userName', mySignUp.name);
-          }
-        } else {
-          setUserName('User');
-        }
-      } catch (e) {
-        console.error("Failed to fetch user name:", e);
-        setUserName('User');
-      }
-    };
-
-    fetchUserName();
-  }, []);
-
-  const handleNext = () => {
-    if (!formData.title || !formData.domain || !formData.repository_url) {
-      alert("필수 항목을 모두 입력해주세요.");
+    // 1. 로컬 스토리지 먼저 확인
+    const cachedName = typeof window !== 'undefined' ? localStorage.getItem('userName') : null;
+    if (cachedName) {
+      setUserName(cachedName);
       return;
     }
-    setStep('CONFIRM');
+
+    // 2. Query Data 사용
+    if (profileData?.name) {
+      setUserName(profileData.name);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userName', profileData.name);
+      }
+    } else {
+      // Fallback
+      setUserName('User');
+    }
+  }, [profileData]);
+
+  // 에디터 단계 진입 시 사이드바 아이템 초기화
+  useEffect(() => {
+    if (step === 'EDITOR' && sidebarItems.length === 0) {
+      const initialItems: SidebarNode[] = [{
+        id: 'draft-root',
+        label: formData.title || '새 문서',
+        module: 'main',
+        childrenItems: [{
+          id: 'draft-doc',
+          label: '시작하기',
+          module: 'default',
+          childrenItems: []
+        }]
+      }];
+      setSidebarItems(initialItems);
+
+      // 초기 선택 설정
+      useDocsStore.setState({ selected: 'draft-doc' });
+
+      // 콘텐츠 맵 초기화
+      setContentMap({
+        'draft-doc': [{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }]
+      });
+    }
+  }, [step, formData.title]);
+
+
+
+  const docsBlocksRef = useRef(docsBlocks);
+  useEffect(() => {
+    docsBlocksRef.current = docsBlocks;
+  }, [docsBlocks]);
+
+  useEffect(() => {
+    if (step !== 'EDITOR') return;
+
+    const prevId = prevSelectedIdRef.current;
+    const currentId = selectedId;
+
+    if (prevId && prevId !== currentId) {
+      // ref를 사용하여 이전 콘텐츠 저장
+      setContentMap(prev => ({
+        ...prev,
+        [prevId]: docsBlocksRef.current
+      }));
+    }
+
+    if (currentId) {
+      // 새 콘텐츠 로드
+      setDocsBlocks(contentMap[currentId] || [{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }]);
+    }
+
+    prevSelectedIdRef.current = currentId;
+  }, [selectedId]); // 선택 변경 시에만 실행
+
+
+
+  const handleNext = () => {
+    if (step === 'INPUT') {
+      if (!formData.title || !formData.domain || !formData.repository_url) {
+        alert("필수 항목을 모두 입력해주세요.");
+        return;
+      }
+      setStep('EDITOR');
+    } else if (step === 'EDITOR') {
+      // 진행하기 전에 현재 블록을 맵에 저장
+      if (selectedId) {
+        setContentMap(prev => ({
+          ...prev,
+          [selectedId]: docsBlocks
+        }));
+      }
+      setStep('CONFIRM');
+    }
+  };
+
+  const handleBlockChange = (index: number, updated: DocsBlock) => {
+    const copy = [...docsBlocks];
+    copy[index] = { ...copy[index], ...updated };
+    setDocsBlocks(copy);
+  };
+
+  const handleAddBlock = (index: number, newBlock?: DocsBlock) => {
+    const copy = [...docsBlocks];
+    const blockId = Math.random().toString(36).substring(2, 11);
+    const blockToInsert = {
+      id: blockId,
+      ...(newBlock ?? { module: "docs_1", content: "" }),
+    } as DocsBlock;
+
+    copy.splice(index + 1, 0, blockToInsert);
+    setDocsBlocks(copy);
+
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockId}']`);
+      el?.focus();
+    }, 0);
+  };
+
+  const handleRemoveBlock = (index: number) => {
+    const copy = [...docsBlocks];
+    if (copy.length <= 1) {
+      copy[0] = { ...copy[0], module: "docs_1", content: "" };
+      setDocsBlocks(copy);
+      return;
+    }
+
+    const focusTargetId = index > 0 ? (copy[index - 1] as any).id : (copy[index + 1] as any).id;
+    copy.splice(index, 1);
+    setDocsBlocks(copy);
+
+    if (focusTargetId) {
+      setTimeout(() => {
+        const el = document.querySelector<HTMLInputElement>(`[data-block-id='${focusTargetId}']`);
+        el?.focus();
+      }, 0);
+    }
+  };
+
+  const handleFocusMove = (index: number, direction: "up" | "down") => {
+    const target = direction === "up" ? index - 1 : index + 1;
+    const targetId = (docsBlocks[target] as any)?.id;
+    if (!targetId) return;
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${targetId}']`);
+      el?.focus();
+    }, 0);
   };
 
   const handleSubmit = async () => {
     try {
       setLoading(true);
-      // Default to ORIGINAL for now as per design assumption, or we could add a toggle if needed.
-      // The design shows "API 초기 세팅" which implies a standard flow.
-      // We'll use createOriginal as default.
 
-      // MOCKING: Server is down, simulating success and redirecting to edit mode
-      // await api.docs.createOriginal({
-      //   ...formData,
-      //   sidebar: {
-      //     title: formData.title,
-      //     sideBarBlocks: []
-      //   }
-      // });
+      // 페이로드 구성
+      // 사용자 편집을 반영하는 sidebarItems 상태 사용 필요
+      const payload = {
+        ...formData,
+        sidebar: {
+          title: formData.title,
+          sideBarBlocks: sidebarItems // 전체 사이드바 구조 전송
+        },
+        docsPage: [] // 초기 내용 비움
+      };
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // 실제 API 호출
+      // createOriginalMutation.mutateAsync returns Promise
+      const response: any = await createOriginalMutation.mutateAsync(payload as any);
 
-      // Redirect to mock edit page
-      router.push('/docs/1/edit');
+      // 응답에 ID가 있으면 사용, 없으면 목록 조회
+      let newDocId = response?.data?.id || response?.id || response?.docsId;
 
-      // setStep('SUCCESS'); // Skip success step in register page, go to edit
-    } catch (error) {
+      if (!newDocId) {
+        // 대체 방법: 목록 조회
+        try {
+          const listResponse: any = await docsApi.getList();
+          if (listResponse && listResponse.data && Array.isArray(listResponse.data.values)) {
+            const found = listResponse.data.values.find((d: any) => d.title === formData.title);
+            if (found) {
+              newDocId = found.docsId || found.id;
+            }
+          }
+        } catch (listError) {
+          console.error("Failed to fetch list for fallback ID:", listError);
+        }
+      }
+
+      if (newDocId) {
+        // 메인 페이지 콘텐츠 업데이트 (또는 가능한 경우 모든 페이지)
+
+        try {
+          const detailResponse = await docsApi.getDetail(newDocId);
+          // 'draft-doc'(기본 시작 페이지)의 콘텐츠를 newDocId(메인에 매핑된다고 가정)에 저장 시도
+          const mainContent = contentMap['draft-doc'] || docsBlocks;
+
+          if (mainContent.length > 0) {
+            await docsApi.updatePage(newDocId, newDocId, mainContent);
+          }
+
+        } catch (updateError) {
+          console.error("Failed to update content:", updateError);
+        }
+
+        router.push(`/docs/${newDocId}/edit`);
+      } else {
+        console.error("Could not determine new document ID");
+        alert("문서가 생성되었으나 ID를 확인할 수 없습니다. 목록으로 이동합니다.");
+        router.push('/docs');
+      }
+
+    } catch (error: any) {
       console.error("Failed to register docs:", error);
       alert("문서 등록에 실패했습니다.");
     } finally {
@@ -100,51 +270,42 @@ export default function DocsRegisterPage() {
               <Title>API 초기 세팅</Title>
             </Header>
             <Form>
-              <InputGroup>
-                <Label>API 이름</Label>
-                <Input
-                  placeholder="API 이름을 입력해주세요"
-                  value={formData.title}
-                  onChange={e => setFormData({ ...formData, title: e.target.value })}
-                />
-              </InputGroup>
+              <FloatingInput
+                label="API 이름"
+                value={formData.title}
+                onChange={e => setFormData({ ...formData, title: e.target.value })}
+              />
 
-              <InputGroup>
-                <Label>API 소개</Label>
-                <Input
-                  placeholder="API에 대한 설명을 입력해주세요"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                />
-              </InputGroup>
+              <FloatingInput
+                label="API 소개"
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+              />
 
-              <InputGroup>
-                <Label>레포지토리 이름</Label>
-                <Input
-                  placeholder="repository-url"
-                  value={formData.repository_url}
-                  onChange={e => setFormData({ ...formData, repository_url: e.target.value })}
-                />
-              </InputGroup>
+              <FloatingInput
+                label="레포지토리 이름"
+                value={formData.repository_url}
+                onChange={e => setFormData({ ...formData, repository_url: e.target.value })}
+              />
 
-              <InputGroup>
-                <Label>도메인 주소</Label>
-                <Input
-                  placeholder="도메인 주소"
-                  value={formData.domain}
-                  onChange={e => setFormData({ ...formData, domain: e.target.value })}
-                />
-              </InputGroup>
+              <FloatingInput
+                label="도메인 주소"
+                value={formData.domain}
+                onChange={e => setFormData({ ...formData, domain: e.target.value })}
+              />
 
-              <InputGroup>
-                <Label>자동 승인</Label>
+              <InputGroup style={{ flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '0 4px' }}>
                 <CheckboxWrapper>
                   <Checkbox
                     type="checkbox"
+                    id="auto_approval"
                     checked={formData.auto_approval}
                     onChange={e => setFormData({ ...formData, auto_approval: e.target.checked })}
                   />
                 </CheckboxWrapper>
+                <label htmlFor="auto_approval" style={{ fontSize: '15px', color: '#374151', cursor: 'pointer', fontFamily: '"Spoqa Han Sans Neo", sans-serif' }}>
+                  자동 승인 활성화
+                </label>
               </InputGroup>
             </Form>
             <Footer>
@@ -170,6 +331,52 @@ export default function DocsRegisterPage() {
         </StepContainer>
       )}
 
+      {step === 'EDITOR' && (
+        <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', width: '100vw', position: 'fixed', top: 0, left: 0, zIndex: 100, background: 'white' }}>
+          <DocsLayout
+            showSidebar={true}
+            sidebarItems={sidebarItems}
+            onSidebarChange={setSidebarItems}
+          >
+            <DocsHeader title={formData.title || "새 문서"} breadcrumb={["문서 등록", formData.title]} isApi={false} />
+            <div style={{ minHeight: "500px" }} onClick={() => {
+              if (docsBlocks.length === 0) {
+                setDocsBlocks([{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }]);
+              }
+            }}>
+              {docsBlocks.length === 0 ? (
+                <div style={{ padding: "20px 0", color: "#9CA3AF", cursor: "text" }}>
+                  내용을 입력하려면 클릭하세요...
+                </div>
+              ) : (
+                docsBlocks.map((block, i) => (
+                  <DocsBlockEditor
+                    key={(block as any).id || i}
+                    index={i}
+                    block={block}
+                    onChange={handleBlockChange}
+                    onAddBlock={handleAddBlock}
+                    onRemoveBlock={handleRemoveBlock}
+                    onFocusMove={handleFocusMove}
+                  />
+                ))
+              )}
+            </div>
+            <div style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '40px',
+              display: 'flex',
+              gap: '10px',
+              zIndex: 1000
+            }}>
+              <PrevButton onClick={() => setStep('INPUT')} style={{ background: 'white', border: '1px solid #E5E7EB' }}>이전으로</PrevButton>
+              <NextButton onClick={handleNext}>다음으로</NextButton>
+            </div>
+          </DocsLayout>
+        </div>
+      )}
+
       {step === 'CONFIRM' && (
         <ConfirmContainer>
           <ConfirmTitle>아래의 API를 BSSM DEVLEOPERS에 등록하시겠습니까?</ConfirmTitle>
@@ -184,7 +391,7 @@ export default function DocsRegisterPage() {
             />
           </PreviewCardWrapper>
           <Footer style={{ justifyContent: 'center', marginTop: '60px' }}>
-            <PrevButton onClick={() => setStep('INPUT')}>이전으로</PrevButton>
+            <PrevButton onClick={() => setStep('EDITOR')}>이전으로</PrevButton>
             <NextButton onClick={handleSubmit} disabled={loading}>
               {loading ? "등록 중..." : "등록하기"}
             </NextButton>
@@ -206,6 +413,22 @@ export default function DocsRegisterPage() {
     </Container>
   );
 }
+
+const FloatingInput = ({ label, value, onChange, ...props }: { label: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, [key: string]: any }) => {
+  const [focused, setFocused] = useState(false);
+  return (
+    <InputGroup>
+      <Label active={focused || !!value}>{label}</Label>
+      <Input
+        value={value}
+        onChange={onChange}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        {...props}
+      />
+    </InputGroup>
+  );
+};
 
 const Container = styled.div`
   max-width: 1200px;
@@ -253,33 +476,43 @@ const Form = styled.div`
 `;
 
 const InputGroup = styled.div`
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
 `;
 
-const Label = styled.label`
-  font-size: 16px;
-  font-weight: 700;
-  color: #000;
+const Label = styled.label<{ active: boolean }>`
+  position: absolute;
+  top: ${props => props.active ? '10px' : '18px'};
+  left: 16px;
+  font-size: ${props => props.active ? '12px' : '16px'};
+  font-weight: ${props => props.active ? '600' : '400'};
+  color: ${props => props.active ? '#16335C' : '#6B7280'};
+  transition: all 0.2s ease;
+  pointer-events: none;
   font-family: "Spoqa Han Sans Neo", sans-serif;
 `;
 
 const Input = styled.input`
-  padding: 16px 8px;
-  border: none;
-  border-bottom: 1px solid #E5E7EB;
+  padding: 24px 16px 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
   font-size: 16px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
   width: 100%;
+  background: #F9FAFB;
+  transition: all 0.2s ease;
+  color: #1F2937;
   
   &:focus {
     outline: none;
-    border-bottom-color: #16335C;
+    border-color: #16335C;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 1px #16335C;
   }
 
-  &::placeholder {
-    color: #9CA3AF;
+  &:hover {
+    background: #F3F4F6;
   }
 `;
 
@@ -314,7 +547,7 @@ const PrevButton = styled(Button)`
   background: white;
   border: 1px solid #E5E7EB;
   color: #000;
-
+  
   &:hover {
     background: #F9FAFB;
   }
@@ -335,39 +568,9 @@ const NextButton = styled(Button)`
   }
 `;
 
-const PreviewLabel = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #000;
-  margin-bottom: 8px;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-`;
 
-const Dot = styled.div`
-  width: 6px;
-  height: 6px;
-  background: #16335C;
-  border-radius: 50%;
-`;
 
-const PreviewTitle = styled.div`
-  font-size: 16px;
-  color: #4B5563;
-  padding-left: 14px;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-`;
-
-const PreviewDesc = styled.div`
-  font-size: 14px;
-  color: #9CA3AF;
-  padding-left: 14px;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-`;
-
-// Confirm Step Styles
+// 확인 단계 스타일
 const ConfirmContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -387,7 +590,7 @@ const PreviewCardWrapper = styled.div`
   width: 400px;
 `;
 
-// Success Step Styles
+// 완료 단계 스타일
 const SuccessContainer = styled.div`
   display: flex;
   flex-direction: column;

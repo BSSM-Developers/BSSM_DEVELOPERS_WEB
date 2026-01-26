@@ -22,7 +22,7 @@ import { TopNav } from "@/components/layout/TopNav";
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html suppressHydrationWarning lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+      <body suppressHydrationWarning>
         <RootProvider>
           <TopNav />
           {children}

@@ -7,40 +7,39 @@ import { usePathname } from "next/navigation";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, tokenManager } from "@/lib/api";
+import { tokenManager } from "@/utils/fetcher";
+import { useMyProfileQuery } from "@/app/sign-up/queries";
+import { useLogoutMutation } from "@/app/login/queries";
 
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Fetch user profile if token exists
+  const { data: userData, isError } = useMyProfileQuery(!!tokenManager.getAccessToken());
+  const logoutMutation = useLogoutMutation();
+
   useEffect(() => {
-    const checkAuth = async () => {
-      const token = tokenManager.getAccessToken();
-      if (token) {
-        setIsLoggedIn(true);
-        // 캐시된 이름이 없으면 가져와서 저장
-        if (!tokenManager.getUserName()) {
-          try {
-            const userData = await api.signUp.getMy({ suppressLogout: true });
-            tokenManager.setUserName(userData.name);
-          } catch (e: any) {
-            // 401 에러는 suppressLogout으로 인해 발생할 수 있으므로 조용히 무시하거나 경고만 남김
-            if (!e.message?.includes('401')) {
-              console.warn("Failed to fetch user info", e);
-            }
-          }
-        }
-      } else {
-        setIsLoggedIn(false);
+    const token = tokenManager.getAccessToken();
+    if (token) {
+      setIsLoggedIn(true);
+
+      // Update cached username if data is fetched successfully
+      if (userData?.name) {
+        tokenManager.setUserName(userData.name);
       }
-    };
-    checkAuth();
-  }, []); // Re-check on path change
+
+      // Optionally handle errors (e.g. 401) if needed, though useMyProfileQuery might handle it via global fetcher
+    } else {
+      setIsLoggedIn(false);
+    }
+  }, [pathname, userData]); // Re-run when path or user data changes
+
 
   const handleLogout = async () => {
     try {
-      await api.auth.logout();
+      await logoutMutation.mutateAsync();
     } catch (e) {
       console.error("Logout failed", e);
     } finally {
@@ -71,39 +70,39 @@ export function TopNav() {
           />
         </LogoWrapper>
 
-        <Link href="/apis">
+        <StyledLink href="/apis">
           <NavLink active={isActive("/apis")}>API 둘러보기</NavLink>
-        </Link>
-        <Link href="/static">
+        </StyledLink>
+        <StyledLink href="/static">
           <NavLink active={isActive("/static")}>API 정적처리</NavLink>
-        </Link>
-        <Link href="/usage">
+        </StyledLink>
+        <StyledLink href="/usage">
           <NavLink active={isActive("/usage")}>API 사용하기</NavLink>
-        </Link>
-        <Link href="/guide">
+        </StyledLink>
+        <StyledLink href="/guide">
           <NavLink active={isActive("/guide")}>가이드</NavLink>
-        </Link>
-        <Link href="/docs/register">
+        </StyledLink>
+        <StyledLink href="/docs/register">
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
-        </Link>
+        </StyledLink>
       </Nav>
 
       {isLoggedIn ? (
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           {tokenManager.getUserRole() === 'ROLE_ADMIN' && (
-            <Link href="/admin/sign-ups">
+            <StyledLink href="/admin/sign-ups">
               <NavLink active={isActive("/admin/sign-ups")} style={{ fontSize: '14px', color: '#ef4444' }}>Admin</NavLink>
-            </Link>
+            </StyledLink>
           )}
-          <Link href="/sign-up">
+          <StyledLink href="/sign-up">
             <NavLink active={isActive("/sign-up")} style={{ fontSize: '14px' }}>프로필</NavLink>
-          </Link>
+          </StyledLink>
           <LoginButton onClick={handleLogout}>로그아웃</LoginButton>
         </div>
       ) : (
-        <Link href="/login">
-          <LoginButton>로그인</LoginButton>
-        </Link>
+        <StyledLink href="/login">
+          <LoginButton as="span">로그인</LoginButton>
+        </StyledLink>
       )}
     </Header>
   );
@@ -123,6 +122,7 @@ const LogoWrapper = styled(Link)`
   display: flex;
   align-items: center;
   cursor: pointer;
+  text-decoration: none;
 
   img {
     object-fit: contain;
@@ -136,11 +136,14 @@ const Nav = styled.nav`
   gap: 69px;
 `;
 
+const StyledLink = styled(Link)`
+  text-decoration: none;
+`;
+
 const NavLink = styled.span<{ active?: boolean }>`
   font-size: 16px;
   font-weight: 500;
   color: ${({ theme, active }) => active ? theme.colors.text : theme.colors.grey[400]};
-  text-decoration: none;
   cursor: pointer;
   transition: color 0.2s;
 
@@ -158,4 +161,7 @@ const LoginButton = styled.button`
   font-weight: 500;
   font-size: 15px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;

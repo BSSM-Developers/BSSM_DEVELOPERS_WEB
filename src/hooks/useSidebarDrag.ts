@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { DragEndEvent, DragOverEvent, DragStartEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { DragEndEvent, DragOverEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { findParentId, removeNodeWithReturn, applySiblings } from "@/components/layout/treeUtils";
@@ -48,7 +48,7 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     return [] as any;
   };
 
-  const onDragStart = (evt: DragStartEvent) => {
+  const onDragStart = () => {
     setOverIntent(null);
   };
 

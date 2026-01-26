@@ -45,7 +45,7 @@ export function ApiResponseSection({
       const parsed = JSON.parse(e.target.value);
       onDataChange?.(parsed);
     } catch (err) {
-      // Ignore invalid JSON while typing
+      // 입력 중 유효하지 않은 JSON 무시
     }
   };
 

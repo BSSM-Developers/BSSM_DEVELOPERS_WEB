@@ -2,7 +2,7 @@ import { SidebarNode } from "../ui/sidebarItem/types";
 
 type Node = SidebarNode & { id: string };
 
-// 부모 id 찾기
+// 부모 ID 찾기
 export function findParentId(list: Node[], childId: string, parentId: string | null = null): string | null {
   for (const n of list) {
     if (n.id === childId) return parentId;
@@ -27,27 +27,27 @@ export function isTopLevel(list: Node[], topLevelId: string, targetId: string): 
   return walk(list, false);
 }
 
-// id를 제거하고 제거된 노드를 반환
+// ID를 제거하고 제거된 노드를 반환
 export function removeNodeWithReturn(list: Node[], id: string): { tree: Node[]; removed: Node | null } {
   let removed: Node | null = null;
   const walk = (xs: Node[]): Node[] =>
     xs.filter(n => {
       if (n.id === id) {
         removed = n;
-          return false;
-        }
-        return true;
+        return false;
+      }
+      return true;
     })
-  .map(n => ({
-    ...n,
-    childrenItems: n.childrenItems ? (walk(n.childrenItems as Node[]) as SidebarNode[]) : undefined,
-  }));
+      .map(n => ({
+        ...n,
+        childrenItems: n.childrenItems ? (walk(n.childrenItems as Node[]) as SidebarNode[]) : undefined,
+      }));
   const tree = walk(list);
 
   return { tree, removed };
 }
 
-// parentId의 children을 주어진 siblings로 갈아끼운다
+// 부모 ID의 자식 요소를 주어진 형제 요소들로 교체함
 export function applySiblings(list: Node[], parentId: string | null, newSiblings: Node[]): Node[] {
   if (parentId === null) {
     return newSiblings as SidebarNode[];

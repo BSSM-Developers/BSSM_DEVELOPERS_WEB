@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
-import { HttpMethodTag } from "@/components/ui/httpMethod/HttpMethodTag";
+
 
 type ParamItemProps = {
   name: string;

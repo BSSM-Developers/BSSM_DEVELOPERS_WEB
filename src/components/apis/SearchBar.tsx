@@ -37,7 +37,7 @@ export function SearchBar({
   }, [isFilterOpen]);
 
   const handleFilterClick = (filter: "ALL" | "ORIGINAL" | "CUSTOM") => {
-    // 토글 로직: 이미 선택된 필터를 클릭하면 해제(ALL로 변경)
+    // 토글 로직: 이미 선택된 필터를 클릭하면 해제(전체로 변경)
     const newFilter = activeFilter === filter ? "ALL" : filter;
     onFilterChange?.(newFilter);
   };

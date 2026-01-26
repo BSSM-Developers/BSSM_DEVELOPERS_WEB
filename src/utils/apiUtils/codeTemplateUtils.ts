@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import type { ApiDoc } from "@/types/docs";
 import { generateParamExamples, extractParams } from "./paramUtils";
 
@@ -32,7 +32,7 @@ export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions
   const endpoint = replacePathParams(apiDoc.endpoint, examples.path as Record<string, string>);
   let fullUrl = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
 
-  // Append query parameters
+  // 쿼리 파라미터 추가
   if (Object.keys(examples.query).length > 0) {
     const queryString = new URLSearchParams(examples.query as Record<string, string>).toString();
     fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryString;

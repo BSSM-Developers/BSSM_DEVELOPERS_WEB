@@ -10,6 +10,7 @@ export type DocsModule =
   | "space";
 
 export interface DocsBlock {
+  id?: string;
   module: DocsModule;
   content?: string;
   listItems?: string[];

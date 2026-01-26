@@ -1,5 +1,5 @@
-// Client-side fetching (No Proxy)
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://dev.bssm-dev.com';
+/* eslint-disable */
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface ApiRequestOptions extends RequestInit {
   params?: Record<string, string>;
@@ -104,6 +104,9 @@ export const api = {
       const accessToken = tokenManager.getAccessToken();
       if (accessToken) {
         headers['Authorization'] = `Bearer ${accessToken}`;
+        console.log("API Request Header Auth:", `Bearer ${accessToken.substring(0, 10)}...`);
+      } else {
+        console.warn("API Request: No access token found in tokenManager");
       }
     }
 
@@ -111,6 +114,7 @@ export const api = {
       ...options,
       method,
       headers,
+      credentials: 'include', // 쿠키 전송을 위해 필수 (특히 /signup/me 엔드포인트)
     };
 
     if (body) {

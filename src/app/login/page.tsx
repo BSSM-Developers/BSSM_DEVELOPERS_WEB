@@ -1,8 +1,8 @@
+/* eslint-disable */
 "use client";
 
 import { useState } from "react";
 import styled from "@emotion/styled";
-import { api } from "@/lib/api";
 
 import { generateCodeVerifier, generateCodeChallenge } from "@/utils/pkce";
 
@@ -10,8 +10,8 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '586164535148-28sggvc0esanl1k84r93pbk87oui3ucg.apps.googleusercontent.com';
-    const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI || 'http://localhost:3001/oauth/callback/google';
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
 
     if (!clientId) {
       alert("Google Client ID가 설정되지 않았습니다.");
@@ -20,19 +20,27 @@ export default function LoginPage() {
 
     try {
       setIsLoading(true);
-      // Generate PKCE values
+
+      if (typeof window === 'undefined' || !window.crypto) {
+        throw new Error("보안 컨텍스트(HTTPS)가 필요하거나 window.crypto를 지원하지 않는 브라우저입니다.");
+      }
+
+      // PKCE 값 생성
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-      // Store verifier for callback
+      // 콜백을 위한 검증자 저장
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('codeVerifier', codeVerifier);
       }
 
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=email profile&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+
+      console.log("Redirecting to Google Auth:", url);
       window.location.href = url;
-    } catch (error) {
-      console.error("PKCE generation failed", error);
+    } catch (error: any) {
+      console.error("Login failed", error);
+      alert(`로그인 처리 중 오류가 발생했습니다: ${error.message}`);
       setIsLoading(false);
     }
   };

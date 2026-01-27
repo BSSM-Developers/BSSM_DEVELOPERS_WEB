@@ -34,7 +34,7 @@ export default function LoginPage() {
         sessionStorage.setItem('codeVerifier', codeVerifier);
       }
 
-      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=email profile&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+      const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid email profile&code_challenge=${codeChallenge}&code_challenge_method=S256`;
       window.location.href = url;
     } catch (error: any) {
       console.error("Login failed", error);

@@ -92,7 +92,7 @@ export const tokenManager = {
   },
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://prod.bssm-dev.com";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL === "https://prod.bssm-dev.com" ? "/api/proxy" : (process.env.NEXT_PUBLIC_API_URL || "");
 
 const request = async <T>(
   method: string,
@@ -100,7 +100,9 @@ const request = async <T>(
   body?: unknown,
   options: ApiRequestOptions = {}
 ): Promise<T> => {
-  const url = new URL(`${BASE_URL}${endpoint}`);
+  // BASE_URL이 상대 경로(/api/proxy)일 때 new URL()이 실패하지 않도록 항상 Base를 제공
+  const fullUrl = `${BASE_URL}${endpoint}`;
+  const url = new URL(fullUrl, typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
 
   if (options.params) {
     Object.entries(options.params).forEach(([key, value]) => {

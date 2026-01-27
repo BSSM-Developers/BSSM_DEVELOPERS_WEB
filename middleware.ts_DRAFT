@@ -1,0 +1,32 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  const response = NextResponse.next();
+
+  // 프록시된 응답에서 Set-Cookie 헤더를 가로채서 Domain 속성을 제거
+  // (백엔드가 Domain=.bssm-dev.com 등을 설정하면 localhost에서 쿠키가 무시되므로)
+  const setCookieHeader = response.headers.get('set-cookie');
+  
+  if (setCookieHeader) {
+    // 여러 쿠키가 있을 수 있으므로 처리 (Next.js middleware에서 헤더 조작은 제한적일 수 있으나 시도)
+    // 주의: NextResponse.next()로 얻은 response는 아직 백엔드 응답을 받기 전일 수 있음.
+    // Next.js Middleware는 요청 전 단계임. 
+    // Proxy 된 "응답"을 수정하려면 Middleware만으로는 부족할 수 있음.
+    // 하지만 Rewrite를 사용하는 경우 Middleware가 먼저 실행되고 Rewrite가 됨.
+    // Rewrite 된 응답의 헤더를 수정하려면?
+    // Next.js에서 직접적인 Response Header Modification for Rewrites is tricky.
+    
+    // 그러나, 개발 환경에서 가장 확실한 방법은,
+    // 브라우저가 "localhost"에서 "prod"로 요청을 보낼 때
+    // 프록시가 응답 헤더를 변경해서 주는 것.
+    
+    // 이 Middleware는 "요청" 단계에서 실행되므로, 응답 헤더 수정이 어려울 수 있음.
+    // 대신, Rewrite 대신 Middleware에서 직접 fetch를 수행하고 응답을 조작해서 반환하는 방식(Custom Proxy)을 사용해야 할 수도 있음.
+    
+    // 일단 간단한 Rewrite 유지하고, 이 Middleware는 "Request" 쪽 문제가 아닌지 확인.
+    // 하지만 문제는 "Response"의 Set-Cookie임.
+  }
+
+  return response;
+}

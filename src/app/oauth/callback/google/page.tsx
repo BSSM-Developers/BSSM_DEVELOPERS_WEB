@@ -55,11 +55,9 @@ function GoogleCallbackContent() {
           tokenManager.setTokens(accessToken, response.refreshToken);
           setStatus("로그인 성공! 회원 정보 확인 중...");
 
-          // 토큰 전파를 보장하기 위해 짧은 지연 추가
           await new Promise(resolve => setTimeout(resolve, 500));
 
           try {
-            // 사용자 정보 가져오기 시도
             const mySignUp = await signUpApi.getMy({ suppressLogout: true });
 
             if (mySignUp.name) {

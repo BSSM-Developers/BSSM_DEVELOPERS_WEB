@@ -14,9 +14,11 @@ import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
 import { DocsBlock } from "@/types/docs";
 import { Check } from "lucide-react";
 import { useDocsStore } from "@/store/docsStore";
+import { FloatingInput } from "@/components/ui/FloatingInput";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
 type Step = 'INPUT' | 'EDITOR' | 'CONFIRM' | 'SUCCESS';
+
 
 export default function DocsRegisterPage() {
   const router = useRouter();
@@ -414,22 +416,6 @@ export default function DocsRegisterPage() {
   );
 }
 
-const FloatingInput = ({ label, value, onChange, ...props }: { label: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void, [key: string]: any }) => {
-  const [focused, setFocused] = useState(false);
-  return (
-    <InputGroup>
-      <Label active={focused || !!value}>{label}</Label>
-      <Input
-        value={value}
-        onChange={onChange}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        {...props}
-      />
-    </InputGroup>
-  );
-};
-
 const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
@@ -479,41 +465,6 @@ const InputGroup = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-`;
-
-const Label = styled.label<{ active: boolean }>`
-  position: absolute;
-  top: ${props => props.active ? '10px' : '18px'};
-  left: 16px;
-  font-size: ${props => props.active ? '12px' : '16px'};
-  font-weight: ${props => props.active ? '600' : '400'};
-  color: ${props => props.active ? '#16335C' : '#6B7280'};
-  transition: all 0.2s ease;
-  pointer-events: none;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-`;
-
-const Input = styled.input`
-  padding: 24px 16px 10px;
-  border: 1px solid #E5E7EB;
-  border-radius: 12px;
-  font-size: 16px;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  width: 100%;
-  background: #F9FAFB;
-  transition: all 0.2s ease;
-  color: #1F2937;
-  
-  &:focus {
-    outline: none;
-    border-color: #16335C;
-    background: #FFFFFF;
-    box-shadow: 0 0 0 1px #16335C;
-  }
-
-  &:hover {
-    background: #F3F4F6;
-  }
 `;
 
 const CheckboxWrapper = styled.div`
@@ -568,9 +519,6 @@ const NextButton = styled(Button)`
   }
 `;
 
-
-
-// 확인 단계 스타일
 const ConfirmContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -590,7 +538,6 @@ const PreviewCardWrapper = styled.div`
   width: 400px;
 `;
 
-// 완료 단계 스타일
 const SuccessContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -614,3 +561,5 @@ const CheckCircle = styled.div`
   justify-content: center;
   align-items: center;
 `;
+
+

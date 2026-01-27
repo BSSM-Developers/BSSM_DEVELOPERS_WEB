@@ -35,8 +35,6 @@ export default function LoginPage() {
       }
 
       const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=email profile&code_challenge=${codeChallenge}&code_challenge_method=S256`;
-
-      console.log("Redirecting to Google Auth:", url);
       window.location.href = url;
     } catch (error: any) {
       console.error("Login failed", error);

@@ -1,4 +1,3 @@
-
 import type { ApiDoc } from "@/types/docs";
 import { generateParamExamples, extractParams } from "./paramUtils";
 
@@ -17,22 +16,28 @@ export interface CodeTemplateOptions {
   formatCode?: boolean;
 }
 
-// API 정보에서 요청 코드 생성
 export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions): string {
   const { language, library = 'axios', baseUrl = '' } = options;
 
   const params = extractParams(apiDoc);
   const examples = {
     header: generateParamExamples(params.headerParams),
+    cookie: generateParamExamples(params.cookieParams),
     body: generateParamExamples(params.bodyParams),
     query: generateParamExamples(params.queryParams),
     path: generateParamExamples(params.pathParams)
   };
 
+  if (Object.keys(examples.cookie).length > 0) {
+    const cookieString = Object.entries(examples.cookie)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('; ');
+    examples.header['Cookie'] = cookieString;
+  }
+
   const endpoint = replacePathParams(apiDoc.endpoint, examples.path as Record<string, string>);
   let fullUrl = baseUrl ? `${baseUrl}${endpoint}` : endpoint;
 
-  // 쿼리 파라미터 추가
   if (Object.keys(examples.query).length > 0) {
     const queryString = new URLSearchParams(examples.query as Record<string, string>).toString();
     fullUrl += (fullUrl.includes('?') ? '&' : '?') + queryString;
@@ -50,7 +55,6 @@ export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions
   }
 }
 
-// 경로 파라미터 실제 값으로 치환
 function replacePathParams(endpoint: string, pathParams: Record<string, string>): string {
   let result = endpoint;
   Object.entries(pathParams).forEach(([key, value]) => {
@@ -59,7 +63,6 @@ function replacePathParams(endpoint: string, pathParams: Record<string, string>)
   return result;
 }
 
-// 인증 헤더 생성
 function generateAuthHeader(options: CodeTemplateOptions): Record<string, string> {
   if (!options.includeAuth) return {};
 
@@ -77,7 +80,6 @@ function generateAuthHeader(options: CodeTemplateOptions): Record<string, string
   }
 }
 
-// JavaScript 코드 생성
 function generateJavaScriptCode(
   apiDoc: ApiDoc,
   url: string,
@@ -146,7 +148,6 @@ ${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(data);`;
   }
 }
 
-// Python 코드 생성
 function generatePythonCode(
   apiDoc: ApiDoc,
   url: string,
@@ -168,7 +169,6 @@ ${wrapColor('response', 'variable')} = ${wrapColor('requests', 'function')}.${wr
 ${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColor('json', 'function')}())`;
 }
 
-// 응답 코드 템플릿 생성
 export function generateResponseTemplate(
   statusCode: number = 200,
   message: string = "성공",
@@ -183,7 +183,6 @@ export function generateResponseTemplate(
   return highlightJson(JSON.stringify(responseObj, null, 2));
 }
 
-// Shell 코드 생성
 function generateShellCode(
   apiDoc: ApiDoc,
   url: string,
@@ -210,7 +209,6 @@ function generateShellCode(
   return curlParts.join(' \\\n');
 }
 
-// 라이브러리별 지원 언어 매핑
 export const libraryLanguageMap: Record<Library, Language[]> = {
   axios: ['javascript'],
   fetch: ['javascript'],
@@ -219,7 +217,6 @@ export const libraryLanguageMap: Record<Library, Language[]> = {
   native: ['shell']
 };
 
-// 언어별 기본 라이브러리
 export const defaultLibraryMap: Record<Language, Library> = {
   javascript: 'axios',
   python: 'requests',

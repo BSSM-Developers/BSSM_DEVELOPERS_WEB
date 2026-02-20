@@ -35,6 +35,7 @@ export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlo
         mappingEndpoint={apiData.mappingEndpoint}
         description={apiData.description}
         headerParams={apiData.headerParams}
+        cookieParams={apiData.cookieParams}
         pathParams={apiData.pathParams}
         queryParams={apiData.queryParams}
         bodyParams={apiData.bodyParams}
@@ -44,6 +45,7 @@ export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlo
         editable={editable}
         onHeaderChange={handleHeaderChange}
         onHeaderParamsChange={(params) => onChange?.({ ...apiData, headerParams: params })}
+        onCookieParamsChange={(params) => onChange?.({ ...apiData, cookieParams: params })}
         onPathParamsChange={(params) => onChange?.({ ...apiData, pathParams: params })}
         onQueryParamsChange={(params) => onChange?.({ ...apiData, queryParams: params })}
         onBodyParamsChange={(params) => onChange?.({ ...apiData, bodyParams: params })}

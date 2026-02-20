@@ -1,4 +1,3 @@
-
 import type { ApiDoc } from "@/types/docs";
 
 export interface ApiParam {
@@ -6,23 +5,22 @@ export interface ApiParam {
   type: string;
   description: string;
   required?: boolean;
+  example?: string;
+  children?: ApiParam[];
 }
 
 export interface ParamGroup {
   headerParams: ApiParam[];
+  cookieParams: ApiParam[];
   bodyParams: ApiParam[];
   queryParams: ApiParam[];
   pathParams: ApiParam[];
 }
 
-/**
- * ApiDoc에서 파라미터들을 추출하여 정리된 형태로 반환
- */
 export function extractParams(apiDoc: ApiDoc): ParamGroup {
   const extractedPathParams = extractPathParams(apiDoc.endpoint);
   const definedPathParams = apiDoc.pathParams || [];
 
-  // Merge: use defined ones if they exist, otherwise use extracted ones
   const pathParams = extractedPathParams.map(ep => {
     const defined = definedPathParams.find(dp => dp.name === ep.name);
     return defined || ep;
@@ -30,32 +28,25 @@ export function extractParams(apiDoc: ApiDoc): ParamGroup {
 
   return {
     headerParams: apiDoc.headerParams || [],
+    cookieParams: apiDoc.cookieParams || [],
     bodyParams: apiDoc.bodyParams || [],
     queryParams: apiDoc.queryParams || [],
     pathParams: pathParams
   };
 }
 
-/**
- * 엔드포인트에서 경로 파라미터 추출
- * 예: "/user/{id}/posts/{postId}" → [{name: "id", type: "string"}, {name: "postId", type: "string"}]
- */
 export function extractPathParams(endpoint: string): ApiParam[] {
   const pathParamRegex = /\{([^}]+)\}/g;
   const matches = endpoint.matchAll(pathParamRegex);
 
   return Array.from(matches).map(match => ({
     name: match[1],
-    type: "string", // 기본값, 추후 타입 추론 로직 추가 가능
+    type: "string",
     description: `경로 파라미터: ${match[1]}`,
     required: true
   }));
 }
 
-/**
- * 파라미터 배열을 객체 형태로 변환
- * 예: [{name: "userId", type: "string"}] → {userId: "string"}
- */
 export function paramsToObject(params: ApiParam[]): Record<string, string> {
   return params.reduce((acc, param) => {
     acc[param.name] = param.type;
@@ -63,23 +54,14 @@ export function paramsToObject(params: ApiParam[]): Record<string, string> {
   }, {} as Record<string, string>);
 }
 
-/**
- * 파라미터 배열에서 필수 파라미터만 필터링
- */
 export function getRequiredParams(params: ApiParam[]): ApiParam[] {
   return params.filter(param => param.required);
 }
 
-/**
- * 파라미터 배열에서 선택적 파라미터만 필터링
- */
 export function getOptionalParams(params: ApiParam[]): ApiParam[] {
   return params.filter(param => !param.required);
 }
 
-/**
- * 파라미터를 타입별로 그룹화
- */
 export function groupParamsByType(params: ApiParam[]): Record<string, ApiParam[]> {
   return params.reduce((acc, param) => {
     const type = param.type;
@@ -91,9 +73,6 @@ export function groupParamsByType(params: ApiParam[]): Record<string, ApiParam[]
   }, {} as Record<string, ApiParam[]>);
 }
 
-/**
- * 파라미터 유효성 검사
- */
 export function validateParam(param: ApiParam): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -109,7 +88,6 @@ export function validateParam(param: ApiParam): { isValid: boolean; errors: stri
     errors.push('파라미터 설명이 필요합니다');
   }
 
-  // 파라미터 이름 검증 (camelCase, snake_case 허용)
   const namePattern = /^[a-zA-Z][a-zA-Z0-9_]*$/;
   if (param.name && !namePattern.test(param.name)) {
     errors.push('파라미터 이름은 영문자로 시작하고 영문자, 숫자, 언더스코어만 포함할 수 있습니다');
@@ -121,9 +99,6 @@ export function validateParam(param: ApiParam): { isValid: boolean; errors: stri
   };
 }
 
-/**
- * 파라미터 배열 전체 유효성 검사
- */
 export function validateParams(params: ApiParam[]): { isValid: boolean; errors: Record<string, string[]> } {
   const errors: Record<string, string[]> = {};
   let isValid = true;
@@ -136,7 +111,6 @@ export function validateParams(params: ApiParam[]): { isValid: boolean; errors: 
     }
   });
 
-  // 중복 파라미터 이름 검사
   const names = params.map(p => p.name).filter(Boolean);
   const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
 
@@ -148,47 +122,75 @@ export function validateParams(params: ApiParam[]): { isValid: boolean; errors: 
   return { isValid, errors };
 }
 
-/**
- * 파라미터를 예시 값으로 변환
- */
 export function generateParamExamples(params: ApiParam[]): Record<string, unknown> {
   const examples: Record<string, unknown> = {};
 
   params.forEach(param => {
-    switch (param.type.toLowerCase()) {
-      case 'string':
-        examples[param.name] = param.name.includes('email') ? 'user@example.com'
-          : param.name.includes('name') ? '사용자명'
-            : param.name.includes('id') ? 'abc123'
-              : `${param.name}_example`;
-        break;
-      case 'number':
-      case 'integer':
-        examples[param.name] = param.name.includes('age') ? 25
-          : param.name.includes('count') ? 10
-            : param.name.includes('id') ? 123
-              : 42;
-        break;
-      case 'boolean':
-        examples[param.name] = true;
-        break;
-      case 'array':
-        examples[param.name] = ['item1', 'item2'];
-        break;
-      case 'object':
-        examples[param.name] = { key: 'value' };
-        break;
-      default:
-        examples[param.name] = `${param.type}_example`;
+    if (param.example !== undefined && param.example !== "") {
+      if (param.type === 'number' || param.type === 'integer') {
+        examples[param.name] = Number(param.example);
+      } else if (param.type === 'boolean') {
+        examples[param.name] = param.example === 'true';
+      } else if (param.type === 'array') {
+        try {
+          examples[param.name] = JSON.parse(param.example);
+        } catch {
+          examples[param.name] = param.example;
+        }
+      } else if (param.type === 'object') {
+        try {
+          examples[param.name] = JSON.parse(param.example);
+        } catch {
+          examples[param.name] = param.example;
+        }
+      } else {
+        examples[param.name] = param.example;
+      }
+    } else if (param.children && param.children.length > 0) {
+      if (param.type === 'array') {
+        examples[param.name] = [generateParamExamples(param.children)];
+      } else {
+        examples[param.name] = generateParamExamples(param.children);
+      }
+    } else {
+      switch (param.type.toLowerCase()) {
+        case 'string':
+          examples[param.name] = param.name.includes('email') ? 'user@example.com'
+            : param.name.includes('name') ? '사용자명'
+              : param.name.includes('id') ? 'abc123'
+                : `${param.name}_example`;
+          break;
+        case 'number':
+        case 'integer':
+          examples[param.name] = param.name.includes('age') ? 25
+            : param.name.includes('count') ? 10
+              : param.name.includes('id') ? 123
+                : 42;
+          break;
+        case 'boolean':
+          examples[param.name] = true;
+          break;
+        case 'array':
+          examples[param.name] = ['item1', 'item2'];
+          break;
+        case 'object':
+          examples[param.name] = {};
+          break;
+        case 'null':
+          examples[param.name] = null;
+          break;
+        case 'any':
+          examples[param.name] = 'any_value';
+          break;
+        default:
+          examples[param.name] = `${param.type}_example`;
+      }
     }
   });
 
   return examples;
 }
 
-/**
- * 파라미터를 JSON Schema 형태로 변환
- */
 export function paramsToJsonSchema(params: ApiParam[]): { type: string; properties: Record<string, unknown>; required: string[] } {
   const properties: Record<string, unknown> = {};
   const required: string[] = [];

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 "use client";
 
 import styled from "@emotion/styled";
@@ -9,6 +8,7 @@ interface ApiParam {
   type: string;
   description: string;
   required?: boolean;
+  example?: string;
 }
 
 interface ApiResponseSectionProps {
@@ -45,7 +45,6 @@ export function ApiResponseSection({
       const parsed = JSON.parse(e.target.value);
       onDataChange?.(parsed);
     } catch (err) {
-      // 입력 중 유효하지 않은 JSON 무시
     }
   };
 
@@ -89,8 +88,8 @@ export function ApiResponseSection({
       <ApiParamsSection
         title="Response Body"
         params={responseParams}
-        large
         editable={editable}
+        paramLocation="body"
         onParamsChange={onParamsChange}
       />
     </ResponseSection>

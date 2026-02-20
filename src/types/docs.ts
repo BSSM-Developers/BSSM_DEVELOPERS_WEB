@@ -24,6 +24,9 @@ export interface ApiParam {
   type: string;
   description: string;
   required?: boolean;
+  example?: string;
+  children?: ApiParam[];
+  paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
 }
 
 export interface ApiDoc {
@@ -34,6 +37,7 @@ export interface ApiDoc {
   mappingEndpoint?: string;
   description: string;
   headerParams?: ApiParam[];
+  cookieParams?: ApiParam[];
   pathParams?: ApiParam[];
   queryParams?: ApiParam[];
   bodyParams?: ApiParam[];

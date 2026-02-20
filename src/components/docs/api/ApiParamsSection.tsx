@@ -12,23 +12,26 @@ interface ApiParam {
   type: string;
   description: string;
   required?: boolean;
+  example?: string;
+  children?: ApiParam[];
+  paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
 }
 
 interface ApiParamsSectionProps {
   title: string;
   params: ApiParam[];
-  large?: boolean;
   showValidation?: boolean;
   editable?: boolean;
+  paramLocation?: string;
   onParamsChange?: (params: ApiParam[]) => void;
 }
 
 export function ApiParamsSection({
   title,
   params,
-  large = false,
   showValidation = false,
   editable = false,
+  paramLocation = 'body',
   onParamsChange
 }: ApiParamsSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -47,7 +50,7 @@ export function ApiParamsSection({
   }, [params, showValidation]);
 
   const handleAddParam = (type: string = "string") => {
-    const newParam: ApiParam = { name: "", type, description: "", required: false };
+    const newParam: ApiParam = { name: "", type, description: "", required: false, example: "" };
     onParamsChange?.([...params, newParam]);
     if (!isOpen) setIsOpen(true);
   };
@@ -76,7 +79,7 @@ export function ApiParamsSection({
 
   return (
     <ParamSection>
-      <ParamSectionHeader onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
+      <ParamSectionHeader as="button" onClick={() => setIsOpen(!isOpen)}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ChevronIcon isOpen={isOpen}>▼</ChevronIcon>
           <ParamSectionTitle>{title}</ParamSectionTitle>
@@ -105,25 +108,26 @@ export function ApiParamsSection({
             </ValidationErrors>
           )}
 
-          <ParamCard large={large}>
-            <ParamList style={{ marginTop: 0 }}>
-              {params.map((param, index) => (
-                <ParamItem
-                  key={index}
-                  name={param.name}
-                  type={param.type}
-                  description={param.description}
-                  required={param.required}
-                  editable={editable}
-                  onChange={(updated) => handleUpdateParam(index, updated)}
-                  onDelete={() => handleDeleteParam(index)}
-                />
-              ))}
-              {editable && (
-                <AddParamButtonComponent onAdd={(type) => handleAddParam(type)} />
-              )}
-            </ParamList>
-          </ParamCard>
+          <ParamList style={{ marginTop: 0, padding: '0 8px', borderLeft: '2px solid #E5E7EB' }}>
+            {params.map((param, index) => (
+              <ParamItem
+                key={index}
+                name={param.name}
+                type={param.type}
+                description={param.description}
+                required={param.required}
+                example={param.example}
+                childrenProps={param.children}
+                paramLocation={paramLocation as any}
+                editable={editable}
+                onChange={(updated) => handleUpdateParam(index, updated)}
+                onDelete={() => handleDeleteParam(index)}
+              />
+            ))}
+            {editable && (
+              <AddParamButtonComponent onAdd={(type) => handleAddParam(type)} />
+            )}
+          </ParamList>
         </>
       )}
       <ConfirmDialog />
@@ -190,11 +194,17 @@ const ParamSection = styled.div`
   width: 100%;
 `;
 
-const ParamSectionHeader = styled.div`
+const ParamSectionHeader = styled.button`
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
 `;
 
 const ParamSectionTitle = styled.h3`
@@ -260,27 +270,7 @@ const ErrorList = styled.ul`
   }
 `;
 
-const ParamCard = styled.div<{ large?: boolean }>`
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.25);
-  padding: 12px 16px 10px 16px;
-  width: 100%;
-  min-height: ${({ large }) => large ? "240px" : "100px"};
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
 
-  @media (max-width: 768px) {
-    padding: 10px 12px;
-    min-height: ${({ large }) => large ? "180px" : "80px"};
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px;
-    min-height: ${({ large }) => large ? "140px" : "70px"};
-  }
-`;
 
 const ParamList = styled.div`
   display: flex;

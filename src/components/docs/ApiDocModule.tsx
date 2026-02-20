@@ -23,6 +23,7 @@ type ApiDocModuleProps = {
     subcategory?: string;
   };
   headerParams?: ApiParam[];
+  cookieParams?: ApiParam[];
   pathParams?: ApiParam[];
   queryParams?: ApiParam[];
   bodyParams?: ApiParam[];
@@ -41,6 +42,7 @@ type ApiDocModuleProps = {
   editable?: boolean;
   onHeaderChange?: (updated: unknown) => void;
   onHeaderParamsChange?: (params: ApiParam[]) => void;
+  onCookieParamsChange?: (params: ApiParam[]) => void;
   onPathParamsChange?: (params: ApiParam[]) => void;
   onQueryParamsChange?: (params: ApiParam[]) => void;
   onBodyParamsChange?: (params: ApiParam[]) => void;
@@ -60,6 +62,7 @@ export function ApiDocModule({
   description,
   breadcrumb,
   headerParams = [],
+  cookieParams = [],
   pathParams = [],
   queryParams = [],
   bodyParams = [],
@@ -69,7 +72,7 @@ export function ApiDocModule({
   languages,
   libraryOptions,
   baseUrl,
-  includeAuth = true,
+  includeAuth = false,
   authType = 'bearer',
   responseData,
   responseStatus = 200,
@@ -78,6 +81,7 @@ export function ApiDocModule({
   editable = false,
   onHeaderChange,
   onHeaderParamsChange,
+  onCookieParamsChange,
   onPathParamsChange,
   onQueryParamsChange,
   onBodyParamsChange,
@@ -94,6 +98,7 @@ export function ApiDocModule({
     mappingEndpoint,
     description,
     headerParams,
+    cookieParams,
     pathParams,
     queryParams,
     bodyParams,
@@ -121,11 +126,13 @@ export function ApiDocModule({
 
           <ApiRequestSection
             headerParams={headerParams}
+            cookieParams={cookieParams}
             pathParams={pathParams}
             queryParams={queryParams}
             bodyParams={bodyParams}
             editable={editable}
             onHeaderParamsChange={onHeaderParamsChange}
+            onCookieParamsChange={onCookieParamsChange}
             onPathParamsChange={onPathParamsChange}
             onQueryParamsChange={onQueryParamsChange}
             onBodyParamsChange={onBodyParamsChange}

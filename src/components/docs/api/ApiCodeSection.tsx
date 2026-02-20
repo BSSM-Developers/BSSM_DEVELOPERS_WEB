@@ -28,7 +28,7 @@ export function ApiCodeSection({
   languages = ["Shell", "JavaScript", "Python"] as any,
   libraryOptions = ["Axios", "Fetch", "jQuery"] as any,
   baseUrl = "",
-  includeAuth = true,
+  includeAuth = false,
   authType = 'bearer',
   responseData = null,
   responseStatus = 200,
@@ -39,14 +39,12 @@ export function ApiCodeSection({
   const [generatedCode, setGeneratedCode] = useState<string>('');
   const [generatedResponse, setGeneratedResponse] = useState<string>('');
 
-  // 언어별 라이브러리 매핑
   const getAvailableLibraries = (lang: Language): Library[] => {
     return Object.entries(libraryLanguageMap)
       .filter(([_, supportedLangs]) => supportedLangs.includes(lang))
       .map(([lib]) => lib as Library);
   };
 
-  // 코드 생성
   useEffect(() => {
     if (apiDoc) {
       try {
@@ -66,12 +64,10 @@ export function ApiCodeSection({
       setGeneratedCode(sampleCode || getDefaultSampleCode());
     }
 
-    // 응답 템플릿 생성
     const response = generateResponseTemplate(responseStatus, responseMessage, responseData);
     setGeneratedResponse(responseCode || response);
   }, [apiDoc, currentLanguage, currentLibrary, baseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage, responseData]);
 
-  // 언어 변경 시 기본 라이브러리 설정
   useEffect(() => {
     const availableLibraries = getAvailableLibraries(currentLanguage);
     if (availableLibraries.length > 0 && !availableLibraries.includes(currentLibrary)) {
@@ -79,14 +75,12 @@ export function ApiCodeSection({
     }
   }, [currentLanguage]);
 
-  // 언어명 매핑 (UI 표시명 → 내부 타입)
   const languageMap: Record<string, Language> = {
     'JavaScript': 'javascript',
     'Python': 'python',
     'Shell': 'shell'
   };
 
-  // 라이브러리명 매핑 (UI 표시명 → 내부 타입)
   const libraryMap: Record<string, Library> = {
     'Axios': 'axios',
     'Fetch': 'fetch',
@@ -95,31 +89,26 @@ export function ApiCodeSection({
     'cURL': 'native'
   };
 
-  // 언어 선택 핸들러
   const handleLanguageChange = (language: string) => {
     const lang = languageMap[language] || language.toLowerCase() as Language;
     setCurrentLanguage(lang);
 
-    // 해당 언어의 기본 라이브러리 설정
     const defaultLib = defaultLibraryMap[lang];
     if (defaultLib) {
       setCurrentLibrary(defaultLib);
     }
   };
 
-  // 라이브러리 선택 핸들러
   const handleLibraryChange = (library: string) => {
     const lib = libraryMap[library] || library.toLowerCase() as Library;
     setCurrentLibrary(lib);
   };
 
-  // 현재 언어에서 사용 가능한 라이브러리 목록 (표시용)
   const availableLibraryNames = getAvailableLibraries(currentLanguage).map(lib => {
     const entry = Object.entries(libraryMap).find(([_, v]) => v === lib);
     return entry ? entry[0] : lib.charAt(0).toUpperCase() + lib.slice(1);
   });
 
-  // 현재 선택된 언어/라이브러리의 UI 표시명
   const selectedLanguageName = Object.entries(languageMap).find(([_, v]) => v === currentLanguage)?.[0] || currentLanguage;
   const selectedLibraryName = Object.entries(libraryMap).find(([_, v]) => v === currentLibrary)?.[0] || currentLibrary;
 
@@ -149,9 +138,7 @@ function getDefaultSampleCode(): string {
 <span style="color: #ff7b72">const</span> response = <span style="color: #ff7b72">await</span> <span style="color: #cda3f9">axios</span>({
   <span style="color: #9fcef8">method</span>: <span style="color: #9fcef8">'post'</span>,
   <span style="color: #9fcef8">url</span>: <span style="color: #9fcef8">'/api/endpoint'</span>,
-  <span style="color: #9fcef8">headers</span>: {
-    <span style="color: #9fcef8">'Authorization'</span>: <span style="color: #9fcef8">'Bearer YOUR_TOKEN_HERE'</span>
-  },
+  <span style="color: #9fcef8">headers</span>: {},
   <span style="color: #9fcef8">data</span>: {
     <span style="color: #9fcef8">'key'</span>: <span style="color: #9fcef8">'value'</span>
   }

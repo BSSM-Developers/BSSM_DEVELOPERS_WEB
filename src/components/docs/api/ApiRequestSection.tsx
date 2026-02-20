@@ -10,9 +10,11 @@ interface ApiRequestSectionProps {
   pathParams?: ApiParam[];
   queryParams?: ApiParam[];
   bodyParams?: ApiParam[];
+  cookieParams?: ApiParam[];
   title?: string;
   editable?: boolean;
   onHeaderParamsChange?: (params: ApiParam[]) => void;
+  onCookieParamsChange?: (params: ApiParam[]) => void;
   onPathParamsChange?: (params: ApiParam[]) => void;
   onQueryParamsChange?: (params: ApiParam[]) => void;
   onBodyParamsChange?: (params: ApiParam[]) => void;
@@ -23,19 +25,22 @@ export function ApiRequestSection({
   pathParams = [],
   queryParams = [],
   bodyParams = [],
+  cookieParams = [],
   title = "Request",
   editable = false,
   onHeaderParamsChange,
+  onCookieParamsChange,
   onPathParamsChange,
   onQueryParamsChange,
   onBodyParamsChange
 }: ApiRequestSectionProps) {
   const hasHeaders = headerParams.length > 0 || editable;
+  const hasCookies = cookieParams.length > 0 || editable;
   const hasPath = pathParams.length > 0 || editable;
   const hasQuery = queryParams.length > 0 || editable;
   const hasBody = bodyParams.length > 0 || editable;
 
-  if (!hasHeaders && !hasPath && !hasQuery && !hasBody) return null;
+  if (!hasHeaders && !hasCookies && !hasPath && !hasQuery && !hasBody) return null;
 
   return (
     <RequestSection>
@@ -46,7 +51,18 @@ export function ApiRequestSection({
           title="Header Params"
           params={headerParams}
           editable={editable}
+          paramLocation="header"
           onParamsChange={onHeaderParamsChange}
+        />
+      )}
+
+      {hasCookies && (
+        <ApiParamsSection
+          title="Cookie Params"
+          params={cookieParams}
+          editable={editable}
+          paramLocation="cookie"
+          onParamsChange={onCookieParamsChange}
         />
       )}
 
@@ -55,6 +71,7 @@ export function ApiRequestSection({
           title="Path Params"
           params={pathParams}
           editable={editable}
+          paramLocation="path"
           onParamsChange={onPathParamsChange}
         />
       )}
@@ -64,6 +81,7 @@ export function ApiRequestSection({
           title="Query Params"
           params={queryParams}
           editable={editable}
+          paramLocation="query"
           onParamsChange={onQueryParamsChange}
         />
       )}
@@ -72,8 +90,8 @@ export function ApiRequestSection({
         <ApiParamsSection
           title="Body Params"
           params={bodyParams}
-          large
           editable={editable}
+          paramLocation="body"
           onParamsChange={onBodyParamsChange}
         />
       )}

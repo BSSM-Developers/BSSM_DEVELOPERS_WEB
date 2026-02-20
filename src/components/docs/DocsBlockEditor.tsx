@@ -1,8 +1,8 @@
-/* eslint-disable */
 "use client";
 
 import { useState, useEffect } from "react";
 import styled from "@emotion/styled";
+import { Theme } from "@emotion/react";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
@@ -28,6 +28,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   const [menuFilter, setMenuFilter] = useState("");
 
   const MENU_OPTIONS = [
+    { id: 'text', label: '텍스트', icon: 'T', module: 'docs_1' },
     { id: 'headline_1', label: '제목 1', icon: 'H1', module: 'headline_1' },
     { id: 'headline_2', label: '제목 2', icon: 'H2', module: 'headline_2' },
     { id: 'list', label: '리스트', icon: '•', module: 'list' },
@@ -123,7 +124,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const composing = (e.nativeEvent as any)?.isComposing || (e as any).keyCode === 229;
+    const composing = (e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229;
     if (composing) return;
 
     if (showMenu) {
@@ -244,7 +245,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
               onKeyDown={handleKeyDown}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              data-block-id={(block as any).id}
+              data-block-id={block.id}
               placeholder={focused ? "내용을 입력하세요" : ""}
               style={{
                 width: "100%",
@@ -317,12 +318,12 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                   setValue(e.target.value);
                   onChange(index, { ...block, content: e.target.value });
                 }}
-                onKeyDown={(e: any) => {
+                onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
                   handleKeyDown(e);
                 }}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
-                data-block-id={(block as any).id}
+                data-block-id={block.id}
                 placeholder={focused ? "코드를 입력하세요" : ""}
                 spellCheck={false}
                 style={{
@@ -357,10 +358,9 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
               onFocus={() => setFocused(true)}
               onBlur={() => {
                 setFocused(false);
-                // 메뉴 클릭을 허용하기 위해 약간의 지연 후 닫기
                 setTimeout(() => setShowMenu(false), 200);
               }}
-              data-block-id={(block as any).id}
+              data-block-id={block.id}
               placeholder={focused ? "내용을 입력하세요" : ""}
               style={{
                 width: "100%",
@@ -442,7 +442,7 @@ const AddCircle = styled.button`
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #58A6FF;
+  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
   color: white;
   border: none;
   display: flex;
@@ -454,7 +454,7 @@ const AddCircle = styled.button`
   pointer-events: auto;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   &:hover {
-    background: #1a7fec;
+    background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
     transform: scale(1.2);
   }
 `;

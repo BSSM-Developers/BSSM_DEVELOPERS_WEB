@@ -5,15 +5,17 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { tokenManager } from "@/utils/fetcher";
 import { signUpApi } from "@/app/sign-up/api";
+import { userApi } from "@/app/user/api";
 import { docsApi } from "@/app/docs/api";
 import styled from "@emotion/styled";
 
 import { useLoginMutation } from "@/app/login/queries";
+import { useUserStore } from "@/store/userStore";
 
 function GoogleCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState("인증 처리 중...");
+  const [status, setStatus] = useState("로그인 중입니다");
 
   const loginMutation = useLoginMutation();
   const isProcessing = useRef(false);
@@ -58,50 +60,18 @@ function GoogleCallbackContent() {
           await new Promise(resolve => setTimeout(resolve, 500));
 
           try {
-            const mySignUp = await signUpApi.getMy({ suppressLogout: true });
+            const user = await userApi.getUser();
 
-            if (mySignUp.name) {
-              tokenManager.setUserName(mySignUp.name);
+            if (user) {
+              useUserStore.getState().setUser(user);
+              tokenManager.setUserName(user.name);
             }
 
-            if (mySignUp.state === 'APPROVED') {
-              router.push("/");
-            } else {
-              router.push("/sign-up");
-            }
-          } catch (e: any) {
-            console.error("getMy failed:", e);
-
-            try {
-              await docsApi.getList();
-
-              try {
-                const base64Url = accessToken.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
-                  return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                const payload = JSON.parse(jsonPayload);
-                if (payload.email) {
-                  tokenManager.setUserName(payload.email.split('@')[0]);
-                } else {
-                  tokenManager.setUserName("User");
-                }
-              } catch (parseError) {
-                tokenManager.setUserName("User");
-              }
-
-              router.push("/");
-            } catch (listError: any) {
-              console.error("Token validation failed:", listError);
-              // 토큰이 유효하지 않은 경우 명시적으로 알림
-              if (listError.message?.includes('Unauthorized')) {
-                setStatus("인증 토큰이 유효하지 않거나 만료되었습니다. 다시 로그인해주세요.");
-                setTimeout(() => router.push("/login"), 2000);
-              } else {
-                setStatus(`로그인 검증 중 오류가 발생했습니다: ${listError.message}`);
-              }
-            }
+            router.push("/");
+          } catch (e) {
+            console.log("User not found, redirecting to sign-up");
+            setStatus("회원가입이 필요합니다. 이동 중...");
+            router.push("/sign-up");
           }
         } else {
           setStatus("회원가입이 필요합니다. 이동 중...");

@@ -59,7 +59,7 @@ export const sidebarModules = {
       }
     `,
     active: ({ theme }: any) => css`
-      border-left: 4px solid ${theme.colors.bssmBlue};
+      /* border-left removed */
       background: ${theme.colors.grey[100]};
       color: ${theme.colors.bssmBlue};
     `,

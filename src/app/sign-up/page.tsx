@@ -15,7 +15,6 @@ export default function SignUpPage() {
 
   const status = profileData?.state || 'NONE';
 
-  // Initialize purpose when data is loaded
   useEffect(() => {
     if (profileData?.purpose) {
       setPurpose(profileData.purpose);
@@ -107,10 +106,10 @@ const Description = styled.p`
 
 const Form = styled.form`
   width: 100%;
-  max-width: 800px; /* 넓은 인풋창을 위해 */
+  max-width: 800px;
   display: flex;
   flex-direction: column;
-  gap: 60px; /* 인풋과 버튼 사이 간격 */
+  gap: 60px;
   align-items: center;
 `;
 

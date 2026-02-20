@@ -95,6 +95,15 @@ function TypeSelect({ value, onChange }: { value: string; onChange: (val: string
         left: rect.left + window.scrollX,
         width: rect.width
       });
+
+      const handleClickOutside = (e: MouseEvent) => {
+        if (triggerRef.current && !triggerRef.current.contains(e.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isOpen]);
 
@@ -106,7 +115,6 @@ function TypeSelect({ value, onChange }: { value: string; onChange: (val: string
       </SelectTrigger>
       {isOpen && createPortal(
         <>
-          <SelectBackdrop onClick={() => setIsOpen(false)} />
           <SelectOptions style={{
             top: coords.top + 4,
             left: coords.left,
@@ -171,7 +179,7 @@ const SelectOptions = styled.div`
   border: 1px solid #E5E7EB;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  z-index: 9999;
   overflow: hidden;
 `;
 
@@ -202,6 +210,7 @@ const EditInput = styled.input`
   font-size: 13px;
   outline: none;
   background: white;
+  color: #191F28;
   &:focus {
     border-color: #58A6FF;
   }

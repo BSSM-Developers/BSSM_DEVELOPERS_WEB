@@ -1,3 +1,5 @@
+"use client";
+
 import { useDocsListQuery } from "@/app/docs/queries";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";

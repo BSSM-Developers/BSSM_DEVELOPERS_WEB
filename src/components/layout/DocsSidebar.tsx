@@ -3,6 +3,7 @@
 
 import styled from "@emotion/styled";
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { DndContext } from "@dnd-kit/core";
@@ -111,6 +112,20 @@ export function DocsSidebar({
 
   const closePicker = () => setPicker(p => ({ ...p, open: false }));
 
+  // click outside logic
+  useEffect(() => {
+    if (!picker.open) return;
+
+    const handleClick = (e: MouseEvent) => {
+      // Picker itself stops propagation, so this only fires if clicked outside
+      closePicker();
+    };
+
+    // Use mousedown to capture quickly, but ensure it doesn't conflict with dragging if needed
+    window.addEventListener("mousedown", handleClick);
+    return () => window.removeEventListener("mousedown", handleClick);
+  }, [picker.open]);
+
   const { sensors, onDragStart, onDragOver, onDragEnd, overIntent } = useSidebarDrag({
     effectiveItems,
     onChange: onChange || setLocalItems,
@@ -199,22 +214,24 @@ export function DocsSidebar({
             +
           </AddButton>
         )}
-        {picker.open && <Backdrop onClick={closePicker} />}
-        {picker.open && picker.anchor && (
-          <Picker anchor={picker.anchor}>
-            {MODULE_OPTIONS.map((opt) => (
-              <PickerItem
-                key={opt.label}
-                onClick={() => onPickModule(opt as any)}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                {opt.label}
-              </PickerItem>
-            ))}
-          </Picker>
-        )}
-
       </Nav>
+      {picker.open && picker.anchor && createPortal(
+        <Picker
+          anchor={picker.anchor}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {MODULE_OPTIONS.map((opt) => (
+            <PickerItem
+              key={opt.label}
+              onClick={() => onPickModule(opt as any)}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+              {opt.label}
+            </PickerItem>
+          ))}
+        </Picker>,
+        document.body
+      )}
     </DndContext>
   );
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import styled from "@emotion/styled";
 import { HttpMethodTag, type HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 
@@ -88,10 +88,23 @@ export function ApiHeader({
 }
 
 function MethodSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <SelectContainer>
+    <SelectContainer ref={wrapperRef}>
       <SelectTrigger onClick={() => setIsOpen(!isOpen)}>
         <HttpMethodTag method={value as HttpMethod} />
         <Arrow isOpen={isOpen}>▼</Arrow>
@@ -111,7 +124,6 @@ function MethodSelect({ value, onChange }: { value: string; onChange: (val: stri
           ))}
         </SelectOptions>
       )}
-      {isOpen && <SelectBackdrop onClick={() => setIsOpen(false)} />}
     </SelectContainer>
   );
 }
@@ -190,7 +202,7 @@ const MappingPath = styled.div`
 
 const SelectContainer = styled.div`
   position: relative;
-  width: 100px;
+  min-width: 80px;
 `;
 
 const SelectTrigger = styled.div`
@@ -199,11 +211,10 @@ const SelectTrigger = styled.div`
   justify-content: space-between;
   padding: 4px 8px;
   background: white;
-  border: 1px solid #E5E7EB;
   border-radius: 4px;
   cursor: pointer;
   &:hover {
-    border-color: #58A6FF;
+    background: #F3F4F6;
   }
 `;
 
@@ -293,7 +304,7 @@ const EndpointSection = styled.div`
   align-items: center;
   gap: 20px;
   padding: 0 12px;
-  background: #F2F4F6;
+  background: white;
   border-radius: 8px;
   height: 42px;
   width: 100%;

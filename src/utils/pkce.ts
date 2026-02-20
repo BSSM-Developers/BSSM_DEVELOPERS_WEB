@@ -1,8 +1,8 @@
 // 코드 검증자 생성을 위한 랜덤 문자열 생성
 export function generateCodeVerifier(): string {
-  const array = new Uint32Array(56 / 2);
+  const array = new Uint8Array(32);
   window.crypto.getRandomValues(array);
-  return Array.from(array, (dec) => ('0' + dec.toString(16)).substr(-2)).join('');
+  return base64UrlEncode(array);
 }
 
 // 검증자로부터 코드 챌린지 생성
@@ -15,8 +15,8 @@ export async function generateCodeChallenge(codeVerifier: string): Promise<strin
 }
 
 // Base64URL 인코딩
-function base64UrlEncode(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
+function base64UrlEncode(buffer: ArrayBuffer | Uint8Array): string {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
@@ -26,3 +26,4 @@ function base64UrlEncode(buffer: ArrayBuffer): string {
     .replace(/\//g, '_')
     .replace(/=+$/, '');
 }
+

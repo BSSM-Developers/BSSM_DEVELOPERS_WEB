@@ -3,7 +3,7 @@
 
 import styled from "@emotion/styled";
 import { useState, useMemo } from "react";
-import { TopNav } from "@/components/layout/TopNav";
+
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
 import { type ApiItem } from "./mockData";
@@ -16,17 +16,8 @@ export default function ApiExplorePage() {
 
   const { data: docsData, isLoading } = useDocsListQuery();
 
-  // Transform docsData to ApiItem[]
   const realOriginalApis: ApiItem[] = useMemo(() => {
     if (!docsData || !Array.isArray(docsData)) return [];
-    // The response structure might be { message, data: { values: [...] } } or just [...]
-    // Based on previous code: response.data.values
-    // But useDocsListQuery returns `docsApi.getList` which returns `fetchClient.get<unknown[]>("/docs")`
-    // Wait, adminApi was `RequestListResponse`.
-    // Let's check `docsApi.getList`. It returns `unknown[]`.
-    // If the backend returns wrapped response, we need to adapt.
-
-    // Assuming the response is the array of docs directly or wrapped
     const list = (docsData as any).values || (Array.isArray(docsData) ? docsData : []);
 
     return list.map((item: any) => ({
@@ -42,7 +33,6 @@ export default function ApiExplorePage() {
   // 실제 데이터가 있으면 사용, 없으면 빈 값
   const displayOriginalApis = realOriginalApis;
 
-  // 검색어 기반 필터링
   const searchItems = (items: ApiItem[]) => {
     if (!searchQuery) return items;
     const query = searchQuery.toLowerCase();
@@ -53,37 +43,30 @@ export default function ApiExplorePage() {
     );
   };
 
-  // 전체 아이템 병합
   const allItems = useMemo(() => {
     return [...displayOriginalApis];
   }, [displayOriginalApis]);
 
-  // 필터링된 리스트 (단일 뷰용)
   const filteredList = useMemo(() => {
     if (filterType === "ALL") return [];
 
     let items = allItems;
 
-    // 타입 필터 적용
     if (filterType === "ORIGINAL") {
       items = items.filter(item => item.type !== "CUSTOM");
     } else if (filterType === "CUSTOM") {
       items = items.filter(item => item.type === "CUSTOM");
     }
 
-    // 검색 적용
     items = searchItems(items);
 
-    // 정렬 적용
     if (sortType === "POPULAR") {
-      // 데모용 역순 정렬
       return [...items].reverse();
     }
 
     return items;
   }, [filterType, sortType, searchQuery, allItems]);
 
-  // 기본 뷰용 섹션 데이터
   const displayPopular = useMemo(() => [], [searchQuery]);
   const displayOriginal = useMemo(() => searchItems(displayOriginalApis), [searchQuery, displayOriginalApis]);
   const displayCustom = useMemo(() => [], [searchQuery]);
@@ -92,7 +75,7 @@ export default function ApiExplorePage() {
 
   return (
     <PageContainer>
-      <TopNav />
+
       <ContentWrapper>
         <PageHeader>
           <Title>API 둘러보기</Title>
@@ -110,7 +93,6 @@ export default function ApiExplorePage() {
         </SearchSection>
 
         {isFilteredView ? (
-          // 필터링된 뷰: 단일 섹션
           filteredList.length > 0 ? (
             <ApiSection
               title={`${filterType} API`}
@@ -121,7 +103,6 @@ export default function ApiExplorePage() {
             <EmptyState>검색 결과가 없습니다.</EmptyState>
           )
         ) : (
-          // 기본 뷰: 다중 섹션
           <>
             {displayPopular.length > 0 && (
               <ApiSection

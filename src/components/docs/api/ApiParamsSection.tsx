@@ -120,7 +120,7 @@ export function ApiParamsSection({
                 />
               ))}
               {editable && (
-                <AddParamMenu onAdd={(type) => handleAddParam(type)} />
+                <AddParamButtonComponent onAdd={(type) => handleAddParam(type)} />
               )}
             </ParamList>
           </ParamCard>
@@ -131,47 +131,11 @@ export function ApiParamsSection({
   );
 }
 
-function AddParamMenu({ onAdd }: { onAdd: (type: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width
-      });
-    }
-  }, [isOpen]);
-
+function AddParamButtonComponent({ onAdd }: { onAdd: (type: string) => void }) {
   return (
-    <>
-      <AddParamButton ref={triggerRef} onClick={() => setIsOpen(!isOpen)}>
-        + 파라미터 추가
-      </AddParamButton>
-      {isOpen && createPortal(
-        <>
-          <MenuBackdrop onClick={() => setIsOpen(false)} />
-          <MenuContainer style={{
-            top: coords.top + 4,
-            left: coords.left,
-            width: 120,
-            position: 'absolute'
-          }}>
-            <MenuItem onClick={() => { onAdd("string"); setIsOpen(false); }}>
-              기본
-            </MenuItem>
-            <MenuItem onClick={() => { onAdd("object"); setIsOpen(false); }}>
-              그룹
-            </MenuItem>
-          </MenuContainer>
-        </>,
-        document.body
-      )}
-    </>
+    <AddParamButton onClick={() => onAdd("string")}>
+      + 파라미터 추가
+    </AddParamButton>
   );
 }
 

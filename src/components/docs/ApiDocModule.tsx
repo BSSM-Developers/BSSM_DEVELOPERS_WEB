@@ -13,6 +13,7 @@ import type { ApiDoc, ApiParam } from "@/types/docs";
 type ApiDocModuleProps = {
   apiId: string;
   apiName: string;
+  domain?: string;
   method: HttpMethod;
   endpoint: string;
   mappingEndpoint?: string;
@@ -33,18 +34,18 @@ type ApiDocModuleProps = {
   baseUrl?: string;
   includeAuth?: boolean;
   authType?: 'bearer' | 'basic' | 'apikey';
-  responseData?: any;
+  responseData?: unknown;
   responseStatus?: number;
   responseMessage?: string;
   onTryClick?: () => void;
   editable?: boolean;
-  onHeaderChange?: (updated: any) => void;
+  onHeaderChange?: (updated: unknown) => void;
   onHeaderParamsChange?: (params: ApiParam[]) => void;
   onPathParamsChange?: (params: ApiParam[]) => void;
   onQueryParamsChange?: (params: ApiParam[]) => void;
   onBodyParamsChange?: (params: ApiParam[]) => void;
   onResponseParamsChange?: (params: ApiParam[]) => void;
-  onResponseDataChange?: (data: any) => void;
+  onResponseDataChange?: (data: unknown) => void;
   onResponseStatusChange?: (status: number) => void;
   onResponseMessageChange?: (message: string) => void;
 };
@@ -52,6 +53,7 @@ type ApiDocModuleProps = {
 export function ApiDocModule({
   apiId,
   apiName,
+  domain,
   method,
   endpoint,
   mappingEndpoint,
@@ -84,7 +86,6 @@ export function ApiDocModule({
   onResponseStatusChange,
   onResponseMessageChange
 }: ApiDocModuleProps) {
-  // ApiDoc 객체 생성
   const apiDoc: ApiDoc = {
     id: apiId,
     name: apiName,
@@ -109,10 +110,11 @@ export function ApiDocModule({
           <ApiHeader
             title={apiName}
             description={description}
+            domain={domain}
             method={method}
             endpoint={endpoint}
             mappingEndpoint={mappingEndpoint}
-            onTryClick={onTryClick || (() => alert(`Trying ${method} ${endpoint}...`))}
+            onTryClick={onTryClick}
             editable={editable}
             onChange={onHeaderChange}
           />

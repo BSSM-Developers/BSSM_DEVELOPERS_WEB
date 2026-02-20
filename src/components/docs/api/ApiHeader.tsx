@@ -2,9 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import styled from "@emotion/styled";
 import { HttpMethodTag, type HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 
+type VerificationState = 'idle' | 'success' | 'fail';
+
 interface ApiHeaderProps {
   title: string;
   description?: string;
+  domain?: string;
   method: HttpMethod;
   endpoint: string;
   mappingEndpoint?: string;
@@ -18,6 +21,7 @@ const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"
 export function ApiHeader({
   title,
   description = "",
+  domain,
   method,
   endpoint,
   mappingEndpoint = "",
@@ -25,6 +29,42 @@ export function ApiHeader({
   editable = false,
   onChange
 }: ApiHeaderProps) {
+  const [verifyState, setVerifyState] = useState<VerificationState>('idle');
+  const [isVerifying, setIsVerifying] = useState(false);
+
+  const handleVerify = async () => {
+    if (onTryClick) {
+      onTryClick();
+      return;
+    }
+
+    if (!domain || !endpoint) {
+      alert("도메인과 엔드포인트를 모두 입력해주세요.");
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+
+      const cleanDomain = domain.replace(/\/$/, "");
+      const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+      const url = `${cleanDomain}${cleanEndpoint}`;
+
+      const res = await fetch(url, {
+        method: 'GET',
+        mode: 'no-cors'
+      });
+
+      if (res) {
+        setVerifyState('success');
+      }
+    } catch {
+      setVerifyState('fail');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   if (editable) {
     return (
       <HeaderSection>
@@ -51,7 +91,15 @@ export function ApiHeader({
             onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, mappingEndpoint })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
-          <TryButton onClick={onTryClick}>Try It!</TryButton>
+          <VerifyButton
+            state={verifyState}
+            onClick={handleVerify}
+            disabled={isVerifying}
+          >
+            {isVerifying ? "검증 중..." :
+              verifyState === 'success' ? "검증 완료" :
+                verifyState === 'fail' ? "검증 실패" : "검증"}
+          </VerifyButton>
         </EndpointSection>
 
         <EndpointSection>
@@ -81,7 +129,15 @@ export function ApiHeader({
           <EndpointPath>{endpoint}</EndpointPath>
           {mappingEndpoint && <MappingPath>Mapping: {mappingEndpoint}</MappingPath>}
         </div>
-        <TryButton onClick={onTryClick}>Try It!</TryButton>
+        <VerifyButton
+          state={verifyState}
+          onClick={handleVerify}
+          disabled={isVerifying}
+        >
+          {isVerifying ? "검증 중..." :
+            verifyState === 'success' ? "검증 완료" :
+              verifyState === 'fail' ? "검증 실패" : "Try It!"}
+        </VerifyButton>
       </EndpointSection>
     </HeaderSection>
   );
@@ -361,6 +417,39 @@ const TryButton = styled.button`
 
   &:hover {
     background: #1a3a68;
+  }
+
+  @media (max-width: 480px) {
+    width: 100%;
+    height: 36px;
+    font-size: 14px;
+  }
+`;
+
+const VerifyButton = styled.button<{ state: VerificationState }>`
+  background: ${({ state }) =>
+    state === 'success' ? '#0CA678' :
+      state === 'fail' ? '#FA5252' : '#16335C'};
+  border-radius: 7px;
+  box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.25);
+  border: none;
+  width: 80px;
+  height: 32px;
+  font-family: "Flight Sans", sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: white;
+  text-align: center;
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: ${({ state, disabled }) =>
+    disabled ? (state === 'success' ? '#0CA678' : state === 'fail' ? '#FA5252' : '#16335C') :
+      state === 'success' ? '#099268' :
+        state === 'fail' ? '#E03131' : '#1a3a68'};
   }
 
   @media (max-width: 480px) {

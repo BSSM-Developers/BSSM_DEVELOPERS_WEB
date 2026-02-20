@@ -63,6 +63,7 @@ export const EditorStep = ({
                 key={block.id || i}
                 index={i}
                 block={block}
+                domain={(formData as any).domain}
                 onChange={handleBlockChange}
                 onAddBlock={handleAddBlock}
                 onRemoveBlock={handleRemoveBlock}

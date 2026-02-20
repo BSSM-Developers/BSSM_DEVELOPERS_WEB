@@ -7,11 +7,12 @@ import type { ApiDoc } from "@/types/docs";
 
 interface ApiBlockProps {
   apiData: ApiDoc;
+  domain?: string;
   editable?: boolean;
   onChange?: (updated: ApiDoc) => void;
 }
 
-export function ApiBlock({ apiData, editable = false, onChange }: ApiBlockProps) {
+export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlockProps) {
   const handleHeaderChange = (updated: any) => {
     onChange?.({
       ...apiData,
@@ -28,6 +29,7 @@ export function ApiBlock({ apiData, editable = false, onChange }: ApiBlockProps)
       <ApiDocModule
         apiId={apiData.id}
         apiName={apiData.name}
+        domain={domain}
         method={apiData.method}
         endpoint={apiData.endpoint}
         mappingEndpoint={apiData.mappingEndpoint}

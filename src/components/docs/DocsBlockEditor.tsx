@@ -15,9 +15,10 @@ interface DocsBlockEditorProps {
   onAddBlock: (index: number, newBlock?: DocsBlockType) => void;
   onRemoveBlock?: (index: number) => void;
   onFocusMove?: (index: number, direction: "up" | "down") => void;
+  domain?: string;
 }
 
-export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock, onFocusMove }: DocsBlockEditorProps) {
+export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock, onFocusMove, domain }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
   const [focused, setFocused] = useState(false);
 
@@ -190,6 +191,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
       <BlockContainer style={{ zIndex: 1000 - index }}>
         <ApiBlock
           apiData={block.apiData}
+          domain={domain}
           editable={true}
           onChange={(updatedApiData) => onChange(index, { ...block, apiData: updatedApiData })}
         />

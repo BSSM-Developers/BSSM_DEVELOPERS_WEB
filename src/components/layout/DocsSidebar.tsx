@@ -11,12 +11,12 @@ import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSidebarDrag } from "@/hooks/useSidebarDrag";
 import { createMutators, type Mutators } from "@/components/layout/sidebarUtils";
+import { useConfirm } from "@/hooks/useConfirm";
 
 const MODULE_OPTIONS = [
   { label: "기본", module: "default" },
-  { label: "그룹", module: "collapse" },
   { label: "메인", module: "main" },
-  { label: "스몰", module: "small" },
+  { label: "그룹", module: "collapse" },
   { label: "API(GET)", module: "api", method: "GET" as const },
   { label: "API(POST)", module: "api", method: "POST" as const },
   { label: "API(DELETE)", module: "api", method: "DELETE" as const },
@@ -38,12 +38,14 @@ const SortableNode = ({
   node,
   editable,
   mutators,
-  overIntent
+  overIntent,
+  depth = 0
 }: {
   node: Node;
   editable: boolean;
   mutators: Mutators;
   overIntent?: { id: string; mode: "sibling" | "child" } | null;
+  depth?: number;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
 
@@ -55,6 +57,10 @@ const SortableNode = ({
     transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     zIndex: isDragging ? 1000 : undefined,
+    marginLeft: depth > 0 ? 16 : 0,
+    paddingLeft: depth > 0 ? 8 : 0,
+    borderLeft: depth > 0 ? "2px solid #E5E7EB" : "none",
+    marginTop: depth > 0 ? 4 : 0,
   };
 
   return (
@@ -70,7 +76,7 @@ const SortableNode = ({
       {node.childrenItems?.length ? (
         <SortableContext items={(node.childrenItems as Node[]).map(c => c.id)} strategy={verticalListSortingStrategy}>
           {(node.childrenItems as Node[]).map(child => (
-            <SortableNode key={child.id} node={child} editable={editable} mutators={mutators} overIntent={overIntent} />
+            <SortableNode key={child.id} node={child} editable={editable} mutators={mutators} overIntent={overIntent} depth={depth + 1} />
           ))}
         </SortableContext>
       ) : null}
@@ -82,6 +88,7 @@ export function DocsSidebar({
   items = [],
   editable = false, onChange
 }: DocsSidebarProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const propItems = Array.isArray(items) ? items : [];
   const [localItems, setLocalItems] = useState<SidebarNode[]>([]);
   const [isClient, setIsClient] = useState(false);
@@ -128,7 +135,20 @@ export function DocsSidebar({
     onChange: onChange || setLocalItems,
   });
 
-  const mutators = createMutators(effectiveItems, onChange, setLocalItems);
+  const baseMutators = createMutators(effectiveItems, onChange, setLocalItems);
+
+  const mutators: Mutators = {
+    ...baseMutators,
+    remove: async (id: string) => {
+      const isConfirmed = await confirm({
+        title: "요소 삭제",
+        message: "정말 이 요소를 삭제하시겠습니까?",
+        confirmText: "삭제",
+        cancelText: "취소"
+      });
+      if (isConfirmed) baseMutators.remove(id);
+    }
+  };
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!editable) return;
@@ -161,7 +181,7 @@ export function DocsSidebar({
     }
   }, [editable, handleKeyDown]);
 
-  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main" | "small" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" }) => {
+  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" }) => {
     const node: SidebarNode = { id: crypto.randomUUID(), label: opt.label, module: opt.module, childrenItems: [] };
     if (opt.method) node.method = opt.method;
     if (picker.mode === "child" && picker.targetId) {
@@ -204,6 +224,7 @@ export function DocsSidebar({
         </Picker>,
         document.body
       )}
+      <ConfirmDialog />
     </DndContext>
   );
 }
@@ -233,10 +254,10 @@ const Backdrop = styled.div`
   background: transparent;
 `;
 
-const Picker = styled.div`
+const Picker = styled.div<{ anchor: { x: number; y: number } }>`
   position: fixed;
-  top: ${({ anchor }: { anchor: { x: number; y: number } }) => anchor.y}px;
-  left: ${({ anchor }: { anchor: { x: number; y: number } }) => anchor.x}px;
+  top: ${({ anchor }) => anchor.y}px;
+  left: ${({ anchor }) => anchor.x}px;
   z-index: 1000;
   background: #fff;
   border: 1px solid #E5E7EB;
@@ -244,6 +265,8 @@ const Picker = styled.div`
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   padding: 8px;
   width: 140px;
+  max-height: 250px;
+  overflow-y: auto;
 `;
 
 const PickerItem = styled.button`
@@ -265,15 +288,14 @@ const DropTargetWrapper = styled.div<{
   border-radius: 8px;
   transition: all 0.2s ease;
 
-  ${({ isChildTarget }) => isChildTarget && `
-    background: rgba(59, 130, 246, 0.1);
-    border: 2px solid #3B82F6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  ${({ isChildTarget, theme }) => isChildTarget && `
+    background: rgba(22, 51, 92, 0.05);
+    border: 2px solid ${theme.colors.bssmDarkBlue || '#16335C'};
+    box-shadow: 0 0 0 4px rgba(22, 51, 92, 0.1);
   `}
 
-  ${({ isSiblingTarget }) => isSiblingTarget && `
-    background: rgba(16, 185, 129, 0.1);
-    border: 2px solid #10B981;
+  ${({ isSiblingTarget, theme }) => isSiblingTarget && `
+    border: 2px solid ${theme.colors.bssmDarkBlue || '#16335C'};
   `}
 `;
 
@@ -282,17 +304,17 @@ const ChildDropIndicator = styled.div`
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
-  background: #3B82F6;
+  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
   color: white;
-  padding: 2px 6px;
+  padding: 4px 8px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   pointer-events: none;
   z-index: 10;
 
   &::before {
-    content: "자식으로 추가";
+    content: "그룹에 넣기";
   }
 `;
 
@@ -301,24 +323,10 @@ const SiblingDropIndicator = styled.div`
   bottom: -2px;
   left: 0;
   right: 0;
-  height: 4px;
-  background: #10B981;
+  height: 3px;
+  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
   border-radius: 2px;
   pointer-events: none;
   z-index: 10;
-
-  &::after {
-    content: "형제로 추가";
-    position: absolute;
-    bottom: 6px;
-    right: 8px;
-    background: #10B981;
-    color: white;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 600;
-    white-space: nowrap;
-  }
 `;
 

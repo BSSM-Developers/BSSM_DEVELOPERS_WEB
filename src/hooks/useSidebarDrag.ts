@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { DragEndEvent, DragOverEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -19,9 +18,9 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 10,  // 더 엄격한 거리 제한
-        delay: 100,    // 100ms 지연 추가
-        tolerance: 5   // 허용 오차
+        distance: 10,
+        delay: 100,
+        tolerance: 5
       }
     })
   );
@@ -37,15 +36,16 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     return null;
   };
 
-  const getSiblings = (parentId: string | null): (SidebarNode & { id: string })[] => {
-    if (parentId === null) return (effectiveItems as any);
-    const stack: any[] = [...(effectiveItems as any)];
+  const getSiblings = (parentId: string | null): SidebarNode[] => {
+    if (parentId === null) return effectiveItems;
+    const stack: SidebarNode[] = [...effectiveItems];
     while (stack.length) {
       const n = stack.pop();
-      if (n.id === parentId) return (n.childrenItems ?? []) as any;
+      if (!n) continue;
+      if (n.id === parentId) return n.childrenItems ?? [];
       if (n.childrenItems) stack.push(...n.childrenItems);
     }
-    return [] as any;
+    return [];
   };
 
   const onDragStart = () => {
@@ -65,16 +65,18 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       return;
     }
 
-    // 드래그되는 아이템 찾기
     const draggedItem = findNodeById(effectiveItems as Node[], String(active.id));
+    const tMod = target.module;
+    const dMod = draggedItem?.module;
+    let mode: "sibling" | "child" = "sibling";
 
-    // collapse 모듈 위에 드롭하려고 할 때, 드래그되는 아이템이 small이 아니면 자식 모드 차단
-    if (target.module === "collapse") {
-      const mode = draggedItem?.module === "small" ? "child" : "sibling";
-      setOverIntent({ id: targetId, mode });
-    } else {
-      setOverIntent({ id: targetId, mode: "sibling" });
+    if (tMod === "main" && dMod !== "main") {
+      mode = "child";
+    } else if (tMod === "collapse" && dMod !== "main" && dMod !== "collapse") {
+      mode = "child";
     }
+
+    setOverIntent({ id: targetId, mode });
   };
 
 
@@ -84,41 +86,45 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
 
     const targetId = String(over.id);
 
-    // 1) 자식으로 넣기 (그룹 위에 드롭한 경우)
     if (overIntent?.id === targetId && overIntent.mode === "child") {
       const { tree: afterRemove, removed } =
-        removeNodeWithReturn(effectiveItems as any, String(active.id));
+        removeNodeWithReturn(effectiveItems, String(active.id));
       if (!removed) return;
 
-      // small 모듈이 아니면 자식으로 추가 차단
-      if (removed.module !== "small") return;
+      const rMod = removed.module;
+      const targetNode = findNodeById(effectiveItems as Node[], targetId);
+      const tMod = targetNode?.module;
 
-      const next = appendChild(afterRemove as any, targetId, removed as any);
-      onChange(next as any);
+      let canAddChild = false;
+      if (tMod === "main" && rMod !== "main") canAddChild = true;
+      if (tMod === "collapse" && rMod !== "main" && rMod !== "collapse") canAddChild = true;
+
+      if (!canAddChild) return;
+
+      const next = appendChild(afterRemove, targetId, removed);
+      onChange(next);
       return;
     }
 
-    const fromParent = findParentId(effectiveItems as any, String(active.id));
-    const toParent = findParentId(effectiveItems as any, String(over.id));
+    const fromParent = findParentId(effectiveItems, String(active.id));
+    const toParent = findParentId(effectiveItems, String(over.id));
 
-    // 2) 다른 부모로 이동 (형제로 삽입)
     if (fromParent !== toParent) {
       const { tree: afterRemove, removed } =
-        removeNodeWithReturn(effectiveItems as any, String(active.id));
+        removeNodeWithReturn(effectiveItems, String(active.id));
       if (!removed) return;
-      const next = insertAfter(afterRemove as any, targetId, removed as any);
-      onChange(next as any);
+      const next = insertAfter(afterRemove, targetId, removed);
+      onChange(next);
       return;
     }
 
-    // 3) 같은 부모 내에서 정렬
     const siblings = getSiblings(fromParent);
-    const fromIdx = siblings.findIndex(s => s.id === active.id);
-    const toIdx = siblings.findIndex(s => s.id === over.id);
+    const fromIdx = siblings.findIndex(s => String(s.id) === String(active.id));
+    const toIdx = siblings.findIndex(s => String(s.id) === String(over.id));
     if (fromIdx < 0 || toIdx < 0) return;
     const moved = arrayMove(siblings, fromIdx, toIdx);
-    const next = applySiblings(effectiveItems as any, fromParent, moved as any);
-    onChange(next as any);
+    const next = applySiblings(effectiveItems, fromParent, moved);
+    onChange(next);
   };
 
   return {

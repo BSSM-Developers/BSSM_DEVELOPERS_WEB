@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import styled from "@emotion/styled";
@@ -28,7 +27,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const [renaming, setRenaming] = useState(false);
   const [label, setLabel] = useState(node.label);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  const selectedDocId = useDocsStore((s: any) => s.selected)
+  const selectedDocId = useDocsStore((state) => state.selected);
   const isFolder = node.module === "collapse" || node.module === "main";
   const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedDocId);
   const isActive = selectedDocId === node.id || childHasActive;
@@ -37,15 +36,11 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const pathname = usePathname();
 
   const handleClick = () => {
-    // 항상 선택 상태 업데이트
     useDocsStore.setState({ selected: node.id });
 
-    // collapse 타입이면 토글도 수행
     if (isFolder) {
       setOpen(p => !p);
     } else {
-      // 문서나 API인 경우 네비게이션 처리
-      // 등록 페이지에서는 네비게이션 방지
       if (pathname?.includes('/docs/register')) {
         return;
       }
@@ -71,8 +66,8 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const closeContextMenu = () => setContextMenu(null);
 
   const duplicateItem = () => {
-    const newNode = { ...node, label: `${node.label} 복사` };
-    delete (newNode as any).id;
+    const { id, ...rest } = node;
+    const newNode = { ...rest, label: `${node.label} 복사` };
     mutators.addSibling(node.id, newNode);
     closeContextMenu();
   };
@@ -89,7 +84,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
         {editable && (
           <DeleteButton
             aria-label="delete"
-            onClick={(e) => { e.stopPropagation(); if (confirm("삭제하시겠습니까?")) mutators.remove(node.id); }}
+            onClick={(e) => { e.stopPropagation(); mutators.remove(node.id); }}
           >
             –
           </DeleteButton>
@@ -99,8 +94,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             onKeyDown={(e) => {
-              const composing = (e.nativeEvent as any)?.isComposing || (e as any).keyCode === 229;
-              if (composing) return;
+              if (e.nativeEvent.isComposing || e.keyCode === 229) return;
               if (e.key === "Enter") commitRename();
               if (e.key === "Escape") setRenaming(false);
             }}
@@ -112,14 +106,14 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
           <>
             <Label>{node.label}</Label>
             {node.module === "api" && node.method && (
-              <HttpMethodTag method={node.method as any} size="small" />
+              <HttpMethodTag method={node.method as "GET" | "POST" | "DELETE" | "PUT" | "PATCH"} size="small" />
             )}
           </>
         )}
       </ItemWrapper>
 
       {renderChildren && isFolder && open && (node.childrenItems?.length ?? 0) > 0 && (
-        <SubMenu>
+        <SubMenu isMain={node.module === "main"}>
           {node.childrenItems!.map(child => (
             <SidebarItem
               key={child.id}
@@ -144,7 +138,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
             </ContextMenuItem>
             {isFolder && (
               <ContextMenuItem onClick={() => {
-                mutators.addChild(node.id, { label: "새 항목", module: "small" });
+                mutators.addChild(node.id, { label: "새 항목", module: "default" });
                 closeContextMenu();
               }}>
                 하위 항목 추가
@@ -153,7 +147,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
             <ContextMenuDivider />
             <ContextMenuItem
               onClick={() => {
-                if (confirm("삭제하시겠습니까?")) mutators.remove(node.id);
+                mutators.remove(node.id);
                 closeContextMenu();
               }}
               danger
@@ -195,7 +189,16 @@ const DeleteButton = styled.button`
   justify-content: center;
   cursor: pointer;
 `;
-const SubMenu = styled.div` display: flex; flex-direction: column; margin-left: 16px; `;
+
+const SubMenu = styled.div<{ isMain?: boolean }>`
+  display: flex;
+  flex-direction: column;
+  margin-left: ${({ isMain }) => isMain ? '0px' : '16px'};
+  padding-left: ${({ isMain }) => isMain ? '0px' : '16px'};
+  border-left: ${({ isMain, theme }) => isMain ? 'none' : `2px solid ${theme.colors.grey[200] || '#E5E7EB'}`};
+  margin-top: ${({ isMain }) => isMain ? '8px' : '4px'};
+  gap: 2px;
+`;
 
 const ContextMenuBackdrop = styled.div`
   position: fixed;

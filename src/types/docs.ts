@@ -48,4 +48,5 @@ export interface ApiDoc {
   responseData?: unknown;
   responseStatus?: number;
   responseMessage?: string;
+  isVerified?: boolean;
 }

@@ -13,7 +13,7 @@ interface ApiHeaderProps {
   mappingEndpoint?: string;
   onTryClick?: () => void;
   editable?: boolean;
-  onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; mappingEndpoint: string }) => void;
+  onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; mappingEndpoint: string; isVerified?: boolean }) => void;
 }
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"];
@@ -57,9 +57,11 @@ export function ApiHeader({
 
       if (res) {
         setVerifyState('success');
+        onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: true });
       }
     } catch {
       setVerifyState('fail');
+      onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: false });
     } finally {
       setIsVerifying(false);
     }
@@ -71,12 +73,12 @@ export function ApiHeader({
         <TitleSection>
           <EditTitleInput
             value={title}
-            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, mappingEndpoint })}
+            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, mappingEndpoint, isVerified: false })}
             placeholder="API 제목"
           />
           <EditDescInput
             value={description}
-            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, mappingEndpoint })}
+            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, mappingEndpoint, isVerified: false })}
             placeholder="API 설명"
           />
         </TitleSection>
@@ -84,11 +86,11 @@ export function ApiHeader({
         <EndpointSection>
           <MethodSelect
             value={method}
-            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, mappingEndpoint })}
+            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, mappingEndpoint, isVerified: false })}
           />
           <EditEndpointInput
             value={endpoint}
-            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, mappingEndpoint })}
+            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, mappingEndpoint, isVerified: false })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
           <VerifyButton
@@ -107,7 +109,7 @@ export function ApiHeader({
             <Label style={{ width: 'auto', color: '#58A6FF' }}>MAPPING</Label>
             <EditEndpointInput
               value={mappingEndpoint}
-              onChange={(e) => onChange?.({ title, description, method, endpoint, mappingEndpoint: e.target.value })}
+              onChange={(e) => onChange?.({ title, description, method, endpoint, mappingEndpoint: e.target.value, isVerified: false })}
               placeholder="매핑 엔드포인트 (e.g. /user/profile)"
             />
           </div>

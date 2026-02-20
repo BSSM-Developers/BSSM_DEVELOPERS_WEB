@@ -20,7 +20,8 @@ export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlo
       description: updated.description,
       method: updated.method,
       endpoint: updated.endpoint,
-      mappingEndpoint: updated.mappingEndpoint
+      mappingEndpoint: updated.mappingEndpoint,
+      isVerified: updated.isVerified !== undefined ? updated.isVerified : apiData.isVerified
     });
   };
 

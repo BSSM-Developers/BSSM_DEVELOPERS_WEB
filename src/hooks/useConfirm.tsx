@@ -8,6 +8,7 @@ interface ConfirmOptions {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  hideCancel?: boolean;
 }
 
 export function useConfirm() {
@@ -40,6 +41,7 @@ export function useConfirm() {
       message={options.message}
       confirmText={options.confirmText}
       cancelText={options.cancelText}
+      hideCancel={options.hideCancel}
       onConfirm={handleConfirm}
       onCancel={handleCancel}
     />

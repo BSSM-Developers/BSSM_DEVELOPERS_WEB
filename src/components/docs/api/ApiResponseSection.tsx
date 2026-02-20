@@ -52,38 +52,7 @@ export function ApiResponseSection({
     <ResponseSection>
       <SectionTitle>{title}</SectionTitle>
 
-      {editable && (
-        <EditSection>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <div style={{ flex: 1 }}>
-              <Label>Status Code</Label>
-              <EditInput
-                type="number"
-                value={isNaN(status) ? '' : status}
-                onChange={(e) => {
-                  const val = parseInt(e.target.value);
-                  onStatusChange?.(isNaN(val) ? 0 : val);
-                }}
-              />
-            </div>
-            <div style={{ flex: 2 }}>
-              <Label>Message</Label>
-              <EditInput
-                value={message}
-                onChange={(e) => onMessageChange?.(e.target.value)}
-              />
-            </div>
-          </div>
-          <div style={{ marginTop: '12px' }}>
-            <Label>Response Data (JSON)</Label>
-            <EditTextarea
-              defaultValue={JSON.stringify(responseData, null, 2)}
-              onChange={handleDataChange}
-              placeholder='{"key": "value"}'
-            />
-          </div>
-        </EditSection>
-      )}
+      {/* Removed traditional manual status/message edit blocks to enforce UI cleanup */}
 
       <ApiParamsSection
         title="Response Body"

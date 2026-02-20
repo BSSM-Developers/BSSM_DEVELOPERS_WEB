@@ -74,11 +74,10 @@ export function DocsLayout({ children, sidebarItems, showSidebar = true, onSideb
       <Body>
         {showSidebar && (
           <Sidebar collapsed={sidebarCollapsed}>
-            <SidebarHeader>
+            <SidebarHeader collapsed={sidebarCollapsed}>
               <ToggleButton onClick={toggleSidebar}>
                 {sidebarCollapsed ? "→" : "←"}
               </ToggleButton>
-              {!sidebarCollapsed && <SidebarTitle>API 문서</SidebarTitle>}
             </SidebarHeader>
             {!sidebarCollapsed && <DocsSidebar items={items} editable={true} onChange={onSidebarChange} />}
           </Sidebar>
@@ -113,19 +112,19 @@ const Sidebar = styled.aside<{ collapsed: boolean }>`
   flex-direction: column;
 `;
 
-const SidebarHeader = styled.div`
+const SidebarHeader = styled.div<{ collapsed?: boolean }>`
   display: flex;
   align-items: center;
+  justify-content: ${({ collapsed }) => collapsed ? "center" : "flex-end"};
   padding: 16px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.grey[200]};
-  gap: 8px;
 `;
 
 const ToggleButton = styled.button`
   width: 24px;
   height: 24px;
   border: 0;
-  background: ${({ theme }) => theme.colors.grey[100]};
+  background: white;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -134,15 +133,8 @@ const ToggleButton = styled.button`
   color: ${({ theme }) => theme.colors.grey[600]};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.grey[200]};
+    background: ${({ theme }) => theme.colors.grey[100]};
   }
-`;
-
-const SidebarTitle = styled.h2`
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Content = styled.main`

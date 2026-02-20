@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { Theme } from "@emotion/react";
 import { DocsBlock } from "@/components/docs/DocsBlock";
@@ -20,7 +20,18 @@ interface DocsBlockEditorProps {
 
 export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock, onFocusMove, domain }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
+  const [imageValue, setImageValue] = useState(block.imageSrc ?? "");
+  const [showImageInput, setShowImageInput] = useState(!block.imageSrc);
   const [focused, setFocused] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [imageWidth, setImageWidth] = useState<number | string>(block.imageWidth || "100%");
+
+  const requestFocus = () => {
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${block.id}']`);
+      el?.focus();
+    }, 0);
+  };
 
   // 슬래시 메뉴 상태
   const [showMenu, setShowMenu] = useState(false);
@@ -57,6 +68,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     } else {
       onChange(index, { ...block, module: module as any, content: "" });
       setValue("");
+      requestFocus();
     }
     setShowMenu(false);
     setMenuFilter("");
@@ -65,6 +77,10 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   useEffect(() => {
     setValue(block.content ?? "");
   }, [block.content]);
+
+  useEffect(() => {
+    setImageValue(block.imageSrc ?? "");
+  }, [block.imageSrc]);
 
   // 블록 타입 자동 판별
   const detectModuleType = (text: string): { module: DocsBlockType["module"]; content: string; imageSrc?: string } | null => {
@@ -110,13 +126,9 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
           content: detection.content,
           imageSrc: detection.imageSrc
         });
+        requestFocus();
         return;
       }
-    } else if (text.trim() === "") {
-      // 비워지면 docs_1로 초기화
-      setValue("");
-      onChange(index, { ...block, module: "docs_1", content: "" });
-      return;
     }
 
     setValue(text);
@@ -154,13 +166,18 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
 
     if (e.key === "Enter") {
       e.preventDefault();
-      onAddBlock(index, { module: "docs_1", content: "" });
+      onAddBlock(index, { module: block.module === "list" ? "list" : "docs_1", content: "" });
       return;
     }
 
     if (e.key === "Backspace" && value === "") {
       e.preventDefault();
-      onRemoveBlock?.(index);
+      if (block.module !== "docs_1") {
+        onChange(index, { ...block, module: "docs_1", content: "" });
+        requestFocus();
+      } else {
+        onRemoveBlock?.(index);
+      }
       return;
     }
 
@@ -207,23 +224,178 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
       <BlockContainer style={{ zIndex: 1000 - index }}>
         <DocsBlock module="image">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-            {block.imageSrc && <img src={block.imageSrc} alt="Preview" style={{ maxWidth: '100%', borderRadius: '8px' }} />}
-            <input
-              value={block.imageSrc || ""}
-              onChange={(e) => onChange(index, { ...block, imageSrc: e.target.value })}
-              placeholder="이미지 URL을 입력하세요"
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              style={{
-                width: "100%",
-                border: "1px solid #E5E7EB",
-                background: "white",
-                padding: "4px 12px",
-                borderRadius: "4px",
-                fontSize: "12px",
-                outline: "none",
-              }}
-            />
+            {block.imageSrc ? (
+              <div
+                className="image-resize-container"
+                ref={containerRef}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setShowImageInput(true);
+                }}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  width: imageWidth,
+                  maxWidth: '100%',
+                  position: 'relative',
+                  margin: '0 auto',
+                }}
+              >
+                <img
+                  src={block.imageSrc}
+                  alt="Preview"
+                  draggable={false}
+                  style={{
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    display: 'block',
+                    pointerEvents: 'none',
+                    borderRadius: '8px'
+                  }}
+                />
+
+                {/* Right Resize Handle */}
+                <div
+                  className="resize-handle right"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const startX = e.pageX;
+                    const startWidth = containerRef.current?.offsetWidth || 0;
+                    let finalWidth = startWidth;
+
+                    const onMouseMove = (moveEvent: MouseEvent) => {
+                      const deltaX = moveEvent.pageX - startX;
+                      // Since it's centered (margin: 0 auto), dragging right edge grows both sides
+                      // Thus width increases by deltaX * 2
+                      finalWidth = Math.max(100, startWidth + deltaX * 2);
+                      setImageWidth(finalWidth);
+                    };
+
+                    const onMouseUp = () => {
+                      document.removeEventListener('mousemove', onMouseMove);
+                      document.removeEventListener('mouseup', onMouseUp);
+                      onChange(index, { ...block, imageWidth: finalWidth });
+                    };
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                  }}
+                />
+
+                {/* Left Resize Handle */}
+                <div
+                  className="resize-handle left"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const startX = e.pageX;
+                    const startWidth = containerRef.current?.offsetWidth || 0;
+                    let finalWidth = startWidth;
+
+                    const onMouseMove = (moveEvent: MouseEvent) => {
+                      const deltaX = startX - moveEvent.pageX;
+                      finalWidth = Math.max(100, startWidth + deltaX * 2);
+                      setImageWidth(finalWidth);
+                    };
+
+                    const onMouseUp = () => {
+                      document.removeEventListener('mousemove', onMouseMove);
+                      document.removeEventListener('mouseup', onMouseUp);
+                      onChange(index, { ...block, imageWidth: finalWidth });
+                    };
+
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                  }}
+                />
+              </div>
+            ) : (
+              <div style={{ padding: "32px", border: "1px dashed #D1D5DB", borderRadius: "8px", background: "#F9FAFB", display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", width: "100%" }}>
+                <div style={{ color: "#9CA3AF" }}>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                </div>
+                <div style={{ fontSize: "14px", color: "#6B7280" }}>이미지 URL을 입력하세요</div>
+              </div>
+            )}
+            {showImageInput && (
+              <>
+                <input
+                  value={imageValue}
+                  onChange={(e) => {
+                    setImageValue(e.target.value);
+                    onChange(index, { ...block, imageSrc: e.target.value });
+                  }}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      if (imageValue.trim() !== "") {
+                        setShowImageInput(false);
+                      }
+                    }
+                  }}
+                  placeholder="https://... URL 입력 후 Enter를 누르세요"
+                  onFocus={() => { setFocused(true); setShowImageInput(true); }}
+                  onBlur={() => {
+                    setFocused(false);
+                    if (imageValue.trim() !== "") {
+                      setShowImageInput(false);
+                    }
+                  }}
+                  style={{
+                    width: "100%",
+                    border: "1px solid transparent",
+                    background: block.imageSrc ? "white" : "white",
+                    padding: "8px 12px",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    outline: "none",
+                    color: "#4B5563",
+                    transition: "all 0.2s",
+                    boxShadow: block.imageSrc ? "0 1px 4px rgba(0,0,0,0.1)" : "0 1px 2px rgba(0,0,0,0.05)",
+                    marginTop: block.imageSrc ? "4px" : "-24px",
+                    position: "relative",
+                    zIndex: 10,
+                    maxWidth: block.imageSrc ? "100%" : "300px",
+                    alignSelf: block.imageSrc ? "flex-start" : "center"
+                  }}
+                  className="image-url-input"
+                  autoFocus
+                />
+              </>
+            )}
+            <style jsx>{`
+              .image-url-input:focus, .image-url-input:hover {
+                border-color: #E5E7EB;
+                box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+              }
+              .image-resize-container .resize-handle {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 8px;
+                height: 48px;
+                background-color: rgba(15, 15, 15, 0.2);
+                border-radius: 4px;
+                cursor: col-resize;
+                opacity: 0;
+                transition: opacity 0.2s, background-color 0.2s;
+              }
+              .image-resize-container .resize-handle.right {
+                right: -16px;
+              }
+              .image-resize-container .resize-handle.left {
+                left: -16px;
+              }
+              .image-resize-container:hover .resize-handle {
+                opacity: 1;
+              }
+              .image-resize-container .resize-handle:hover {
+                background-color: rgba(15, 15, 15, 0.4);
+              }
+            `}</style>
           </div>
         </DocsBlock>
         <AddBlockButton onClick={() => onAddBlock(index)} />
@@ -442,7 +614,7 @@ const AddCircle = styled.button`
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
+  background: ${({ theme }) => theme.colors.bssmDarkBlue};
   color: white;
   border: none;
   display: flex;
@@ -454,7 +626,7 @@ const AddCircle = styled.button`
   pointer-events: auto;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   &:hover {
-    background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
+    background: ${({ theme }) => theme.colors.bssmDarkBlue};
     transform: scale(1.2);
   }
 `;

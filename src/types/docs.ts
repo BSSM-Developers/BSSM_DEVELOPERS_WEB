@@ -15,6 +15,7 @@ export interface DocsBlock {
   content?: string;
   listItems?: string[];
   imageSrc?: string;
+  imageWidth?: number | string;
   apiData?: ApiDoc;
   language?: string;
 }

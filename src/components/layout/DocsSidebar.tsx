@@ -112,16 +112,13 @@ export function DocsSidebar({
 
   const closePicker = () => setPicker(p => ({ ...p, open: false }));
 
-  // click outside logic
   useEffect(() => {
     if (!picker.open) return;
 
     const handleClick = (e: MouseEvent) => {
-      // Picker itself stops propagation, so this only fires if clicked outside
       closePicker();
     };
 
-    // Use mousedown to capture quickly, but ensure it doesn't conflict with dragging if needed
     window.addEventListener("mousedown", handleClick);
     return () => window.removeEventListener("mousedown", handleClick);
   }, [picker.open]);
@@ -164,8 +161,8 @@ export function DocsSidebar({
     }
   }, [editable, handleKeyDown]);
 
-  const onPickModule = (opt: { label: string; module: any; method?: "GET" | "POST" | "DELETE" }) => {
-    const node: any = { label: opt.label, module: opt.module };
+  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main" | "small" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" }) => {
+    const node: SidebarNode = { id: crypto.randomUUID(), label: opt.label, module: opt.module, childrenItems: [] };
     if (opt.method) node.method = opt.method;
     if (picker.mode === "child" && picker.targetId) {
       mutators.addChild(picker.targetId, node);
@@ -178,34 +175,9 @@ export function DocsSidebar({
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
-      {editable && (
-        <EditModeControls>
-          <EditModeButton
-            onClick={() => {
-              if (confirm('변경사항을 취소하시겠습니까?')) {
-                setLocalItems(propItems);
-              }
-            }}
-            variant="cancel"
-          >
-            취소
-          </EditModeButton>
-          <EditModeButton
-            onClick={() => {
-              if (onChange) {
-                onChange(localItems);
-              }
-              alert('변경사항이 저장되었습니다.');
-            }}
-            variant="complete"
-          >
-            완료
-          </EditModeButton>
-        </EditModeControls>
-      )}
       <Nav>
-        <SortableContext items={effectiveItems.map((n: any) => n.id)}>
-          {effectiveItems.map((node: any) => (
+        <SortableContext items={effectiveItems.map((n: Node) => n.id)}>
+          {effectiveItems.map((node: Node) => (
             <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} overIntent={overIntent} />
           ))}
         </SortableContext>
@@ -223,7 +195,7 @@ export function DocsSidebar({
           {MODULE_OPTIONS.map((opt) => (
             <PickerItem
               key={opt.label}
-              onClick={() => onPickModule(opt as any)}
+              onClick={() => onPickModule(opt)}
               onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
               onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
               {opt.label}
@@ -350,36 +322,3 @@ const SiblingDropIndicator = styled.div`
   }
 `;
 
-const EditModeControls = styled.div`
-  display: flex;
-  gap: 8px;
-  padding: 16px;
-  border-bottom: 1px solid #E5E7EB;
-`;
-
-const EditModeButton = styled.button<{ variant: 'cancel' | 'complete' }>`
-  flex: 1;
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  ${({ variant, theme }) => variant === 'cancel' ? `
-    background: #F3F4F6;
-    color: #6B7280;
-    
-    &:hover {
-      background: #E5E7EB;
-    }
-  ` : `
-    background: ${theme.colors.bssmDarkBlue};
-    color: white;
-    
-    &:hover {
-      opacity: 0.9;
-    }
-  `}
-`;

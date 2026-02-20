@@ -50,17 +50,8 @@ export default function DocsRegisterPage() {
   };
 
   return (
-    <Container>
-      {step === 'INPUT' && (
-        <InputStep
-          formData={formData}
-          updateFormData={updateFormData}
-          handleNext={handleNextStep}
-          userName={userName}
-        />
-      )}
-
-      {step === 'EDITOR' && (
+    <>
+      {step === 'EDITOR' ? (
         <EditorStep
           formData={formData}
           sidebarItems={sidebarItems}
@@ -73,21 +64,32 @@ export default function DocsRegisterPage() {
           handleStepChange={setStep}
           handleNext={handleNextStep}
         />
-      )}
+      ) : (
+        <Container>
+          {step === 'INPUT' && (
+            <InputStep
+              formData={formData}
+              updateFormData={updateFormData}
+              handleNext={handleNextStep}
+              userName={userName}
+            />
+          )}
 
-      {step === 'CONFIRM' && (
-        <ConfirmStep
-          formData={formData}
-          userName={userName}
-          handleStepChange={setStep}
-          handleSubmit={handleSubmit}
-          loading={loading}
-        />
-      )}
+          {step === 'CONFIRM' && (
+            <ConfirmStep
+              formData={formData}
+              userName={userName}
+              handleStepChange={setStep}
+              handleSubmit={handleSubmit}
+              loading={loading}
+            />
+          )}
 
-      {step === 'SUCCESS' && (
-        <SuccessStep />
+          {step === 'SUCCESS' && (
+            <SuccessStep />
+          )}
+        </Container>
       )}
-    </Container>
+    </>
   );
 }

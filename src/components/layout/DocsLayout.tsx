@@ -67,12 +67,10 @@ export function DocsLayout({ children, sidebarItems, showSidebar = true, onSideb
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
 
-  // 전달된 항목 사용 또는 테스트 항목 사용로 대체
   const items = sidebarItems || testItems;
 
   return (
     <Wrapper>
-      {/* TopNav는 이미 RootLayout에 포함됨 */}
       <Body>
         {showSidebar && (
           <Sidebar collapsed={sidebarCollapsed}>
@@ -96,7 +94,7 @@ export function DocsLayout({ children, sidebarItems, showSidebar = true, onSideb
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 69px);
 `;
 
 const Body = styled.div`

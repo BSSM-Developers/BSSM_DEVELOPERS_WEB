@@ -41,7 +41,7 @@ export const EditorStep = ({
   const breadcrumb = isRoot ? [] : [formData.title || "새 문서"];
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', width: '100vw', position: 'fixed', top: 0, left: 0, zIndex: 100, background: 'white' }}>
+    <div style={{ width: '100%', height: 'calc(100vh - 69px)', display: 'flex', flexDirection: 'column' }}>
       <DocsLayout
         showSidebar={true}
         sidebarItems={sidebarItems}
@@ -63,7 +63,7 @@ export const EditorStep = ({
                 key={block.id || i}
                 index={i}
                 block={block}
-                domain={(formData as any).domain}
+                domain={""}
                 onChange={handleBlockChange}
                 onAddBlock={handleAddBlock}
                 onRemoveBlock={handleRemoveBlock}

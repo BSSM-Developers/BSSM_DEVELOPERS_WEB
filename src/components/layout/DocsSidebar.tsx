@@ -22,6 +22,7 @@ const MODULE_OPTIONS = [
   { label: "API(DELETE)", module: "api", method: "DELETE" as const },
   { label: "API(PUT)", module: "api", method: "PUT" as const },
   { label: "API(PATCH)", module: "api", method: "PATCH" as const },
+  { label: "API(UPDATE)", module: "api", method: "UPDATE" as const },
 ] as const;
 
 
@@ -181,7 +182,7 @@ export function DocsSidebar({
     }
   }, [editable, handleKeyDown]);
 
-  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" }) => {
+  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE" }) => {
     const node: SidebarNode = { id: crypto.randomUUID(), label: opt.label, module: opt.module, childrenItems: [] };
     if (opt.method) node.method = opt.method;
     if (picker.mode === "child" && picker.targetId) {
@@ -224,7 +225,7 @@ export function DocsSidebar({
         </Picker>,
         document.body
       )}
-      <ConfirmDialog />
+      {ConfirmDialog}
     </DndContext>
   );
 }

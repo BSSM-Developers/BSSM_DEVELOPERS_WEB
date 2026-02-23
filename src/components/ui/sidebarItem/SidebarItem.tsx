@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, usePathname } from "next/navigation";
 import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
@@ -106,7 +107,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
           <>
             <Label>{node.label}</Label>
             {node.module === "api" && node.method && (
-              <HttpMethodTag method={node.method as "GET" | "POST" | "DELETE" | "PUT" | "PATCH"} size="small" />
+              <HttpMethodTag method={node.method as "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE"} size="small" />
             )}
           </>
         )}
@@ -126,7 +127,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
         </SubMenu>
       )}
 
-      {contextMenu && (
+      {contextMenu && typeof document !== "undefined" && createPortal(
         <>
           <ContextMenuBackdrop onClick={closeContextMenu} />
           <ContextMenu style={{ top: contextMenu.y, left: contextMenu.x }}>
@@ -155,7 +156,8 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
               삭제
             </ContextMenuItem>
           </ContextMenu>
-        </>
+        </>,
+        document.body
       )}
     </>
   );

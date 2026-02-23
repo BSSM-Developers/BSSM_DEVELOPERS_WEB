@@ -25,6 +25,7 @@ type ParamItemProps = {
   className?: string;
   editable?: boolean;
   paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
+  hideRequired?: boolean;
   onChange?: (updated: { name: string; type: string; description: string; required: boolean; example?: string; children?: ApiParam[] }) => void;
   onDelete?: () => void;
 };
@@ -39,6 +40,7 @@ export function ParamItem({
   className,
   editable = false,
   paramLocation = 'body',
+  hideRequired = false,
   onChange,
   onDelete
 }: ParamItemProps) {
@@ -87,14 +89,16 @@ export function ParamItem({
                   onChange?.({ name, type: newType, description, required, example: newExample, children: childrenProps });
                 }}
               />
-              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#F06820', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={required}
-                  onChange={(e) => onChange?.({ name, type, description, required: e.target.checked, example, children: childrenProps })}
-                />
-                필수
-              </label>
+              {!hideRequired ? (
+                <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#F06820', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={required}
+                    onChange={(e) => onChange?.({ name, type, description, required: e.target.checked, example, children: childrenProps })}
+                  />
+                  필수
+                </label>
+              ) : null}
             </ParamHeader>
             <DescriptionWrapper style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               <EditInput
@@ -157,6 +161,7 @@ export function ParamItem({
                 childrenProps={child.children}
                 paramLocation={paramLocation}
                 editable={true}
+                hideRequired={hideRequired}
                 onChange={(updated) => {
                   const nextChildren = [...childrenProps];
                   nextChildren[index] = updated;
@@ -193,7 +198,7 @@ export function ParamItem({
             {example && !isComplexType && <ExampleText>{example}</ExampleText>}
           </DescriptionWrapper>
         </ParamInfo>
-        {required && <RequiredText>required</RequiredText>}
+        {!hideRequired ? (required ? <RequiredText>required</RequiredText> : null) : null}
       </Container>
       {isComplexType && childrenProps.length > 0 && (
         <ChildrenContainer>
@@ -208,6 +213,7 @@ export function ParamItem({
               childrenProps={child.children}
               paramLocation={paramLocation}
               editable={false}
+              hideRequired={hideRequired}
             />
           ))}
         </ChildrenContainer>

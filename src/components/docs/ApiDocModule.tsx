@@ -101,12 +101,14 @@ export function ApiDocModule({
     cookieParams,
     pathParams,
     queryParams,
-    bodyParams,
-    responseParams,
     responseData,
     responseStatus,
     responseMessage
   };
+
+  const missingPathParams = editable && pathParams.length > 0
+    ? pathParams.filter(p => p.name && !`${endpoint || ''} ${mappingEndpoint || ''}`.includes(`{${p.name}}`))
+    : [];
 
   return (
     <Container>
@@ -121,6 +123,7 @@ export function ApiDocModule({
             mappingEndpoint={mappingEndpoint}
             onTryClick={onTryClick}
             editable={editable}
+            missingPathParams={missingPathParams.map(p => `{${p.name}}`)}
             onChange={onHeaderChange}
           />
 
@@ -142,12 +145,6 @@ export function ApiDocModule({
             responseParams={responseParams}
             editable={editable}
             onParamsChange={onResponseParamsChange}
-            status={responseStatus}
-            message={responseMessage}
-            responseData={responseData}
-            onStatusChange={onResponseStatusChange}
-            onMessageChange={onResponseMessageChange}
-            onDataChange={onResponseDataChange}
           />
         </DocumentationContent>
       </ContentWrapper>
@@ -191,12 +188,7 @@ const ContentWrapper = styled.div`
   flex-direction: column;
   gap: 32px;
   flex: 1;
-  max-width: 800px;
   width: 100%;
-
-  @media (max-width: 1400px) {
-    max-width: none;
-  }
 `;
 
 const DocumentationContent = styled.div`

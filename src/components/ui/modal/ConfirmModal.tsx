@@ -82,7 +82,7 @@ const Backdrop = styled.div`
 const ModalContainer = styled.div`
   position: relative;
   width: 100%;
-  max-width: 320px;
+  max-width: 420px;
   background: white;
   border-radius: 12px;
   padding: 24px;

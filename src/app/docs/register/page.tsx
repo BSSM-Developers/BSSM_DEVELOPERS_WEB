@@ -49,6 +49,7 @@ export default function DocsRegisterPage() {
       const allBlocks = { ...contentMap, [selectedId as string]: docsBlocks };
 
       let hasApiModule = false;
+      const uniqueApis = new Set<string>();
 
       for (const [nodeId, blocks] of Object.entries(allBlocks)) {
         for (const block of blocks) {
@@ -57,8 +58,33 @@ export default function DocsRegisterPage() {
             const api = block.apiData;
             const docName = api.name || 'API 문서';
 
+            const methodEndpoint = `${api.method} ${api.endpoint}`;
+            if (uniqueApis.has(methodEndpoint)) {
+              await confirm({ title: "검증 실패", message: `중복된 API가 존재합니다: ${methodEndpoint}\n동일한 식별자를 가진 API는 하나만 등록 가능합니다.`, hideCancel: true });
+              return;
+            }
+            uniqueApis.add(methodEndpoint);
+
             if (!api.mappingEndpoint) {
               await confirm({ title: "검증 실패", message: `[${docName}] 매핑 엔드포인트(MAPPING)를 입력해주세요.`, hideCancel: true });
+              return;
+            }
+
+            if (api.pathParams && api.pathParams.length > 0) {
+              const fullUrl = `${api.endpoint || ''} ${api.mappingEndpoint || ''}`;
+              for (const p of api.pathParams) {
+                if (p.name && !fullUrl.includes(`{${p.name}}`)) {
+                  await confirm({ title: "검증 실패", message: `[${docName}] 선언된 Path 파라미터 '{${p.name}}'가 엔드포인트 문자열에 존재하지 않습니다.`, hideCancel: true });
+                  return;
+                }
+              }
+            }
+
+            const digitRegex = /\/[0-9]+(\/|$)/;
+            const uuidRegex = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\/|$)/;
+
+            if (digitRegex.test(api.endpoint) || uuidRegex.test(api.endpoint) || (api.mappingEndpoint && (digitRegex.test(api.mappingEndpoint) || uuidRegex.test(api.mappingEndpoint)))) {
+              await confirm({ title: "검증 실패", message: `[${docName}] 엔드포인트 경로에 실제 파라미터 값을 직접(하드코딩) 넣을 수 없습니다. (예: /book/1 금지)\n대신 {book_id} 형태의 동적 Path 파라미터를 사용해주세요.`, hideCancel: true });
               return;
             }
 
@@ -110,7 +136,7 @@ export default function DocsRegisterPage() {
 
   return (
     <>
-      <ConfirmDialog />
+      {ConfirmDialog}
       {step === 'EDITOR' ? (
         <EditorStep
           formData={formData}

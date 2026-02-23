@@ -34,7 +34,7 @@ export function useConfirm() {
     resolveRef(false);
   }, [resolveRef]);
 
-  const ConfirmDialog = () => (
+  const confirmDialog = (
     <ConfirmModal
       isOpen={isOpen}
       title={options.title || "확인"}
@@ -47,5 +47,5 @@ export function useConfirm() {
     />
   );
 
-  return { confirm, ConfirmDialog };
+  return { confirm, ConfirmDialog: confirmDialog };
 }

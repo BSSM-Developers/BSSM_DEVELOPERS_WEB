@@ -64,9 +64,9 @@ export function ApiCodeSection({
       setGeneratedCode(sampleCode || getDefaultSampleCode());
     }
 
-    const response = generateResponseTemplate(responseStatus, responseMessage, responseData);
+    const response = generateResponseTemplate(responseStatus, responseMessage, apiDoc?.responseParams);
     setGeneratedResponse(responseCode || response);
-  }, [apiDoc, currentLanguage, currentLibrary, baseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage, responseData]);
+  }, [apiDoc, currentLanguage, currentLibrary, baseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage]);
 
   useEffect(() => {
     const availableLibraries = getAvailableLibraries(currentLanguage);

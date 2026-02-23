@@ -1,8 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 import { ParamItem } from "@/components/ui/param/ParamItem";
 import { validateParams } from "@/utils/apiUtils/paramUtils";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -23,6 +22,7 @@ interface ApiParamsSectionProps {
   showValidation?: boolean;
   editable?: boolean;
   paramLocation?: string;
+  hideRequired?: boolean;
   onParamsChange?: (params: ApiParam[]) => void;
 }
 
@@ -32,6 +32,7 @@ export function ApiParamsSection({
   showValidation = false,
   editable = false,
   paramLocation = 'body',
+  hideRequired = false,
   onParamsChange
 }: ApiParamsSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -120,6 +121,7 @@ export function ApiParamsSection({
                 childrenProps={param.children}
                 paramLocation={paramLocation as any}
                 editable={editable}
+                hideRequired={hideRequired}
                 onChange={(updated) => handleUpdateParam(index, updated)}
                 onDelete={() => handleDeleteParam(index)}
               />
@@ -130,7 +132,7 @@ export function ApiParamsSection({
           </ParamList>
         </>
       )}
-      <ConfirmDialog />
+      {ConfirmDialog}
     </ParamSection>
   );
 }

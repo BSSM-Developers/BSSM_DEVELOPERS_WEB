@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import styled from "@emotion/styled";
+import { useConfirm } from "@/hooks/useConfirm";
 import { HttpMethodTag, type HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 
 type VerificationState = 'idle' | 'success' | 'fail';
@@ -13,6 +14,7 @@ interface ApiHeaderProps {
   mappingEndpoint?: string;
   onTryClick?: () => void;
   editable?: boolean;
+  missingPathParams?: string[];
   onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; mappingEndpoint: string; isVerified?: boolean }) => void;
 }
 
@@ -27,19 +29,28 @@ export function ApiHeader({
   mappingEndpoint = "",
   onTryClick,
   editable = false,
+  missingPathParams = [],
   onChange
 }: ApiHeaderProps) {
   const [verifyState, setVerifyState] = useState<VerificationState>('idle');
   const [isVerifying, setIsVerifying] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
 
-  const handleVerify = async () => {
+  const handleVerify = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (isVerifying) return;
+
     if (onTryClick) {
       onTryClick();
       return;
     }
 
     if (!domain || !endpoint) {
-      alert("도메인과 엔드포인트를 모두 입력해주세요.");
+      await confirm({ title: "검증 실패", message: "도메인과 엔드포인트를 모두 입력해주세요.", hideCancel: true });
       return;
     }
 
@@ -50,18 +61,45 @@ export function ApiHeader({
       const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
       const url = `${cleanDomain}${cleanEndpoint}`;
 
-      const res = await fetch(url, {
-        method: 'GET',
-        mode: 'no-cors'
+      const res = await fetch('/api/try', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetUrl: url, method }),
       });
 
-      if (res) {
+      if (!res.ok) {
+        throw new Error('Proxy failed');
+      }
+
+      const data = await res.json();
+      const status = data.status;
+
+      if (status !== 404 && status !== 405 && status < 500) {
         setVerifyState('success');
         onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: true });
+        return;
       }
+
+      setVerifyState('fail');
+      onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: false });
+
+      if (status === 404) {
+        await confirm({ title: "검증 실패", message: "해당 엔드포인트를 찾을 수 없습니다 (404 Not Found).", hideCancel: true });
+        return;
+      }
+
+      if (status === 405) {
+        await confirm({ title: "검증 실패", message: "해당 엔드포인트에서 허용되지 않는 메서드입니다 (405 Method Not Allowed).", hideCancel: true });
+        return;
+      }
+
+      await confirm({ title: "검증 실패", message: `서버 오류가 발생했습니다 (${status}).`, hideCancel: true });
     } catch {
       setVerifyState('fail');
       onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: false });
+      await confirm({ title: "검증 실패", message: "서버에 연결할 수 없거나 CORS 정책에 의해 거부되었습니다.", hideCancel: true });
     } finally {
       setIsVerifying(false);
     }
@@ -82,6 +120,12 @@ export function ApiHeader({
             placeholder="API 설명"
           />
         </TitleSection>
+
+        {missingPathParams && missingPathParams.length > 0 && (
+          <WarningText>
+            선언하신 Path 파라미터({missingPathParams.join(", ")})가 엔드포인트 문자열에 존재하지 않습니다.
+          </WarningText>
+        )}
 
         <EndpointSection>
           <MethodSelect
@@ -114,6 +158,7 @@ export function ApiHeader({
             />
           </div>
         </EndpointSection>
+        {ConfirmDialog}
       </HeaderSection>
     );
   }
@@ -141,6 +186,7 @@ export function ApiHeader({
               verifyState === 'fail' ? "검증 실패" : "Try It!"}
         </VerifyButton>
       </EndpointSection>
+      {ConfirmDialog}
     </HeaderSection>
   );
 }
@@ -426,6 +472,19 @@ const TryButton = styled.button`
     height: 36px;
     font-size: 14px;
   }
+`;
+
+const WarningText = styled.div`
+  background-color: #FFF4F4;
+  color: #E03131;
+  border: 1px solid #FFA8A8;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  margin-top: -8px;
 `;
 
 const VerifyButton = styled.button<{ state: VerificationState }>`

@@ -62,7 +62,7 @@ const testItems: SidebarNode[] = [
   }
 ];
 
-export function DocsLayout({ children, sidebarItems, showSidebar = true, onSidebarChange }: { children: React.ReactNode; sidebarItems?: SidebarNode[]; showSidebar?: boolean; onSidebarChange?: (items: SidebarNode[]) => void }) {
+export function DocsLayout({ children, sidebarItems, showSidebar = true, onSidebarChange, projectName }: { children: React.ReactNode; sidebarItems?: SidebarNode[]; showSidebar?: boolean; onSidebarChange?: (items: SidebarNode[]) => void; projectName?: string; }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
@@ -75,9 +75,14 @@ export function DocsLayout({ children, sidebarItems, showSidebar = true, onSideb
         {showSidebar && (
           <Sidebar collapsed={sidebarCollapsed}>
             <SidebarHeader collapsed={sidebarCollapsed}>
-              <ToggleButton onClick={toggleSidebar}>
-                {sidebarCollapsed ? "→" : "←"}
-              </ToggleButton>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'space-between' }}>
+                {!sidebarCollapsed && projectName && (
+                  <ProjectName>{projectName}</ProjectName>
+                )}
+                <ToggleButton onClick={toggleSidebar}>
+                  {sidebarCollapsed ? "→" : "←"}
+                </ToggleButton>
+              </div>
             </SidebarHeader>
             {!sidebarCollapsed && <DocsSidebar items={items} editable={true} onChange={onSidebarChange} />}
           </Sidebar>
@@ -142,6 +147,16 @@ const Content = styled.main`
   overflow-y: auto;
   background: ${({ theme }) => theme.colors.background};
   padding: 40px 30px;
+`;
+
+const ProjectName = styled.span`
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.grey[700]};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 

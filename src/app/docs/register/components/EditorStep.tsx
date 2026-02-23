@@ -46,8 +46,9 @@ export const EditorStep = ({
         showSidebar={true}
         sidebarItems={sidebarItems}
         onSidebarChange={setSidebarItems}
+        projectName={(formData as any).title || "새 문서"}
       >
-        <DocsHeader title={selectedNode?.label || formData.title || "새 문서"} breadcrumb={breadcrumb} isApi={false} />
+        <DocsHeader title={selectedNode?.label || (formData as any).title || "새 문서"} breadcrumb={breadcrumb} isApi={false} />
         <div style={{ minHeight: "500px" }} onClick={() => {
           if (docsBlocks.length === 0) {
             handleAddBlock(-1);
@@ -63,7 +64,7 @@ export const EditorStep = ({
                 key={block.id || i}
                 index={i}
                 block={block}
-                domain={""}
+                domain={(formData as any).domain || ""}
                 onChange={handleBlockChange}
                 onAddBlock={handleAddBlock}
                 onRemoveBlock={handleRemoveBlock}

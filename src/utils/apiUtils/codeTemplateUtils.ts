@@ -1,4 +1,4 @@
-import type { ApiDoc } from "@/types/docs";
+import type { ApiDoc, ApiParam } from "@/types/docs";
 import { generateParamExamples, extractParams } from "./paramUtils";
 
 import { wrapColor, highlightJson } from "./highlightUtils";
@@ -169,11 +169,42 @@ ${wrapColor('response', 'variable')} = ${wrapColor('requests', 'function')}.${wr
 ${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColor('json', 'function')}())`;
 }
 
+export function paramsToObject(params: ApiParam[]): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+
+  for (const param of params) {
+    const key = param.name;
+    let value: unknown = param.example;
+
+    if (param.type === 'object' && param.children && param.children.length > 0) {
+      value = paramsToObject(param.children);
+    } else if (param.type === 'array' && param.children && param.children.length > 0) {
+      value = [paramsToObject(param.children)];
+    } else if (typeof value === 'string') {
+      if (param.type === 'boolean') {
+        value = value === 'true';
+      } else if (param.type === 'integer' || param.type === 'number') {
+        const num = Number(value);
+        if (!isNaN(num)) value = num;
+      } else if (param.type === 'null' || value === 'null') {
+        value = null;
+      }
+    }
+
+    result[key] = value;
+  }
+  return result;
+}
+
 export function generateResponseTemplate(
   statusCode: number = 200,
   message: string = "성공",
-  data: unknown = null
+  responseParams?: ApiParam[]
 ): string {
+  const data = responseParams && responseParams.length > 0
+    ? paramsToObject(responseParams)
+    : null;
+
   const responseObj = {
     status: statusCode,
     message,

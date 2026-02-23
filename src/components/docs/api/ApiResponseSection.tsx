@@ -16,37 +16,17 @@ interface ApiResponseSectionProps {
   title?: string;
   editable?: boolean;
   onParamsChange?: (params: ApiParam[]) => void;
-  status?: number;
-  message?: string;
-  responseData?: any;
-  onStatusChange?: (status: number) => void;
-  onMessageChange?: (message: string) => void;
-  onDataChange?: (data: any) => void;
 }
 
 export function ApiResponseSection({
   responseParams = [],
   title = "Response",
   editable = false,
-  onParamsChange,
-  status = 200,
-  message = "성공",
-  responseData = null,
-  onStatusChange,
-  onMessageChange,
-  onDataChange
+  onParamsChange
 }: ApiResponseSectionProps) {
   const hasParams = responseParams.length > 0 || editable;
 
   if (!hasParams) return null;
-
-  const handleDataChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    try {
-      const parsed = JSON.parse(e.target.value);
-      onDataChange?.(parsed);
-    } catch (err) {
-    }
-  };
 
   return (
     <ResponseSection>
@@ -59,6 +39,7 @@ export function ApiResponseSection({
         params={responseParams}
         editable={editable}
         paramLocation="body"
+        hideRequired={true}
         onParamsChange={onParamsChange}
       />
     </ResponseSection>

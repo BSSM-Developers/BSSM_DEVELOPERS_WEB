@@ -106,9 +106,19 @@ export function ApiDocModule({
     responseMessage
   };
 
-  const missingPathParams = editable && pathParams.length > 0
-    ? pathParams.filter(p => p.name && !`${endpoint || ''} ${mappingEndpoint || ''}`.includes(`{${p.name}}`))
-    : [];
+  const checkMissing = () => {
+    if (!editable || !pathParams || pathParams.length === 0) return [];
+    const missing = new Set<string>();
+    for (const p of pathParams) {
+      if (!p.name) continue;
+      const t = `{${p.name}}`;
+      if (endpoint && !endpoint.includes(t)) missing.add(p.name);
+      if (mappingEndpoint && !mappingEndpoint.includes(t)) missing.add(p.name);
+    }
+    return Array.from(missing);
+  };
+
+  const missingPathParams = checkMissing();
 
   return (
     <Container>
@@ -123,7 +133,7 @@ export function ApiDocModule({
             mappingEndpoint={mappingEndpoint}
             onTryClick={onTryClick}
             editable={editable}
-            missingPathParams={missingPathParams.map(p => `{${p.name}}`)}
+            missingPathParams={missingPathParams.map(p => `{${p}}`)}
             onChange={onHeaderChange}
           />
 

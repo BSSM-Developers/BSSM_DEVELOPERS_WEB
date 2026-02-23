@@ -36,6 +36,12 @@ export function ApiHeader({
   const [isVerifying, setIsVerifying] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
+  useEffect(() => {
+    if (editable) {
+      setVerifyState('idle');
+    }
+  }, [domain, endpoint, method, editable]);
+
   const handleVerify = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();

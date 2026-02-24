@@ -49,8 +49,7 @@ export const useDocsSubmit = () => {
               newDocId = found.docsId || found.id;
             }
           }
-        } catch {
-          // Fallback failed silently
+        } catch (postErr) {
         }
       }
 
@@ -60,8 +59,7 @@ export const useDocsSubmit = () => {
           if (mainContent.length > 0) {
             await docsApi.updatePage(newDocId, newDocId, mainContent);
           }
-        } catch {
-          // Content update failed silently
+        } catch (contentErr) {
         }
 
         router.push(`/docs/${newDocId}/edit`);

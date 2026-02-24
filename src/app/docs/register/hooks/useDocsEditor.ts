@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useDocsStore } from "@/store/docsStore";
 import { DocsBlock } from "@/types/docs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
@@ -185,6 +185,12 @@ export const useDocsEditor = (step: Step, title: string) => {
     }
   };
 
+  const restoreEditorState = useCallback((blocks: DocsBlock[], items: SidebarNode[], map: Record<string, DocsBlock[]>) => {
+    setDocsBlocks(blocks);
+    setSidebarItems(items);
+    setContentMap(map);
+  }, []);
+
   return {
     docsBlocks,
     sidebarItems,
@@ -194,6 +200,7 @@ export const useDocsEditor = (step: Step, title: string) => {
     handleRemoveBlock,
     handleFocusMove,
     saveCurrentBlock,
-    contentMap
+    contentMap,
+    restoreEditorState
   };
 };

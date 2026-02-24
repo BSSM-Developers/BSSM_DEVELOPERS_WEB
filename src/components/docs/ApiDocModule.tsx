@@ -2,7 +2,6 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { ApiBreadcrumb } from "./api/ApiBreadcrumb";
 import { ApiHeader } from "./api/ApiHeader";
 import { ApiRequestSection } from "./api/ApiRequestSection";
 import { ApiResponseSection } from "./api/ApiResponseSection";

@@ -18,15 +18,11 @@ import {
   PreviewCardWrapper
 } from '../styles';
 
+import type { FormData } from '../hooks/useDocsForm';
+
 interface InputStepProps {
-  formData: {
-    title: string;
-    description: string;
-    domain: string;
-    repository_url: string;
-    auto_approval: boolean;
-  };
-  updateFormData: (field: any, value: any) => void;
+  formData: FormData;
+  updateFormData: (field: keyof FormData, value: string | boolean) => void;
   handleNext: () => void;
   userName: string;
 }

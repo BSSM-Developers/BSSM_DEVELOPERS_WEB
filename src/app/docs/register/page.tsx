@@ -12,16 +12,20 @@ import { useDocsSubmit } from './hooks/useDocsSubmit';
 import { useUserStore } from '@/store/userStore';
 import { useDocsStore } from '@/store/docsStore';
 import { useConfirm } from '@/hooks/useConfirm';
+import { useRouter } from 'next/navigation';
 
 export default function DocsRegisterPage() {
+  const router = useRouter();
   const userName = useUserStore((state) => state.user?.name || "");
   const { confirm, ConfirmDialog } = useConfirm();
+  const [isRestored, setIsRestored] = React.useState(false);
 
   const {
     step,
     setStep,
     formData,
     updateFormData,
+    setFullFormData,
     handleNext: handleFormNext
   } = useDocsForm();
 
@@ -34,7 +38,8 @@ export default function DocsRegisterPage() {
     handleRemoveBlock,
     handleFocusMove,
     saveCurrentBlock,
-    contentMap
+    contentMap,
+    restoreEditorState
   } = useDocsEditor(step, formData.title);
 
   const { loading, handleSubmit: submitDocs } = useDocsSubmit();
@@ -142,6 +147,94 @@ export default function DocsRegisterPage() {
   const handleSubmit = () => {
     submitDocs(formData, sidebarItems, contentMap, docsBlocks);
   };
+
+  React.useEffect(() => {
+    const draftStr = localStorage.getItem('docs-register-draft');
+    if (draftStr) {
+      try {
+        const draft = JSON.parse(draftStr);
+        setStep(draft.step);
+        setFullFormData(draft.formData);
+        restoreEditorState(draft.docsBlocks, draft.sidebarItems, draft.contentMap);
+        if (draft.selectedId) {
+          useDocsStore.setState({ selected: draft.selectedId });
+        }
+      } catch (e) {
+        console.error("Failed to restore draft", e);
+        localStorage.removeItem('docs-register-draft');
+      }
+    }
+    setIsRestored(true);
+  }, [setStep, setFullFormData, restoreEditorState]);
+
+  React.useEffect(() => {
+    if (step === 'SUCCESS') {
+      localStorage.removeItem('docs-register-draft');
+    }
+  }, [step]);
+
+  const hasDraftContent = formData.title.trim().length > 0 || step !== 'INPUT';
+
+  React.useEffect(() => {
+    if (isRestored && step !== 'SUCCESS') {
+      if (hasDraftContent) {
+        const draft = {
+          step,
+          formData,
+          docsBlocks,
+          sidebarItems,
+          contentMap,
+          selectedId: useDocsStore.getState().selected
+        };
+        localStorage.setItem('docs-register-draft', JSON.stringify(draft));
+      } else {
+        localStorage.removeItem('docs-register-draft');
+      }
+    }
+  }, [isRestored, step, formData, docsBlocks, sidebarItems, contentMap, hasDraftContent]);
+
+  React.useEffect(() => {
+    if (step === 'SUCCESS' || !hasDraftContent) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [step, hasDraftContent]);
+
+  React.useEffect(() => {
+    if (step === 'SUCCESS' || !hasDraftContent) return;
+
+    const handleLinkClick = async (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const a = target.closest('a');
+      if (a && a.href) {
+        const url = new URL(a.href, window.location.origin);
+        if (url.pathname !== window.location.pathname) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          const go = await confirm({
+            title: "페이지 이동 경고",
+            message: "현재 페이지를 벗어나면 작성 중인 임시 저장 내용이 모두 삭제됩니다. 정말 이동하시겠습니까?",
+            hideCancel: false
+          });
+
+          if (go) {
+            localStorage.removeItem('docs-register-draft');
+            router.push(url.pathname + url.search + url.hash);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('click', handleLinkClick, { capture: true });
+    return () => document.removeEventListener('click', handleLinkClick, { capture: true });
+  }, [step, hasDraftContent, confirm, router]);
+
+  if (!isRestored) return <div style={{ minHeight: '100vh', background: '#FAFAFA' }} />;
 
   return (
     <>

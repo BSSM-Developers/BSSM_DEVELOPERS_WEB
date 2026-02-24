@@ -41,6 +41,7 @@ export const useDocsForm = () => {
     step,
     setStep,
     formData,
+    setFullFormData: setFormData,
     updateFormData,
     handleNext,
     handleStepChange

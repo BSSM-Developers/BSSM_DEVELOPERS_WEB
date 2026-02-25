@@ -80,8 +80,8 @@ export function ApiParamsSection({
 
   return (
     <ParamSection>
-      <ParamSectionHeader as="button" onClick={() => setIsOpen(!isOpen)}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <ParamSectionHeader type="button" onClick={() => setIsOpen(!isOpen)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'none' }}>
           <ChevronIcon isOpen={isOpen}>▼</ChevronIcon>
           <ParamSectionTitle>{title}</ParamSectionTitle>
         </div>
@@ -119,7 +119,7 @@ export function ApiParamsSection({
                 required={param.required}
                 example={param.example}
                 childrenProps={param.children}
-                paramLocation={paramLocation as any}
+                paramLocation={paramLocation === 'response' ? undefined : (paramLocation as 'header' | 'cookie' | 'path' | 'query' | 'body')}
                 editable={editable}
                 hideRequired={hideRequired}
                 onChange={(updated) => handleUpdateParam(index, updated)}
@@ -144,13 +144,6 @@ function AddParamButtonComponent({ onAdd }: { onAdd: (type: string) => void }) {
     </AddParamButton>
   );
 }
-
-const MenuBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  background: transparent;
-`;
 
 const MenuContainer = styled.div`
   background: white;
@@ -204,9 +197,14 @@ const ParamSectionHeader = styled.button`
   width: 100%;
   background: none;
   border: none;
-  padding: 0;
+  padding: 4px 0;
   text-align: left;
   cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.6;
+  }
 `;
 
 const ParamSectionTitle = styled.h3`

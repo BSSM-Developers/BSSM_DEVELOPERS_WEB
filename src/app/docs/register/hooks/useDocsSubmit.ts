@@ -41,15 +41,15 @@ export const useDocsSubmit = () => {
       if (!newDocId) {
         try {
           const listResponse = await docsApi.getList();
-          const list = (listResponse as any).values || (Array.isArray(listResponse) ? listResponse : []);
+          const list = (listResponse as { values?: { title: string; docsId?: string | number; id?: string | number }[] }).values || (Array.isArray(listResponse) ? listResponse : []);
 
           if (Array.isArray(list)) {
-            const found = list.find((d: { title: string, docsId?: string, id?: string }) => d.title === formData.title);
+            const found = list.find((d: { title: string, docsId?: string | number, id?: string | number }) => d.title === formData.title);
             if (found) {
-              newDocId = found.docsId || found.id;
+              newDocId = String(found.docsId || found.id);
             }
           }
-        } catch (postErr) {
+        } catch {
         }
       }
 
@@ -59,7 +59,7 @@ export const useDocsSubmit = () => {
           if (mainContent.length > 0) {
             await docsApi.updatePage(newDocId, newDocId, mainContent);
           }
-        } catch (contentErr) {
+        } catch {
         }
 
         router.push(`/docs/${newDocId}/edit`);

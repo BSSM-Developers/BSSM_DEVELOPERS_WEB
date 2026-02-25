@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
-import { Theme } from "@emotion/react";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 import { highlightCode } from "@/utils/apiUtils/highlightUtils";
+import TextareaAutosize from 'react-textarea-autosize';
 
 interface DocsBlockEditorProps {
   block: DocsBlockType;
@@ -33,7 +33,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     }, 0);
   };
 
-  // 슬래시 메뉴 상태
   const [showMenu, setShowMenu] = useState(false);
   const [menuIndex, setMenuIndex] = useState(0);
   const [menuFilter, setMenuFilter] = useState("");
@@ -66,7 +65,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
         }
       });
     } else {
-      onChange(index, { ...block, module: module as any, content: "" });
+      onChange(index, { ...block, module: module as DocsBlockType["module"], content: "" });
       setValue("");
       requestFocus();
     }
@@ -82,17 +81,11 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     setImageValue(block.imageSrc ?? "");
   }, [block.imageSrc]);
 
-  // 블록 타입 자동 판별
   const detectModuleType = (text: string): { module: DocsBlockType["module"]; content: string; imageSrc?: string } | null => {
-    // 제목 1: "# "
     if (/^#\s/.test(text)) return { module: "headline_1", content: text.replace(/^#\s*/, "") };
-    // 제목 2: "## "
     if (/^##\s/.test(text)) return { module: "headline_2", content: text.replace(/^##\s*/, "") };
-    // 목록: "- "
     if (/^-\s/.test(text)) return { module: "list", content: text.replace(/^-\s*/, "") };
-    // 코드: "``` "
     if (/^```\s/.test(text)) return { module: "code", content: text.replace(/^```\s*/, "") };
-    // 이미지: "![] " 또는 "![url] "
     if (/^!\[(.*)\]\s/.test(text)) {
       const match = text.match(/^!\[(.*)\]\s/);
       return { module: "image", content: "", imageSrc: match ? match[1] : "" };
@@ -104,7 +97,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     const text = e.target.value;
 
     if (block.module === "docs_1") {
-      // 슬래시 메뉴 감지
       if (text.startsWith("/")) {
         setShowMenu(true);
         setMenuFilter(text.slice(1));
@@ -112,7 +104,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
         setValue(text);
         return;
       } else if (showMenu) {
-        // 슬래시가 지워지면 메뉴 닫기
         setShowMenu(false);
         setMenuFilter("");
       }
@@ -203,10 +194,9 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   };
 
 
-  // API 블록인 경우 특별한 렌더링
   if (block.module === "api" && block.apiData) {
     return (
-      <BlockContainer style={{ zIndex: 1000 - index }}>
+      <BlockContainer style={{ zIndex: 1000 - index, cursor: "text" }} onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
         <ApiBlock
           apiData={block.apiData}
           domain={domain}
@@ -218,10 +208,9 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
     );
   }
 
-  // 이미지 블록인 경우
   if (block.module === "image") {
     return (
-      <BlockContainer style={{ zIndex: 1000 - index }}>
+      <BlockContainer style={{ zIndex: 1000 - index, cursor: "text" }} onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
         <DocsBlock module="image">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
             {block.imageSrc ? (
@@ -256,7 +245,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                   }}
                 />
 
-                {/* Right Resize Handle */}
                 <div
                   className="resize-handle right"
                   onMouseDown={(e) => {
@@ -268,8 +256,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
 
                     const onMouseMove = (moveEvent: MouseEvent) => {
                       const deltaX = moveEvent.pageX - startX;
-                      // Since it's centered (margin: 0 auto), dragging right edge grows both sides
-                      // Thus width increases by deltaX * 2
                       finalWidth = Math.max(100, startWidth + deltaX * 2);
                       setImageWidth(finalWidth);
                     };
@@ -285,7 +271,6 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                   }}
                 />
 
-                {/* Left Resize Handle */}
                 <div
                   className="resize-handle left"
                   onMouseDown={(e) => {
@@ -407,13 +392,13 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
   const isList = block.module === "list";
 
   return (
-    <BlockContainer style={{ zIndex: 1000 - index }}>
+    <BlockContainer style={{ zIndex: 1000 - index, cursor: "text" }} onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
       <DocsBlock module={block.module}>
         {isList ? (
           <li style={{ width: "100%" }}>
-            <input
+            <TextareaAutosize
               value={value}
-              onChange={handleChange}
+              onChange={(e) => handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>)}
               onKeyDown={handleKeyDown}
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
@@ -429,6 +414,9 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                 color: "inherit",
                 outline: "none",
                 margin: 0,
+                resize: "none",
+                overflow: "hidden",
+                display: "block",
               }}
             />
           </li>
@@ -523,9 +511,9 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
           </div>
         ) : (
           <div style={{ position: 'relative', width: '100%' }}>
-            <input
+            <TextareaAutosize
               value={value}
-              onChange={handleChange}
+              onChange={(e) => handleChange(e as unknown as React.ChangeEvent<HTMLInputElement>)}
               onKeyDown={handleKeyDown}
               onFocus={() => setFocused(true)}
               onBlur={() => {
@@ -537,7 +525,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
               style={{
                 width: "100%",
                 border: "none",
-                background: "white",
+                background: "transparent",
                 padding: "2px 12px",
                 borderRadius: "4px",
                 font: "inherit",
@@ -545,6 +533,10 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                 outline: "none",
                 margin: 0,
                 transition: "box-shadow 0.2s",
+                resize: "none",
+                overflow: "hidden",
+                display: "block",
+                cursor: "text"
               }}
               className="docs-block-input"
             />

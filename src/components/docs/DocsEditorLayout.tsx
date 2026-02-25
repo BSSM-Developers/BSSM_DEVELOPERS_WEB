@@ -14,11 +14,24 @@ export interface DocsEditorLayoutProps {
 
 export function DocsEditorLayout({ blocks, onChange, onAdd, onRemove, onFocusMove }: DocsEditorLayoutProps) {
   return (
-    <div style={{ padding: "40px 80px", maxWidth: "800px", margin: "0 auto", minHeight: "500px" }} onClick={() => {
-      if (blocks.length === 0) {
-        onAdd(0, { module: "docs_1", content: "" });
-      }
-    }}>
+    <div
+      style={{ padding: "40px 80px", maxWidth: "800px", margin: "0 auto", minHeight: "500px", flex: 1, display: "flex", flexDirection: "column", cursor: "text" }}
+      onClick={() => {
+        if (blocks.length > 0) {
+          const lastBlock = blocks[blocks.length - 1];
+          if ((lastBlock.module === "docs_1" || lastBlock.module === "list" || lastBlock.module === "headline_1" || lastBlock.module === "headline_2") && lastBlock.content === "") {
+            const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${lastBlock.id}']`);
+            el?.focus();
+            return;
+          }
+        }
+        if (blocks.length === 0) {
+          onAdd(0, { module: "docs_1", content: "" });
+        } else {
+          onAdd(blocks.length);
+        }
+      }}
+    >
       {blocks.length === 0 ? (
         <div style={{ padding: "20px 0", color: "#9CA3AF", cursor: "text" }}>
           내용을 입력하려면 클릭하세요...

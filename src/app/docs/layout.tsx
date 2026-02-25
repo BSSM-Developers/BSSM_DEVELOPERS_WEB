@@ -15,10 +15,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (docsData) {
       // Assuming docsData is array or { values: [] }
-      const list = (docsData as any).values || (Array.isArray(docsData) ? docsData : []);
+      const list = (docsData as { values?: { docsId?: string | number; id?: string | number; title: string }[] }).values || (Array.isArray(docsData) ? docsData : []);
 
-      const items = list.map((doc: any) => ({
-        id: doc.docsId || doc.id,
+      const items = list.map((doc: { docsId?: string | number; id?: string | number; title: string }) => ({
+        id: String(doc.docsId || doc.id),
         label: doc.title,
         module: "default",
         childrenItems: []

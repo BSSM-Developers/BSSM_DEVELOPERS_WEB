@@ -19,6 +19,7 @@
     "next": "15.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-textarea-autosize": "^8.5.9",
     "remark": "^15.0.1",
     "remark-parse": "^11.0.0",
     "zustand": "^5.0.8"

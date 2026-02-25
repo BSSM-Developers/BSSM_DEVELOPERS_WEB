@@ -6,12 +6,13 @@ import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
-import { DndContext } from "@dnd-kit/core";
+import { DndContext, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSidebarDrag } from "@/hooks/useSidebarDrag";
 import { createMutators, type Mutators } from "@/components/layout/sidebarUtils";
 import { useConfirm } from "@/hooks/useConfirm";
+import { findNodeById } from "@/components/layout/treeUtils";
 
 const MODULE_OPTIONS = [
   { label: "기본", module: "default" },
@@ -35,6 +36,127 @@ type DocsSidebarProps = {
 
 type Node = SidebarNode & { id: string };
 
+const SidebarContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 1;
+`;
+
+const Nav = styled.nav`
+  padding: 24px 16px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+`;
+
+const RootZone = styled.div<{ isOver: boolean }>`
+  flex: 1;
+  min-height: 100px;
+  margin: 0 16px 24px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  ${({ isOver, theme }) => isOver && `
+    background: rgba(22, 51, 92, 0.05);
+    border: 2px dashed ${theme.colors.bssmDarkBlue || '#16335C'};
+  `}
+`;
+
+const AddButton = styled.button`
+  margin-top: 12px;
+  height: 51px;
+  border-radius: 12px;
+  border: 2px solid ${({ theme }) => theme.colors.bssmDarkBlue};
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  font-size: 24px;
+  background: transparent;
+  cursor: pointer;
+`;
+
+const Backdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: transparent;
+`;
+
+const Picker = styled.div<{ anchor: { x: number; y: number } }>`
+  position: fixed;
+  top: ${({ anchor }) => anchor.y}px;
+  left: ${({ anchor }) => anchor.x}px;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  padding: 8px;
+  width: 140px;
+  max-height: 250px;
+  overflow-y: auto;
+`;
+
+const PickerItem = styled.button`
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: #4B5563;
+  border-radius: 8px;
+`;
+
+const DropTargetWrapper = styled.div<{
+  isChildTarget: boolean;
+  isSiblingTarget: boolean;
+}>`
+  position: relative;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  ${({ isChildTarget, theme }) => isChildTarget && `
+    background: rgba(22, 51, 92, 0.05);
+    outline: 2px solid ${theme.colors.bssmDarkBlue || '#16335C'};
+    outline-offset: -2px;
+    box-shadow: 0 0 0 4px rgba(22, 51, 92, 0.1);
+  `}
+
+  ${({ isSiblingTarget }) => isSiblingTarget && `
+    /* No outline needed, SiblingDropIndicator is sufficient */
+  `}
+`;
+
+const ChildDropIndicator = styled.div`
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 10;
+
+  &::before {
+    content: "그룹에 넣기";
+  }
+`;
+
+const SiblingDropIndicator = styled.div`
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 10;
+`;
+
 const SortableNode = ({
   node,
   editable,
@@ -55,9 +177,10 @@ const SortableNode = ({
   const isSiblingTarget = isDropTarget && overIntent?.mode === "sibling";
 
   const style: React.CSSProperties = {
-    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
-    transition,
+    transform: isChildTarget ? undefined : transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition: isChildTarget ? "none" : transition,
     zIndex: isDragging ? 1000 : undefined,
+    opacity: isDragging ? 0.3 : 1,
     marginLeft: depth > 0 ? 16 : 0,
     paddingLeft: depth > 0 ? 8 : 0,
     borderLeft: depth > 0 ? "2px solid #E5E7EB" : "none",
@@ -131,7 +254,7 @@ export function DocsSidebar({
     return () => window.removeEventListener("mousedown", handleClick);
   }, [picker.open]);
 
-  const { sensors, onDragStart, onDragOver, onDragEnd, overIntent } = useSidebarDrag({
+  const { sensors, onDragStart, onDragOver, onDragEnd, overIntent, activeId } = useSidebarDrag({
     effectiveItems,
     onChange: onChange || setLocalItems,
   });
@@ -196,138 +319,75 @@ export function DocsSidebar({
 
   return (
     <DndContext sensors={sensors} onDragStart={onDragStart} onDragEnd={onDragEnd} onDragOver={onDragOver}>
-      <Nav>
-        <SortableContext items={effectiveItems.map((n: Node) => n.id)}>
-          {effectiveItems.map((node: Node) => (
-            <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} overIntent={overIntent} />
-          ))}
-        </SortableContext>
-        {editable && (
-          <AddButton onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
-            +
-          </AddButton>
-        )}
-      </Nav>
-      {picker.open && picker.anchor && createPortal(
-        <Picker
-          anchor={picker.anchor}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          {MODULE_OPTIONS.map((opt) => (
-            <PickerItem
-              key={opt.label}
-              onClick={() => onPickModule(opt)}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-              {opt.label}
-            </PickerItem>
-          ))}
-        </Picker>,
+      <SidebarContainer>
+        <Nav>
+          <SortableContext items={effectiveItems.map((n: Node) => n.id)}>
+            {effectiveItems.map((node: Node) => (
+              <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} overIntent={overIntent} />
+            ))}
+          </SortableContext>
+          {editable && (
+            <AddButton onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
+              +
+            </AddButton>
+          )}
+        </Nav>
+        {editable && <RootDropZone />}
+      </SidebarContainer>
+
+      {createPortal(
+        <DragOverlay dropAnimation={null}>
+          {activeId ? (
+            <div style={{ opacity: 0.8, cursor: "grabbing" }}>
+              <SidebarItem
+                key={activeId}
+                node={findNodeById(effectiveItems as Node[], activeId) as Node}
+                editable={false}
+                mutators={mutators}
+                renderChildren={false}
+              />
+            </div>
+          ) : null}
+        </DragOverlay>,
         document.body
       )}
+
+      {
+        picker.open && picker.anchor && createPortal(
+          <Picker
+            anchor={picker.anchor}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {MODULE_OPTIONS.map((opt) => (
+              <PickerItem
+                key={opt.label}
+                onClick={() => onPickModule(opt)}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
+                {opt.label}
+              </PickerItem>
+            ))}
+          </Picker>,
+          document.body
+        )
+      }
       {ConfirmDialog}
     </DndContext>
   );
 }
 
-const Nav = styled.nav`
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-`;
+function RootDropZone() {
+  const { isOver, setNodeRef } = useDroppable({
+    id: 'root-drop-zone',
+  });
 
-const AddButton = styled.button`
-  margin-top: 12px;
-  height: 51px;
-  border-radius: 12px;
-  border: 2px solid ${({ theme }) => theme.colors.bssmDarkBlue};
-  color: ${({ theme }) => theme.colors.bssmDarkBlue};
-  font-size: 24px;
-  background: transparent;
-  cursor: pointer;
-`;
+  return (
+    <RootZone
+      ref={setNodeRef}
+      isOver={isOver}
+    />
+  );
+}
 
-const Backdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: transparent;
-`;
 
-const Picker = styled.div<{ anchor: { x: number; y: number } }>`
-  position: fixed;
-  top: ${({ anchor }) => anchor.y}px;
-  left: ${({ anchor }) => anchor.x}px;
-  z-index: 1000;
-  background: #fff;
-  border: 1px solid #E5E7EB;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-  padding: 8px;
-  width: 140px;
-  max-height: 250px;
-  overflow-y: auto;
-`;
-
-const PickerItem = styled.button`
-  width: 100%;
-  text-align: left;
-  padding: 8px 10px;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  color: #4B5563;
-  border-radius: 8px;
-`;
-
-const DropTargetWrapper = styled.div<{
-  isChildTarget: boolean;
-  isSiblingTarget: boolean;
-}>`
-  position: relative;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-
-  ${({ isChildTarget, theme }) => isChildTarget && `
-    background: rgba(22, 51, 92, 0.05);
-    border: 2px solid ${theme.colors.bssmDarkBlue || '#16335C'};
-    box-shadow: 0 0 0 4px rgba(22, 51, 92, 0.1);
-  `}
-
-  ${({ isSiblingTarget, theme }) => isSiblingTarget && `
-    border: 2px solid ${theme.colors.bssmDarkBlue || '#16335C'};
-  `}
-`;
-
-const ChildDropIndicator = styled.div`
-  position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  pointer-events: none;
-  z-index: 10;
-
-  &::before {
-    content: "그룹에 넣기";
-  }
-`;
-
-const SiblingDropIndicator = styled.div`
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
-  border-radius: 2px;
-  pointer-events: none;
-  z-index: 10;
-`;
 

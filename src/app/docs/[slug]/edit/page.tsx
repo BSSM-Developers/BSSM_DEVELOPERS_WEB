@@ -172,11 +172,21 @@ export default function DocsEditPage() {
       <DocsHeader title={title} breadcrumb={breadcrumb} isApi={isApiDoc} />
 
       <div
-        style={{ minHeight: "500px" }}
+        style={{ minHeight: "500px", flex: 1, display: "flex", flexDirection: "column", cursor: "text" }}
         onClick={() => {
+          if (blocks.length > 0 && !isApiDoc) {
+            const lastBlock = blocks[blocks.length - 1] as any;
+            if ((lastBlock.module === "docs_1" || lastBlock.module === "list" || lastBlock.module === "headline_1" || lastBlock.module === "headline_2") && lastBlock.content === "") {
+              const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${lastBlock.id}']`);
+              el?.focus();
+              return;
+            }
+          }
           if (blocks.length === 0 && !isApiDoc) {
             const blockId = Math.random().toString(36).substring(2, 11);
             updateDocsData(selected, [{ id: blockId, module: "docs_1", content: "" }]);
+          } else if (!isApiDoc) {
+            handleAddBlock(blocks.length);
           }
         }}
       >

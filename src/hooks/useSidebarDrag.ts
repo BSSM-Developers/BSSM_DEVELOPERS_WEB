@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DragEndEvent, DragOverEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
+import { DragEndEvent, DragOverEvent, DragStartEvent, useSensor, useSensors, PointerSensor } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { findParentId, removeNodeWithReturn, applySiblings } from "@/components/layout/treeUtils";
@@ -13,6 +13,7 @@ interface UseSidebarDragProps {
 }
 
 export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps) => {
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [overIntent, setOverIntent] = useState<{ id: string; mode: "sibling" | "child" } | null>(null);
 
   const sensors = useSensors(
@@ -48,7 +49,8 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     return [];
   };
 
-  const onDragStart = () => {
+  const onDragStart = (evt: DragStartEvent) => {
+    setActiveId(String(evt.active.id));
     setOverIntent(null);
   };
 
@@ -59,6 +61,13 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
       return;
     }
     const targetId = String(over.id);
+
+    // root drop zone handling
+    if (targetId === 'root-drop-zone') {
+      setOverIntent({ id: targetId, mode: "sibling" });
+      return;
+    }
+
     const target = findNodeById(effectiveItems as Node[], targetId);
     if (!target) {
       setOverIntent(null);
@@ -81,10 +90,20 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
 
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
+    setActiveId(null);
     setOverIntent(null);
     if (!over || active.id === over.id) return;
 
     const targetId = String(over.id);
+
+    // root-drop-zone: push to very end of root level
+    if (targetId === 'root-drop-zone') {
+      const { tree: afterRemove, removed } = removeNodeWithReturn(effectiveItems, String(active.id));
+      if (!removed) return;
+      const next = [...afterRemove, removed];
+      onChange(next);
+      return;
+    }
 
     if (overIntent?.id === targetId && overIntent.mode === "child") {
       const { tree: afterRemove, removed } =
@@ -132,6 +151,7 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     onDragStart,
     onDragOver,
     onDragEnd,
+    activeId,
     overIntent,
   };
 };

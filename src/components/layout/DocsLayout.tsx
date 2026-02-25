@@ -147,6 +147,9 @@ const Content = styled.main`
   overflow-y: auto;
   background: ${({ theme }) => theme.colors.background};
   padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  cursor: text;
 `;
 
 const ProjectName = styled.span`

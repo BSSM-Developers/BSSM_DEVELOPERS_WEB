@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import styled from "@emotion/styled";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical, Plus, Trash2, Copy } from "lucide-react";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
@@ -13,18 +16,45 @@ interface DocsBlockEditorProps {
   index: number;
   onChange: (index: number, updated: DocsBlockType) => void;
   onAddBlock: (index: number, newBlock?: DocsBlockType) => void;
+  onDuplicateBlock: (index: number) => void;
   onRemoveBlock?: (index: number) => void;
   onFocusMove?: (index: number, direction: "up" | "down") => void;
   domain?: string;
 }
 
-export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBlock, onFocusMove, domain }: DocsBlockEditorProps) {
+export const DocsBlockEditor = memo(function DocsBlockEditor({
+  block,
+  index,
+  onChange,
+  onAddBlock,
+  onDuplicateBlock,
+  onRemoveBlock,
+  onFocusMove,
+  domain
+}: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
   const [imageValue, setImageValue] = useState(block.imageSrc ?? "");
   const [showImageInput, setShowImageInput] = useState(!block.imageSrc);
   const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageWidth, setImageWidth] = useState<number | string>(block.imageWidth || "100%");
+  const [showContextMenu, setShowContextMenu] = useState(false);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: block.id as string });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 2000 : 1000 - index,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   const requestFocus = () => {
     setTimeout(() => {
@@ -157,7 +187,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
 
     if (e.key === "Enter") {
       e.preventDefault();
-      onAddBlock(index, { module: block.module === "list" ? "list" : "docs_1", content: "" });
+      onAddBlock(index, { module: block.module === "list" ? "list" : "docs_1", content: "" } as DocsBlockType);
       return;
     }
 
@@ -190,27 +220,22 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
         return;
       }
     }
-
   };
 
-
-  if (block.module === "api" && block.apiData) {
-    return (
-      <BlockContainer style={{ zIndex: 1000 - index, cursor: "text" }} onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
+  const renderContent = () => {
+    if (block.module === "api" && block.apiData) {
+      return (
         <ApiBlock
           apiData={block.apiData}
           domain={domain}
           editable={true}
           onChange={(updatedApiData) => onChange(index, { ...block, apiData: updatedApiData })}
         />
-        <AddBlockButton onClick={() => onAddBlock(index)} />
-      </BlockContainer>
-    );
-  }
+      );
+    }
 
-  if (block.module === "image") {
-    return (
-      <BlockContainer style={{ zIndex: 1000 - index, cursor: "text" }} onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
+    if (block.module === "image") {
+      return (
         <DocsBlock module="image">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
             {block.imageSrc ? (
@@ -252,7 +277,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                     e.stopPropagation();
                     const startX = e.pageX;
                     const startWidth = containerRef.current?.offsetWidth || 0;
-                    let finalWidth = startWidth;
+                    let finalWidth: number | string = startWidth;
 
                     const onMouseMove = (moveEvent: MouseEvent) => {
                       const deltaX = moveEvent.pageX - startX;
@@ -263,7 +288,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                     const onMouseUp = () => {
                       document.removeEventListener('mousemove', onMouseMove);
                       document.removeEventListener('mouseup', onMouseUp);
-                      onChange(index, { ...block, imageWidth: finalWidth });
+                      onChange(index, { ...block, imageWidth: finalWidth as number });
                     };
 
                     document.addEventListener('mousemove', onMouseMove);
@@ -278,7 +303,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                     e.stopPropagation();
                     const startX = e.pageX;
                     const startWidth = containerRef.current?.offsetWidth || 0;
-                    let finalWidth = startWidth;
+                    let finalWidth: number | string = startWidth;
 
                     const onMouseMove = (moveEvent: MouseEvent) => {
                       const deltaX = startX - moveEvent.pageX;
@@ -289,7 +314,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                     const onMouseUp = () => {
                       document.removeEventListener('mousemove', onMouseMove);
                       document.removeEventListener('mouseup', onMouseUp);
-                      onChange(index, { ...block, imageWidth: finalWidth });
+                      onChange(index, { ...block, imageWidth: finalWidth as number });
                     };
 
                     document.addEventListener('mousemove', onMouseMove);
@@ -306,50 +331,48 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
               </div>
             )}
             {showImageInput && (
-              <>
-                <input
-                  value={imageValue}
-                  onChange={(e) => {
-                    setImageValue(e.target.value);
-                    onChange(index, { ...block, imageSrc: e.target.value });
-                  }}
-                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      if (imageValue.trim() !== "") {
-                        setShowImageInput(false);
-                      }
-                    }
-                  }}
-                  placeholder="https://... URL 입력 후 Enter를 누르세요"
-                  onFocus={() => { setFocused(true); setShowImageInput(true); }}
-                  onBlur={() => {
-                    setFocused(false);
+              <input
+                value={imageValue}
+                onChange={(e) => {
+                  setImageValue(e.target.value);
+                  onChange(index, { ...block, imageSrc: e.target.value });
+                }}
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
                     if (imageValue.trim() !== "") {
                       setShowImageInput(false);
                     }
-                  }}
-                  style={{
-                    width: "100%",
-                    border: "1px solid transparent",
-                    background: block.imageSrc ? "white" : "white",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    outline: "none",
-                    color: "#4B5563",
-                    transition: "all 0.2s",
-                    boxShadow: block.imageSrc ? "0 1px 4px rgba(0,0,0,0.1)" : "0 1px 2px rgba(0,0,0,0.05)",
-                    marginTop: block.imageSrc ? "4px" : "-24px",
-                    position: "relative",
-                    zIndex: 10,
-                    maxWidth: block.imageSrc ? "100%" : "300px",
-                    alignSelf: block.imageSrc ? "flex-start" : "center"
-                  }}
-                  className="image-url-input"
-                  autoFocus
-                />
-              </>
+                  }
+                }}
+                placeholder="https://... URL 입력 후 Enter를 누르세요"
+                onFocus={() => { setFocused(true); setShowImageInput(true); }}
+                onBlur={() => {
+                  setFocused(false);
+                  if (imageValue.trim() !== "") {
+                    setShowImageInput(false);
+                  }
+                }}
+                style={{
+                  width: "100%",
+                  border: "1px solid transparent",
+                  background: "white",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "13px",
+                  outline: "none",
+                  color: "#4B5563",
+                  transition: "all 0.2s",
+                  boxShadow: block.imageSrc ? "0 1px 4px rgba(0,0,0,0.1)" : "0 1px 2px rgba(0,0,0,0.05)",
+                  marginTop: block.imageSrc ? "4px" : "-24px",
+                  position: "relative",
+                  zIndex: 10,
+                  maxWidth: block.imageSrc ? "100%" : "300px",
+                  alignSelf: block.imageSrc ? "flex-start" : "center"
+                }}
+                className="image-url-input"
+                autoFocus
+              />
             )}
             <style jsx>{`
               .image-url-input:focus, .image-url-input:hover {
@@ -383,16 +406,13 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
             `}</style>
           </div>
         </DocsBlock>
-        <AddBlockButton onClick={() => onAddBlock(index)} />
-      </BlockContainer>
-    );
-  }
+      );
+    }
 
-  const isCode = block.module === "code";
-  const isList = block.module === "list";
+    const isCode = block.module === "code";
+    const isList = block.module === "list";
 
-  return (
-    <BlockContainer style={{ zIndex: 1000 - index, cursor: "text" }} onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
+    return (
       <DocsBlock module={block.module}>
         {isList ? (
           <li style={{ width: "100%" }}>
@@ -478,7 +498,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                   setValue(e.target.value);
                   onChange(index, { ...block, content: e.target.value });
                 }}
-                onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                onKeyDown={(e) => {
                   handleKeyDown(e);
                 }}
                 onFocus={() => setFocused(true)}
@@ -526,7 +546,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                 width: "100%",
                 border: "none",
                 background: "transparent",
-                padding: "2px 12px",
+                padding: "2px 4px",
                 borderRadius: "4px",
                 font: "inherit",
                 color: "inherit",
@@ -548,7 +568,7 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                 box-shadow: none;
               }
             `}</style>
-            {showMenu && filteredOptions.length > 0 && (
+            {showMenu && filteredOptions.length > 0 ? (
               <MenuContainer>
                 {filteredOptions.map((opt, i) => (
                   <MenuItem
@@ -562,71 +582,150 @@ export function DocsBlockEditor({ block, index, onChange, onAddBlock, onRemoveBl
                   </MenuItem>
                 ))}
               </MenuContainer>
-            )}
+            ) : null}
           </div>
         )}
       </DocsBlock>
-      <AddBlockButton onClick={() => onAddBlock(index)} />
+    );
+  };
+
+  return (
+    <BlockContainer
+      ref={setNodeRef}
+      style={style}
+      className="block-editor-container"
+    >
+      <Gutter className="gutter-controls">
+        <DragHandle
+          {...attributes}
+          {...listeners}
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowContextMenu((prev) => !prev);
+          }}
+          isActive={showContextMenu}
+        >
+          <GripVertical size={16} />
+          {showContextMenu ? (
+            <ContextMenu>
+              <ContextMenuItem onClick={() => { onDuplicateBlock(index); setShowContextMenu(false); }}>
+                <Copy size={14} />
+                복제
+              </ContextMenuItem>
+              <ContextMenuItem isDelete onClick={() => { onRemoveBlock?.(index); setShowContextMenu(false); }}>
+                <Trash2 size={14} />
+                삭제
+              </ContextMenuItem>
+            </ContextMenu>
+          ) : null}
+        </DragHandle>
+        <PlusButton onClick={() => onAddBlock(index)}>
+          <Plus size={16} />
+        </PlusButton>
+      </Gutter>
+
+      <ContentArea onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
+        {renderContent()}
+      </ContentArea>
     </BlockContainer>
   );
-}
+});
 
 const BlockContainer = styled.div`
   position: relative;
   width: 100%;
-  padding: 0;
-  &:hover > .add-block-area {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 4px;
+  &:hover .gutter-controls {
     opacity: 1;
-    pointer-events: auto;
   }
 `;
 
-const AddBlockButton = ({ onClick }: { onClick: () => void }) => (
-  <AddBlockArea className="add-block-area">
-    <AddCircle onClick={onClick} className="add-block-button">+</AddCircle>
-  </AddBlockArea>
-);
-
-const AddBlockArea = styled.div`
+const Gutter = styled.div`
   position: absolute;
-  bottom: -16px;
-  left: 0;
-  right: 0;
-  height: 32px;
+  left: -36px;
+  top: 4px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 0px;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s;
   z-index: 100;
-  pointer-events: none;
 `;
 
-const AddCircle = styled.button`
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: ${({ theme }) => theme.colors.bssmDarkBlue};
-  color: white;
-  border: none;
+const DragHandle = styled.div<{ isActive?: boolean }>`
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  font-size: 16px;
-  margin: 0 10px;
-  pointer-events: auto;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: ${props => props.isActive ? '#191F28' : '#ACB3BA'};
+  cursor: grab;
+  border-radius: 4px;
+  position: relative;
+  background: ${props => props.isActive ? '#F2F4F6' : 'transparent'};
   &:hover {
-    background: ${({ theme }) => theme.colors.bssmDarkBlue};
-    transform: scale(1.2);
+    background: #F2F4F6;
+    color: #191F28;
+  }
+  &:active {
+    cursor: grabbing;
+  }
+`;
+
+const PlusButton = styled.div`
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ACB3BA;
+  cursor: pointer;
+  border-radius: 4px;
+  &:hover {
+    background: #F2F4F6;
+    color: #191F28;
+  }
+`;
+
+const ContentArea = styled.div`
+  flex: 1;
+  width: 100%;
+`;
+
+const ContextMenu = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 4px;
+  width: 120px;
+  margin-top: 4px;
+  z-index: 1000;
+`;
+
+const ContextMenuItem = styled.div<{ isDelete?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: ${props => props.isDelete ? '#F04452' : '#191F28'};
+  &:hover {
+    background: #F2F4F6;
   }
 `;
 
 const MenuContainer = styled.div`
   position: absolute;
   top: 100%;
-  left: 12px;
+  left: 4px;
   z-index: 100;
   background: white;
   border: 1px solid #E5E7EB;

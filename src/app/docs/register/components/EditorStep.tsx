@@ -1,4 +1,18 @@
 import React from 'react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 import { DocsLayout } from "@/components/layout/DocsLayout";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
@@ -17,8 +31,10 @@ interface EditorStepProps {
   docsBlocks: DocsBlock[];
   handleBlockChange: (index: number, updated: DocsBlock) => void;
   handleAddBlock: (index: number, newBlock?: DocsBlock) => void;
+  handleDuplicateBlock: (index: number) => void;
   handleRemoveBlock: (index: number) => void;
   handleFocusMove: (index: number, direction: "up" | "down") => void;
+  handleMoveBlock: (activeId: string, overId: string) => void;
   handleStepChange: (step: Step) => void;
   handleNext: () => void;
 }
@@ -30,8 +46,10 @@ export const EditorStep = ({
   docsBlocks,
   handleBlockChange,
   handleAddBlock,
+  handleDuplicateBlock,
   handleRemoveBlock,
   handleFocusMove,
+  handleMoveBlock,
   handleStepChange,
   handleNext
 }: EditorStepProps) => {
@@ -40,6 +58,20 @@ export const EditorStep = ({
   const isRoot = selectedNode?.id === sidebarItems[0]?.id;
 
   const breadcrumb = isRoot ? [] : [formData.title || "새 문서"];
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      handleMoveBlock(active.id as string, over.id as string);
+    }
+  };
 
   return (
     <div style={{ width: '100%', height: 'calc(100vh - 69px)', display: 'flex', flexDirection: 'column' }}>
@@ -51,7 +83,15 @@ export const EditorStep = ({
       >
         <DocsHeader title={selectedNode?.label || formData.title || "새 문서"} breadcrumb={breadcrumb} isApi={false} />
         <div
-          style={{ minHeight: "500px", flex: 1, cursor: "text", display: "flex", flexDirection: "column" }}
+          style={{
+            minHeight: "500px",
+            flex: 1,
+            cursor: "text",
+            display: "flex",
+            flexDirection: "column",
+            paddingLeft: '36px',
+            position: 'relative'
+          }}
           onClick={() => {
             if (docsBlocks.length > 0) {
               const lastBlock = docsBlocks[docsBlocks.length - 1];
@@ -73,18 +113,30 @@ export const EditorStep = ({
               내용을 입력하려면 클릭하세요...
             </div>
           ) : (
-            docsBlocks.map((block, i) => (
-              <DocsBlockEditor
-                key={block.id || i}
-                index={i}
-                block={block}
-                domain={formData.domain || ""}
-                onChange={handleBlockChange}
-                onAddBlock={handleAddBlock}
-                onRemoveBlock={handleRemoveBlock}
-                onFocusMove={handleFocusMove}
-              />
-            ))
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={docsBlocks.map(b => b.id as string)}
+                strategy={verticalListSortingStrategy}
+              >
+                {docsBlocks.map((block, i) => (
+                  <DocsBlockEditor
+                    key={block.id}
+                    index={i}
+                    block={block}
+                    domain={formData.domain || ""}
+                    onChange={handleBlockChange}
+                    onAddBlock={handleAddBlock}
+                    onDuplicateBlock={handleDuplicateBlock}
+                    onRemoveBlock={handleRemoveBlock}
+                    onFocusMove={handleFocusMove}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
         <div style={{

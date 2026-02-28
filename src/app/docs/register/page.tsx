@@ -37,6 +37,8 @@ export default function DocsRegisterPage() {
     handleAddBlock,
     handleRemoveBlock,
     handleFocusMove,
+    handleDuplicateBlock,
+    handleMoveBlock,
     saveCurrentBlock,
     contentMap,
     restoreEditorState
@@ -56,7 +58,7 @@ export default function DocsRegisterPage() {
       let hasApiModule = false;
       const uniqueApis = new Set<string>();
 
-      for (const [nodeId, blocks] of Object.entries(allBlocks)) {
+      for (const [, blocks] of Object.entries(allBlocks)) {
         for (const block of blocks) {
           if (block.module === 'api' && block.apiData) {
             hasApiModule = true;
@@ -247,8 +249,10 @@ export default function DocsRegisterPage() {
           docsBlocks={docsBlocks}
           handleBlockChange={handleBlockChange}
           handleAddBlock={handleAddBlock}
+          handleDuplicateBlock={handleDuplicateBlock}
           handleRemoveBlock={handleRemoveBlock}
           handleFocusMove={handleFocusMove}
+          handleMoveBlock={handleMoveBlock}
           handleStepChange={setStep}
           handleNext={handleNextStep}
         />

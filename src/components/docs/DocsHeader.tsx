@@ -25,7 +25,8 @@ export function DocsHeader({ title, breadcrumb = [], isApi = false }: DocsHeader
 }
 
 const Header = styled.header<{ isApi?: boolean }>`
-  margin-bottom: ${({ isApi }) => (isApi ? "24px" : "48px")};
+  margin-bottom: 24px;
+  padding-left: 24px;
 `;
 
 const BreadcrumbAndTitle = styled.div`

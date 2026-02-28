@@ -4,6 +4,7 @@ import { DocsBlock } from "@/types/docs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { Step } from "./types";
 import { findNodeById, updateNode } from "@/components/layout/treeUtils";
+import { arrayMove } from "@dnd-kit/sortable";
 
 export const useDocsEditor = (step: Step, title: string) => {
   const selectedId = useDocsStore((state) => state.selected);
@@ -84,6 +85,38 @@ export const useDocsEditor = (step: Step, title: string) => {
     prevSelectedIdRef.current = currentId;
   }, [selectedId, step, contentMap, sidebarItems]);
 
+  useEffect(() => {
+    if (!selectedId || sidebarItems.length === 0) return;
+
+    const node = findNodeById(sidebarItems, selectedId);
+    if (!node) return;
+
+    setDocsBlocks(prev => {
+      if (prev.length === 0) return prev;
+      const copy = [...prev];
+      let changed = false;
+
+      if (node.module === 'api') {
+        const apiBlockIndex = copy.findIndex(b => b.module === 'api');
+        if (apiBlockIndex !== -1 && copy[apiBlockIndex].apiData && copy[apiBlockIndex].apiData.name !== node.label) {
+          copy[apiBlockIndex] = {
+            ...copy[apiBlockIndex],
+            apiData: { ...copy[apiBlockIndex].apiData!, name: node.label }
+          };
+          changed = true;
+        }
+      } else {
+        const firstBlock = copy[0];
+        if (firstBlock && firstBlock.module === 'headline_1' && firstBlock.content !== node.label) {
+          copy[0] = { ...firstBlock, content: node.label };
+          changed = true;
+        }
+      }
+
+      return changed ? copy : prev;
+    });
+  }, [sidebarItems, selectedId]);
+
   const handleBlockChange = (index: number, updated: DocsBlock) => {
     setDocsBlocks(prev => {
       const copy = [...prev];
@@ -145,10 +178,26 @@ export const useDocsEditor = (step: Step, title: string) => {
     }, 0);
   };
 
+  const handleDuplicateBlock = (index: number) => {
+    const sourceBlock = docsBlocks[index];
+    if (!sourceBlock) return;
+
+    const newBlock = {
+      ...sourceBlock,
+      id: Math.random().toString(36).substring(2, 11)
+    };
+
+    setDocsBlocks(prev => {
+      const copy = [...prev];
+      copy.splice(index + 1, 0, newBlock);
+      return copy;
+    });
+  };
+
   const handleRemoveBlock = (index: number) => {
     setDocsBlocks(prev => {
       if (prev.length <= 1) {
-        return [{ ...prev[0], module: "docs_1", content: "" }];
+        return [{ ...prev[0], id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }];
       }
 
       const copy = [...prev];
@@ -176,6 +225,16 @@ export const useDocsEditor = (step: Step, title: string) => {
     }, 0);
   };
 
+  const handleMoveBlock = (activeId: string, overId: string) => {
+    if (activeId === overId) return;
+
+    setDocsBlocks((prev) => {
+      const oldIndex = prev.findIndex((b) => b.id === activeId);
+      const newIndex = prev.findIndex((b) => b.id === overId);
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  };
+
   const saveCurrentBlock = () => {
     if (selectedId) {
       setContentMap(prev => ({
@@ -197,8 +256,10 @@ export const useDocsEditor = (step: Step, title: string) => {
     setSidebarItems,
     handleBlockChange,
     handleAddBlock,
+    handleDuplicateBlock,
     handleRemoveBlock,
     handleFocusMove,
+    handleMoveBlock,
     saveCurrentBlock,
     contentMap,
     restoreEditorState

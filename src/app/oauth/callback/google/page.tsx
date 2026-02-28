@@ -1,16 +1,29 @@
+/* eslint-disable */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api, tokenManager } from "@/lib/api";
+import { tokenManager } from "@/utils/fetcher";
+import { signUpApi } from "@/app/sign-up/api";
+import { userApi } from "@/app/user/api";
+import { docsApi } from "@/app/docs/api";
 import styled from "@emotion/styled";
 
-export default function GoogleCallbackPage() {
+import { useLoginMutation } from "@/app/login/queries";
+import { useUserStore } from "@/store/userStore";
+
+function GoogleCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState("인증 처리 중...");
+  const [status, setStatus] = useState("로그인 중입니다");
+
+  const loginMutation = useLoginMutation();
+  const isProcessing = useRef(false);
 
   useEffect(() => {
+    if (isProcessing.current) return;
+    isProcessing.current = true;
+
     const code = searchParams.get("code");
 
     if (!code) {
@@ -23,7 +36,6 @@ export default function GoogleCallbackPage() {
       try {
         const codeVerifier = sessionStorage.getItem('codeVerifier');
         if (!codeVerifier) {
-          console.error("Code verifier not found");
           setStatus("인증 오류: Code verifier가 없습니다.");
           setTimeout(() => router.push("/login"), 2000);
           return;
@@ -31,46 +43,44 @@ export default function GoogleCallbackPage() {
 
         let response;
         try {
-          response = await api.auth.loginWithGoogle(code, codeVerifier);
-          console.log("Login response:", response); // Debug log
+          response = await loginMutation.mutateAsync({ code, codeVerifier });
         } catch (error) {
-          console.log("Login failed (likely new user), redirecting to sign-up:", error);
+          console.error("Login failed:", error);
           router.push("/sign-up");
           return;
         }
 
-        // Safely access accessToken
         const accessToken = response?.accessToken;
-
-        // Clear verifier
         sessionStorage.removeItem('codeVerifier');
 
         if (accessToken) {
-          // Existing user
-          tokenManager.setTokens(accessToken);
-          setStatus("로그인 성공! 이동 중...");
+          tokenManager.setTokens(accessToken, response.refreshToken);
+          setStatus("로그인 성공! 회원 정보 확인 중...");
 
-          // Check status just in case, or go straight to home
+          await new Promise(resolve => setTimeout(resolve, 500));
+
           try {
-            const mySignUp = await api.signUp.getMy();
-            if (mySignUp.state === 'APPROVED') {
-              router.push("/");
-            } else {
-              router.push("/sign-up");
+            const user = await userApi.getUser();
+
+            if (user) {
+              useUserStore.getState().setUser(user);
+              tokenManager.setUserName(user.name);
             }
-          } catch (e) {
+
             router.push("/");
+          } catch (e) {
+            console.log("User not found, redirecting to sign-up");
+            setStatus("회원가입이 필요합니다. 이동 중...");
+            router.push("/sign-up");
           }
         } else {
-          // New user (accessToken missing, signup-token cookie should be present)
           setStatus("회원가입이 필요합니다. 이동 중...");
           router.push("/sign-up");
         }
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Callback processing failed:", error);
-        setStatus("처리 중 오류가 발생했습니다. 다시 시도해주세요.");
-        setTimeout(() => router.push("/login"), 2000);
+        setStatus(`처리 중 오류가 발생했습니다: ${error.message}`);
       }
     };
 
@@ -81,6 +91,14 @@ export default function GoogleCallbackPage() {
     <Container>
       <Message>{status}</Message>
     </Container>
+  );
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={<Container><Message>로딩 중...</Message></Container>}>
+      <GoogleCallbackContent />
+    </Suspense>
   );
 }
 

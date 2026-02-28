@@ -1,60 +1,36 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useMemo, useEffect } from "react";
-import { TopNav } from "@/components/layout/TopNav";
+import { useState, useMemo, useCallback } from "react";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
-import { popularApis, originalApis as mockOriginalApis, customApis, type ApiItem } from "./mockData";
-import { api } from "@/lib/api";
+import { type ApiItem } from "./mockData";
+import { useDocsListQuery } from "@/app/docs/queries";
 
 export default function ApiExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
 
-  const [realOriginalApis, setRealOriginalApis] = useState<ApiItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: docsData, isLoading } = useDocsListQuery();
 
-  useEffect(() => {
-    const fetchApis = async () => {
-      try {
-        setIsLoading(true);
-        // 1. Get Docs List
-        const response: any = await api.docs.getList();
+  const realOriginalApis: ApiItem[] = useMemo(() => {
+    const list = docsData?.data?.values;
+    if (!list || !Array.isArray(list)) return [];
 
-        // Check if response has data.values structure
-        if (response && response.data && Array.isArray(response.data.values)) {
-          const docsList = response.data.values;
+    return list.map((item) => ({
+      id: String(item.docsId || item.id || Math.random()),
+      title: item.title || "Untitled API",
+      description: item.description || "설명이 없습니다.",
+      tags: [item.writer || "Unknown"],
+      type: "ORIGINAL",
+      author: item.writer || "Unknown"
+    }));
+  }, [docsData]);
 
-          const mappedApis: ApiItem[] = docsList.map((item: any) => ({
-            id: item.docsId || Math.random().toString(),
-            title: item.title || "Untitled API",
-            description: item.description || "설명이 없습니다.",
-            tags: [item.writer || "Unknown"],
-            type: "ORIGINAL",
-            author: item.writer || "Unknown"
-          }));
-
-          setRealOriginalApis(mappedApis);
-        } else {
-          console.log("No docs found or invalid response structure", response);
-        }
-      } catch (error) {
-        console.error("Failed to fetch APIs:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchApis();
-  }, []);
-
-  // Use real data if available, otherwise empty
   const displayOriginalApis = realOriginalApis;
 
-  // 검색어 기반 필터링
-  const searchItems = (items: ApiItem[]) => {
+  const searchItems = useCallback((items: ApiItem[]) => {
     if (!searchQuery) return items;
     const query = searchQuery.toLowerCase();
     return items.filter(item =>
@@ -62,48 +38,54 @@ export default function ApiExplorePage() {
       item.description.toLowerCase().includes(query) ||
       item.tags.some(tag => tag.toLowerCase().includes(query))
     );
-  };
+  }, [searchQuery]);
 
-  // 전체 아이템 병합
   const allItems = useMemo(() => {
     return [...displayOriginalApis];
   }, [displayOriginalApis]);
 
-  // 필터링된 리스트 (단일 뷰용)
   const filteredList = useMemo(() => {
     if (filterType === "ALL") return [];
 
     let items = allItems;
 
-    // 타입 필터 적용
     if (filterType === "ORIGINAL") {
       items = items.filter(item => item.type !== "CUSTOM");
     } else if (filterType === "CUSTOM") {
       items = items.filter(item => item.type === "CUSTOM");
     }
 
-    // 검색 적용
     items = searchItems(items);
 
-    // 정렬 적용
     if (sortType === "POPULAR") {
-      // 데모용 역순 정렬
       return [...items].reverse();
     }
 
     return items;
-  }, [filterType, sortType, searchQuery, allItems]);
+  }, [filterType, sortType, searchItems, allItems]);
 
-  // 기본 뷰용 섹션 데이터
-  const displayPopular = useMemo(() => [], [searchQuery]);
-  const displayOriginal = useMemo(() => searchItems(displayOriginalApis), [searchQuery, displayOriginalApis]);
-  const displayCustom = useMemo(() => [], [searchQuery]);
+  const displayPopular = useMemo(() => [], []);
+  const displayOriginal = useMemo(() => searchItems(displayOriginalApis), [searchItems, displayOriginalApis]);
+  const displayCustom = useMemo(() => [], []);
 
   const isFilteredView = filterType !== "ALL";
 
+  if (isLoading) {
+    return (
+      <PageContainer>
+        <ContentWrapper>
+          <PageHeader>
+            <Title>API 둘러보기</Title>
+            <Subtitle>학생들이 공유한 API를 자유롭게 둘러볼 수 있습니다</Subtitle>
+          </PageHeader>
+          <EmptyState>데이터를 불러오는 중입니다...</EmptyState>
+        </ContentWrapper>
+      </PageContainer>
+    );
+  }
+
   return (
     <PageContainer>
-      <TopNav />
       <ContentWrapper>
         <PageHeader>
           <Title>API 둘러보기</Title>
@@ -121,7 +103,6 @@ export default function ApiExplorePage() {
         </SearchSection>
 
         {isFilteredView ? (
-          // 필터링된 뷰: 단일 섹션
           filteredList.length > 0 ? (
             <ApiSection
               title={`${filterType} API`}
@@ -132,7 +113,6 @@ export default function ApiExplorePage() {
             <EmptyState>검색 결과가 없습니다.</EmptyState>
           )
         ) : (
-          // 기본 뷰: 다중 섹션
           <>
             {displayPopular.length > 0 && (
               <ApiSection

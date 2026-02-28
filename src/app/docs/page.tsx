@@ -1,20 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { DocsLayout } from "@/components/layout/DocsLayout";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
-import { ApiDocModule } from "@/components/docs/ApiDocModule";
 import { DocsBlock } from "@/types/docs";
-import { docsSubData, DocsSubEntry } from "./mock/docsSubData";
-import { apiMockData } from "./mock/apiMockData";
 import { useDocsStore, DocsStoreState } from "@/store/docsStore";
 
 type BlockWithId = DocsBlock & { id: string };
 
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
-// Helper function to find the sidebar node and its path
+// 사이드바 노드와 경로를 찾는 헬퍼 함수
 const findSidebarNodeWithPath = (items: SidebarNode[], id: string, path: string[] = []): { node: SidebarNode; path: string[] } | null => {
   for (const item of items) {
     if (item.id === id) return { node: item, path };
@@ -26,7 +21,7 @@ const findSidebarNodeWithPath = (items: SidebarNode[], id: string, path: string[
   return null;
 };
 
-// Need to import sidebar items to check if selected is API
+// API 여부를 확인하기 위해 사이드바 아이템 필요
 const sidebarItems: SidebarNode[] = [
   {
     id: "perseus",
@@ -126,7 +121,7 @@ export default function DocsEditPage() {
   const updateDocsData = useDocsStore((s: DocsStoreState) => s.updateDocsData);
   const updateApiData = useDocsStore((s: DocsStoreState) => s.updateApiData);
 
-  // Find the selected node in sidebar
+  // 사이드바에서 선택된 노드 찾기
   const result = findSidebarNodeWithPath(sidebarItems, selected);
   const node = result?.node;
   const isApiDoc = node?.module === "api";
@@ -187,6 +182,19 @@ export default function DocsEditPage() {
     }
   };
 
+  const handleDuplicateBlock = (index: number) => {
+    if (isApiDoc) return;
+    const copy = [...(docsData[selected] || [])];
+    const original = copy[index];
+    const blockId = Math.random().toString(36).substring(2, 11);
+    const newBlock: BlockWithId = {
+      ...original,
+      id: blockId,
+    };
+    copy.splice(index + 1, 0, newBlock);
+    updateDocsData(selected, copy);
+  };
+
   const handleFocusMove = (index: number, direction: "up" | "down") => {
     const target = direction === "up" ? index - 1 : index + 1;
     const targetId = (blocks[target] as BlockWithId)?.id;
@@ -200,8 +208,10 @@ export default function DocsEditPage() {
   const title = node?.label || "시작하기";
   const breadcrumb = result?.path || ["가이드"];
 
+
+
   return (
-    <DocsLayout sidebarItems={sidebarItems}>
+    <>
       <DocsHeader title={title} breadcrumb={breadcrumb} isApi={isApiDoc} />
 
       <div
@@ -226,11 +236,12 @@ export default function DocsEditPage() {
               onChange={(idx, updated) => handleBlockChange(idx, updated)}
               onAddBlock={handleAddBlock}
               onRemoveBlock={handleRemoveBlock}
+              onDuplicateBlock={handleDuplicateBlock}
               onFocusMove={handleFocusMove}
             />
           ))
         )}
       </div>
-    </DocsLayout>
+    </>
   );
 }

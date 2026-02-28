@@ -17,11 +17,16 @@ export const metadata: Metadata = {
   description: "API 공유 플랫폼",
 };
 
+import { TopNav } from "@/components/layout/TopNav";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html suppressHydrationWarning lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
-        <RootProvider>{children}</RootProvider>
+      <body suppressHydrationWarning>
+        <RootProvider>
+          <TopNav />
+          {children}
+        </RootProvider>
       </body>
     </html>
   );

@@ -3,7 +3,6 @@
 import styled from "@emotion/styled";
 import { DocsSidebar } from "./DocsSidebar";
 import { useState } from "react";
-import { TopNav } from "./TopNav";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
 const testItems: SidebarNode[] = [
@@ -63,27 +62,31 @@ const testItems: SidebarNode[] = [
   }
 ];
 
-export function DocsLayout({ children, sidebarItems }: { children: React.ReactNode; sidebarItems?: SidebarNode[] }) {
+export function DocsLayout({ children, sidebarItems, showSidebar = true, onSidebarChange, projectName }: { children: React.ReactNode; sidebarItems?: SidebarNode[]; showSidebar?: boolean; onSidebarChange?: (items: SidebarNode[]) => void; projectName?: string; }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
 
-  // Use passed sidebarItems or fallback to testItems
   const items = sidebarItems || testItems;
 
   return (
     <Wrapper>
-      <TopNav />
       <Body>
-        <Sidebar collapsed={sidebarCollapsed}>
-          <SidebarHeader>
-            <ToggleButton onClick={toggleSidebar}>
-              {sidebarCollapsed ? "→" : "←"}
-            </ToggleButton>
-            {!sidebarCollapsed && <SidebarTitle>API 문서</SidebarTitle>}
-          </SidebarHeader>
-          {!sidebarCollapsed && <DocsSidebar items={items} editable={true} />}
-        </Sidebar>
+        {showSidebar && (
+          <Sidebar collapsed={sidebarCollapsed}>
+            <SidebarHeader collapsed={sidebarCollapsed}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'space-between' }}>
+                {!sidebarCollapsed && projectName && (
+                  <ProjectName>{projectName}</ProjectName>
+                )}
+                <ToggleButton onClick={toggleSidebar}>
+                  {sidebarCollapsed ? "→" : "←"}
+                </ToggleButton>
+              </div>
+            </SidebarHeader>
+            {!sidebarCollapsed && <DocsSidebar items={items} editable={true} onChange={onSidebarChange} />}
+          </Sidebar>
+        )}
         <Content>
           {children}
         </Content>
@@ -95,7 +98,7 @@ export function DocsLayout({ children, sidebarItems }: { children: React.ReactNo
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: calc(100vh - 69px);
 `;
 
 const Body = styled.div`
@@ -114,19 +117,19 @@ const Sidebar = styled.aside<{ collapsed: boolean }>`
   flex-direction: column;
 `;
 
-const SidebarHeader = styled.div`
+const SidebarHeader = styled.div<{ collapsed?: boolean }>`
   display: flex;
   align-items: center;
+  justify-content: ${({ collapsed }) => collapsed ? "center" : "flex-end"};
   padding: 16px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.grey[200]};
-  gap: 8px;
 `;
 
 const ToggleButton = styled.button`
   width: 24px;
   height: 24px;
   border: 0;
-  background: ${({ theme }) => theme.colors.grey[100]};
+  background: white;
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -135,22 +138,28 @@ const ToggleButton = styled.button`
   color: ${({ theme }) => theme.colors.grey[600]};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.grey[200]};
+    background: ${({ theme }) => theme.colors.grey[100]};
   }
-`;
-
-const SidebarTitle = styled.h2`
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Content = styled.main`
   flex: 1;
   overflow-y: auto;
   background: ${({ theme }) => theme.colors.background};
-  padding: 40px 30px;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  cursor: text;
+`;
+
+const ProjectName = styled.span`
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.grey[700]};
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 

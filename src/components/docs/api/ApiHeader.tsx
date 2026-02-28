@@ -1,16 +1,20 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import styled from "@emotion/styled";
+import { useConfirm } from "@/hooks/useConfirm";
 import { HttpMethodTag, type HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
+
+type VerificationState = 'idle' | 'success' | 'fail';
 
 interface ApiHeaderProps {
   title: string;
   description?: string;
+  domain?: string;
   method: HttpMethod;
   endpoint: string;
-  mappingEndpoint?: string;
   onTryClick?: () => void;
   editable?: boolean;
-  onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; mappingEndpoint: string }) => void;
+  missingPathParams?: string[];
+  onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
 }
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"];
@@ -18,52 +22,131 @@ const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"
 export function ApiHeader({
   title,
   description = "",
+  domain,
   method,
   endpoint,
-  mappingEndpoint = "",
   onTryClick,
   editable = false,
+  missingPathParams = [],
   onChange
 }: ApiHeaderProps) {
+  const [verifyState, setVerifyState] = useState<VerificationState>('idle');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
+
+  const handleVerify = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (isVerifying) return;
+
+    if (onTryClick) {
+      onTryClick();
+      return;
+    }
+
+    if (!domain || !endpoint) {
+      await confirm({ title: "검증 실패", message: "도메인과 엔드포인트를 모두 입력해주세요.", hideCancel: true });
+      return;
+    }
+
+    try {
+      setIsVerifying(true);
+
+      const cleanDomain = domain.replace(/\/$/, "");
+      const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+      const url = `${cleanDomain}${cleanEndpoint}`;
+
+      const res = await fetch('/api/try', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ targetUrl: url, method }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Proxy failed');
+      }
+
+      const data = await res.json();
+      const status = data.status;
+
+      if (status !== 404 && status !== 405 && status < 500) {
+        setVerifyState('success');
+        onChange?.({ title, description, method, endpoint, isVerified: true });
+        return;
+      }
+
+      setVerifyState('fail');
+      onChange?.({ title, description, method, endpoint, isVerified: false });
+
+      if (status === 404) {
+        await confirm({ title: "검증 실패", message: "해당 엔드포인트를 찾을 수 없습니다 (404 Not Found).", hideCancel: true });
+        return;
+      }
+
+      if (status === 405) {
+        await confirm({ title: "검증 실패", message: "해당 엔드포인트에서 허용되지 않는 메서드입니다 (405 Method Not Allowed).", hideCancel: true });
+        return;
+      }
+
+      await confirm({ title: "검증 실패", message: `서버 오류가 발생했습니다 (${status}).`, hideCancel: true });
+    } catch {
+      setVerifyState('fail');
+      onChange?.({ title, description, method, endpoint, isVerified: false });
+      await confirm({ title: "검증 실패", message: "서버에 연결할 수 없거나 CORS 정책에 의해 거부되었습니다.", hideCancel: true });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
   if (editable) {
     return (
       <HeaderSection>
         <TitleSection>
           <EditTitleInput
             value={title}
-            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, mappingEndpoint })}
+            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, isVerified: false })}
             placeholder="API 제목"
           />
           <EditDescInput
             value={description}
-            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, mappingEndpoint })}
+            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, isVerified: false })}
             placeholder="API 설명"
           />
         </TitleSection>
 
+        {missingPathParams && missingPathParams.length > 0 && (
+          <WarningText>
+            선언하신 Path 파라미터({missingPathParams.join(", ")})가 엔드포인트 문자열에 존재하지 않습니다.
+          </WarningText>
+        )}
+
         <EndpointSection>
           <MethodSelect
             value={method}
-            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, mappingEndpoint })}
+            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, isVerified: false })}
           />
           <EditEndpointInput
             value={endpoint}
-            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, mappingEndpoint })}
+            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, isVerified: false })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
-          <TryButton onClick={onTryClick}>Try It!</TryButton>
+          <VerifyButton
+            state={verifyState}
+            onClick={handleVerify}
+            disabled={isVerifying}
+          >
+            {isVerifying ? "검증 중..." :
+              verifyState === 'success' ? "검증 완료" :
+                verifyState === 'fail' ? "검증 실패" : "검증"}
+          </VerifyButton>
         </EndpointSection>
 
-        <EndpointSection>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-            <Label style={{ width: 'auto', color: '#58A6FF' }}>MAPPING</Label>
-            <EditEndpointInput
-              value={mappingEndpoint}
-              onChange={(e) => onChange?.({ title, description, method, endpoint, mappingEndpoint: e.target.value })}
-              placeholder="매핑 엔드포인트 (e.g. /user/profile)"
-            />
-          </div>
-        </EndpointSection>
+        {ConfirmDialog}
       </HeaderSection>
     );
   }
@@ -79,19 +162,40 @@ export function ApiHeader({
         <HttpMethodTag method={method} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <EndpointPath>{endpoint}</EndpointPath>
-          {mappingEndpoint && <MappingPath>Mapping: {mappingEndpoint}</MappingPath>}
         </div>
-        <TryButton onClick={onTryClick}>Try It!</TryButton>
+        <VerifyButton
+          state={verifyState}
+          onClick={handleVerify}
+          disabled={isVerifying}
+        >
+          {isVerifying ? "검증 중..." :
+            verifyState === 'success' ? "검증 완료" :
+              verifyState === 'fail' ? "검증 실패" : "Try It!"}
+        </VerifyButton>
       </EndpointSection>
+      {ConfirmDialog}
     </HeaderSection>
   );
 }
 
 function MethodSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    <SelectContainer>
+    <SelectContainer ref={wrapperRef}>
       <SelectTrigger onClick={() => setIsOpen(!isOpen)}>
         <HttpMethodTag method={value as HttpMethod} />
         <Arrow isOpen={isOpen}>▼</Arrow>
@@ -111,7 +215,6 @@ function MethodSelect({ value, onChange }: { value: string; onChange: (val: stri
           ))}
         </SelectOptions>
       )}
-      {isOpen && <SelectBackdrop onClick={() => setIsOpen(false)} />}
     </SelectContainer>
   );
 }
@@ -167,30 +270,9 @@ const EditEndpointInput = styled.input`
   }
 `;
 
-const Label = styled.div`
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  color: #58A6FF;
-  background: #F0F7FF;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid #58A6FF;
-  flex-shrink: 0;
-  text-transform: uppercase;
-`;
-
-const MappingPath = styled.div`
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-weight: 400;
-  font-size: 12px;
-  color: #8B95A1;
-  letter-spacing: -0.6px;
-`;
-
 const SelectContainer = styled.div`
   position: relative;
-  width: 100px;
+  min-width: 80px;
 `;
 
 const SelectTrigger = styled.div`
@@ -199,11 +281,10 @@ const SelectTrigger = styled.div`
   justify-content: space-between;
   padding: 4px 8px;
   background: white;
-  border: 1px solid #E5E7EB;
   border-radius: 4px;
   cursor: pointer;
   &:hover {
-    border-color: #58A6FF;
+    background: #F3F4F6;
   }
 `;
 
@@ -233,13 +314,6 @@ const SelectOption = styled.div`
   &:hover {
     background: #F3F4F6;
   }
-`;
-
-const SelectBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  background: transparent;
 `;
 
 const HeaderSection = styled.div`
@@ -293,7 +367,7 @@ const EndpointSection = styled.div`
   align-items: center;
   gap: 20px;
   padding: 0 12px;
-  background: #F2F4F6;
+  background: white;
   border-radius: 8px;
   height: 42px;
   width: 100%;
@@ -333,8 +407,23 @@ const EndpointPath = styled.div`
   }
 `;
 
-const TryButton = styled.button`
-  background: #16335C;
+const WarningText = styled.div`
+  background-color: #FFF4F4;
+  color: #E03131;
+  border: 1px solid #FFA8A8;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+  margin-top: -8px;
+`;
+
+const VerifyButton = styled.button<{ state: VerificationState }>`
+  background: ${({ state }) =>
+    state === 'success' ? '#0CA678' :
+      state === 'fail' ? '#FA5252' : '#16335C'};
   border-radius: 7px;
   box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.25);
   border: none;
@@ -345,11 +434,16 @@ const TryButton = styled.button`
   font-size: 12px;
   color: white;
   text-align: center;
-  cursor: pointer;
+  cursor: ${({ disabled }) => disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${({ disabled }) => disabled ? 0.7 : 1};
   flex-shrink: 0;
+  transition: background-color 0.2s;
 
   &:hover {
-    background: #1a3a68;
+    background: ${({ state, disabled }) =>
+    disabled ? (state === 'success' ? '#0CA678' : state === 'fail' ? '#FA5252' : '#16335C') :
+      state === 'success' ? '#099268' :
+        state === 'fail' ? '#E03131' : '#1a3a68'};
   }
 
   @media (max-width: 480px) {

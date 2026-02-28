@@ -8,6 +8,7 @@ interface ConfirmOptions {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  hideCancel?: boolean;
 }
 
 export function useConfirm() {
@@ -33,17 +34,18 @@ export function useConfirm() {
     resolveRef(false);
   }, [resolveRef]);
 
-  const ConfirmDialog = () => (
+  const confirmDialog = (
     <ConfirmModal
       isOpen={isOpen}
       title={options.title || "확인"}
       message={options.message}
       confirmText={options.confirmText}
       cancelText={options.cancelText}
+      hideCancel={options.hideCancel}
       onConfirm={handleConfirm}
       onCancel={handleCancel}
     />
   );
 
-  return { confirm, ConfirmDialog };
+  return { confirm, ConfirmDialog: confirmDialog };
 }

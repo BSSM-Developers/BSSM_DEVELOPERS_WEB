@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ApiDoc, DocsBlock } from "@/types/docs";
-import { docsSubData } from "@/app/docs/mock/docsSubData";
 import { apiMockData } from "@/app/docs/mock/apiMockData";
 
 type BlockWithId = DocsBlock & { id: string };
@@ -17,9 +16,7 @@ export interface DocsStoreState {
 
 // 초기 데이터 구성
 const initialDocsData: Record<string, BlockWithId[]> = {};
-docsSubData.forEach(entry => {
-  initialDocsData[entry.id] = entry.blocks as BlockWithId[];
-});
+
 
 export const useDocsStore = create<DocsStoreState>()(
   persist(

@@ -2,20 +2,36 @@
 
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
-import { DocsBlock as DocsBlockType } from "@/types/docs";
+import { DocsBlock as DocsBlockType, ApiDoc } from "@/types/docs";
 import { highlightCode } from "@/utils/apiUtils/highlightUtils";
 
 interface DocsBlockViewerProps {
   block: DocsBlockType;
+  domain?: string;
 }
 
-export function DocsBlockViewer({ block }: DocsBlockViewerProps) {
-  if (block.module === "api" && block.apiData) {
-    return (
-      <DocsBlock module="api">
-        <ApiBlock apiData={block.apiData} editable={false} />
-      </DocsBlock>
-    );
+export function DocsBlockViewer({ block, domain }: DocsBlockViewerProps) {
+  if (block.module === "api" || block.module === "docs_1") {
+    let data = block.apiData;
+    if (!data && block.content && block.content.startsWith("{")) {
+      try {
+        const parsed = JSON.parse(block.content);
+        if (parsed.method && parsed.endpoint) {
+          data = parsed as ApiDoc;
+        }
+      } catch {
+      }
+    }
+
+    if (data) {
+      return (
+        <DocsBlock module="api">
+          <ApiBlock apiData={data} domain={domain} editable={false} />
+        </DocsBlock>
+      );
+    }
+
+    if (block.module === "api") return null;
   }
 
   if (block.module === "image") {

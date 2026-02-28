@@ -2,8 +2,8 @@ export interface ApiItem {
   id: string;
   title: string;
   description: string;
-  tags: string[]; // e.g., ["INSERT", "BSM", "서정원", "박동현"]
-  logo?: string; // URL or component placeholder
+  tags: string[];
+  logo?: string; // URL 또는 컴포넌트 플레이스홀더
   isHot?: boolean;
   type: "INSERT" | "BSM" | "RE:MEDY" | "CUSTOM" | "ORIGINAL";
   author?: string;

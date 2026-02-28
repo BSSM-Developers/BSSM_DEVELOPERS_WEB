@@ -1,9 +1,9 @@
-export type ModuleType = "default" | "api" | "main" | "collapse" | "small";
+export type ModuleType = "default" | "api" | "main" | "collapse" | "small" | "main_title";
 
 export interface SidebarNode {
   id: string;
   label: string;
-  module?: ModuleType;
-  method?: "GET" | "POST" | "DELETE" | "PATCH";
+  module?: string;
+  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE";
   childrenItems?: SidebarNode[];
 }

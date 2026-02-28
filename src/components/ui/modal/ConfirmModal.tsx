@@ -10,6 +10,7 @@ interface ConfirmModalProps {
   message: string;
   confirmText?: string;
   cancelText?: string;
+  hideCancel?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -20,6 +21,7 @@ export function ConfirmModal({
   message,
   confirmText = "확인",
   cancelText = "취소",
+  hideCancel = false,
   onConfirm,
   onCancel
 }: ConfirmModalProps) {
@@ -46,7 +48,7 @@ export function ConfirmModal({
         <Title>{title}</Title>
         <Message>{message}</Message>
         <ButtonGroup>
-          <CancelButton onClick={onCancel}>{cancelText}</CancelButton>
+          {!hideCancel && <CancelButton onClick={onCancel}>{cancelText}</CancelButton>}
           <ConfirmButton onClick={onConfirm}>{confirmText}</ConfirmButton>
         </ButtonGroup>
       </ModalContainer>
@@ -80,7 +82,7 @@ const Backdrop = styled.div`
 const ModalContainer = styled.div`
   position: relative;
   width: 100%;
-  max-width: 320px;
+  max-width: 420px;
   background: white;
   border-radius: 12px;
   padding: 24px;

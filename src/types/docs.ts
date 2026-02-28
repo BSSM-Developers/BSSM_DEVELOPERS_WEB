@@ -7,13 +7,19 @@ export type DocsModule =
   | "list"
   | "api"
   | "big_space"
-  | "space";
+  | "space"
+  | "main"
+  | "main_title"
+  | "default"
+  | "collapse";
 
 export interface DocsBlock {
+  id?: string;
   module: DocsModule;
   content?: string;
   listItems?: string[];
   imageSrc?: string;
+  imageWidth?: number | string;
   apiData?: ApiDoc;
   language?: string;
 }
@@ -23,6 +29,9 @@ export interface ApiParam {
   type: string;
   description: string;
   required?: boolean;
+  example?: string;
+  children?: ApiParam[];
+  paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
 }
 
 export interface ApiDoc {
@@ -30,9 +39,9 @@ export interface ApiDoc {
   name: string;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "UPDATE";
   endpoint: string;
-  mappingEndpoint?: string;
   description: string;
   headerParams?: ApiParam[];
+  cookieParams?: ApiParam[];
   pathParams?: ApiParam[];
   queryParams?: ApiParam[];
   bodyParams?: ApiParam[];
@@ -42,4 +51,5 @@ export interface ApiDoc {
   responseData?: unknown;
   responseStatus?: number;
   responseMessage?: string;
+  isVerified?: boolean;
 }

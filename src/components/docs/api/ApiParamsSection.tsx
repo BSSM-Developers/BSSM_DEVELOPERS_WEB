@@ -1,8 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
+import { useState, useEffect } from "react";
 import { ParamItem } from "@/components/ui/param/ParamItem";
 import { validateParams } from "@/utils/apiUtils/paramUtils";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -12,23 +11,28 @@ interface ApiParam {
   type: string;
   description: string;
   required?: boolean;
+  example?: string;
+  children?: ApiParam[];
+  paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
 }
 
 interface ApiParamsSectionProps {
   title: string;
   params: ApiParam[];
-  large?: boolean;
   showValidation?: boolean;
   editable?: boolean;
+  paramLocation?: string;
+  hideRequired?: boolean;
   onParamsChange?: (params: ApiParam[]) => void;
 }
 
 export function ApiParamsSection({
   title,
   params,
-  large = false,
   showValidation = false,
   editable = false,
+  paramLocation = 'body',
+  hideRequired = false,
   onParamsChange
 }: ApiParamsSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -47,7 +51,7 @@ export function ApiParamsSection({
   }, [params, showValidation]);
 
   const handleAddParam = (type: string = "string") => {
-    const newParam: ApiParam = { name: "", type, description: "", required: false };
+    const newParam: ApiParam = { name: "", type, description: "", required: false, example: "" };
     onParamsChange?.([...params, newParam]);
     if (!isOpen) setIsOpen(true);
   };
@@ -76,8 +80,8 @@ export function ApiParamsSection({
 
   return (
     <ParamSection>
-      <ParamSectionHeader onClick={() => setIsOpen(!isOpen)} style={{ cursor: 'pointer' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <ParamSectionHeader type="button" onClick={() => setIsOpen(!isOpen)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'none' }}>
           <ChevronIcon isOpen={isOpen}>▼</ChevronIcon>
           <ParamSectionTitle>{title}</ParamSectionTitle>
         </div>
@@ -105,103 +109,41 @@ export function ApiParamsSection({
             </ValidationErrors>
           )}
 
-          <ParamCard large={large}>
-            <ParamList style={{ marginTop: 0 }}>
-              {params.map((param, index) => (
-                <ParamItem
-                  key={index}
-                  name={param.name}
-                  type={param.type}
-                  description={param.description}
-                  required={param.required}
-                  editable={editable}
-                  onChange={(updated) => handleUpdateParam(index, updated)}
-                  onDelete={() => handleDeleteParam(index)}
-                />
-              ))}
-              {editable && (
-                <AddParamMenu onAdd={(type) => handleAddParam(type)} />
-              )}
-            </ParamList>
-          </ParamCard>
+          <ParamList style={{ marginTop: 0, padding: '0 8px', borderLeft: '2px solid #E5E7EB' }}>
+            {params.map((param, index) => (
+              <ParamItem
+                key={index}
+                name={param.name}
+                type={param.type}
+                description={param.description}
+                required={param.required}
+                example={param.example}
+                childrenProps={param.children}
+                paramLocation={paramLocation === 'response' ? undefined : (paramLocation as 'header' | 'cookie' | 'path' | 'query' | 'body')}
+                editable={editable}
+                hideRequired={hideRequired}
+                onChange={(updated) => handleUpdateParam(index, updated)}
+                onDelete={() => handleDeleteParam(index)}
+              />
+            ))}
+            {editable && (
+              <AddParamButtonComponent onAdd={(type) => handleAddParam(type)} />
+            )}
+          </ParamList>
         </>
       )}
-      <ConfirmDialog />
+      {ConfirmDialog}
     </ParamSection>
   );
 }
 
-function AddParamMenu({ onAdd }: { onAdd: (type: string) => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
-
-  useEffect(() => {
-    if (isOpen && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setCoords({
-        top: rect.bottom + window.scrollY,
-        left: rect.left + window.scrollX,
-        width: rect.width
-      });
-    }
-  }, [isOpen]);
-
+function AddParamButtonComponent({ onAdd }: { onAdd: (type: string) => void }) {
   return (
-    <>
-      <AddParamButton ref={triggerRef} onClick={() => setIsOpen(!isOpen)}>
-        + 파라미터 추가
-      </AddParamButton>
-      {isOpen && createPortal(
-        <>
-          <MenuBackdrop onClick={() => setIsOpen(false)} />
-          <MenuContainer style={{
-            top: coords.top + 4,
-            left: coords.left,
-            width: 120,
-            position: 'absolute'
-          }}>
-            <MenuItem onClick={() => { onAdd("string"); setIsOpen(false); }}>
-              기본
-            </MenuItem>
-            <MenuItem onClick={() => { onAdd("object"); setIsOpen(false); }}>
-              그룹
-            </MenuItem>
-          </MenuContainer>
-        </>,
-        document.body
-      )}
-    </>
+    <AddParamButton onClick={() => onAdd("string")}>
+      + 파라미터 추가
+    </AddParamButton>
   );
 }
-
-const MenuBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  background: transparent;
-`;
-
-const MenuContainer = styled.div`
-  background: white;
-  border: 1px solid #E5E7EB;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  overflow: hidden;
-`;
-
-const MenuItem = styled.div`
-  padding: 8px 12px;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 13px;
-  color: #4B5563;
-  cursor: pointer;
-  &:hover {
-    background: #F3F4F6;
-    color: #58A6FF;
-  }
-`;
 
 const AddParamButton = styled.button`
   width: 100%;
@@ -226,11 +168,22 @@ const ParamSection = styled.div`
   width: 100%;
 `;
 
-const ParamSectionHeader = styled.div`
+const ParamSectionHeader = styled.button`
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.2s;
+
+  &:hover {
+    opacity: 0.6;
+  }
 `;
 
 const ParamSectionTitle = styled.h3`
@@ -296,27 +249,7 @@ const ErrorList = styled.ul`
   }
 `;
 
-const ParamCard = styled.div<{ large?: boolean }>`
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0px 0px 1px 0px rgba(0,0,0,0.25);
-  padding: 12px 16px 10px 16px;
-  width: 100%;
-  min-height: ${({ large }) => large ? "240px" : "100px"};
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
 
-  @media (max-width: 768px) {
-    padding: 10px 12px;
-    min-height: ${({ large }) => large ? "180px" : "80px"};
-  }
-
-  @media (max-width: 480px) {
-    padding: 8px;
-    min-height: ${({ large }) => large ? "140px" : "70px"};
-  }
-`;
 
 const ParamList = styled.div`
   display: flex;

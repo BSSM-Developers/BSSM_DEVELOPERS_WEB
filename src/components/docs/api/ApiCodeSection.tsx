@@ -1,22 +1,22 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 "use client";
 
 import styled from "@emotion/styled";
 import { useState, useEffect } from "react";
 import { CodeBlock } from "@/components/ui/codeBlock/CodeBlock";
 import { generateRequestCode, generateResponseTemplate, type Language, type Library, defaultLibraryMap, libraryLanguageMap } from "@/utils/apiUtils/codeTemplateUtils";
+import { highlightJson } from "@/utils/apiUtils/highlightUtils";
 import type { ApiDoc } from "@/types/docs";
 
 interface ApiCodeSectionProps {
   apiDoc?: ApiDoc;
   sampleCode?: string;
   responseCode?: string;
-  languages?: Language[];
-  libraryOptions?: Library[];
+  languages?: string[];
+  libraryOptions?: string[];
   baseUrl?: string;
   includeAuth?: boolean;
   authType?: 'bearer' | 'basic' | 'apikey';
-  responseData?: any;
+  responseData?: unknown;
   responseStatus?: number;
   responseMessage?: string;
 }
@@ -25,10 +25,9 @@ export function ApiCodeSection({
   apiDoc,
   sampleCode,
   responseCode,
-  languages = ["Shell", "JavaScript", "Python"] as any,
-  libraryOptions = ["Axios", "Fetch", "jQuery"] as any,
+  languages = ["Shell", "JavaScript", "Python"],
   baseUrl = "",
-  includeAuth = true,
+  includeAuth = false,
   authType = 'bearer',
   responseData = null,
   responseStatus = 200,
@@ -39,14 +38,12 @@ export function ApiCodeSection({
   const [generatedCode, setGeneratedCode] = useState<string>('');
   const [generatedResponse, setGeneratedResponse] = useState<string>('');
 
-  // 언어별 라이브러리 매핑
   const getAvailableLibraries = (lang: Language): Library[] => {
     return Object.entries(libraryLanguageMap)
-      .filter(([_, supportedLangs]) => supportedLangs.includes(lang))
+      .filter(([, supportedLangs]) => supportedLangs.includes(lang))
       .map(([lib]) => lib as Library);
   };
 
-  // 코드 생성
   useEffect(() => {
     if (apiDoc) {
       try {
@@ -58,35 +55,40 @@ export function ApiCodeSection({
           authType
         });
         setGeneratedCode(code);
-      } catch (error) {
-        console.error('Code generation failed:', error);
+      } catch {
         setGeneratedCode(sampleCode || getDefaultSampleCode());
       }
     } else {
       setGeneratedCode(sampleCode || getDefaultSampleCode());
     }
 
-    // 응답 템플릿 생성
-    const response = generateResponseTemplate(responseStatus, responseMessage, responseData);
+    if (responseData) {
+      const actualResponse = highlightJson(JSON.stringify({
+        status: responseStatus,
+        message: responseMessage,
+        data: responseData
+      }, null, 2));
+      setGeneratedResponse(actualResponse);
+      return;
+    }
+
+    const response = generateResponseTemplate(responseStatus, responseMessage, apiDoc?.responseParams);
     setGeneratedResponse(responseCode || response);
   }, [apiDoc, currentLanguage, currentLibrary, baseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage, responseData]);
 
-  // 언어 변경 시 기본 라이브러리 설정
   useEffect(() => {
     const availableLibraries = getAvailableLibraries(currentLanguage);
     if (availableLibraries.length > 0 && !availableLibraries.includes(currentLibrary)) {
       setCurrentLibrary(availableLibraries[0]);
     }
-  }, [currentLanguage]);
+  }, [currentLanguage, currentLibrary]);
 
-  // 언어명 매핑 (UI 표시명 → 내부 타입)
   const languageMap: Record<string, Language> = {
     'JavaScript': 'javascript',
     'Python': 'python',
     'Shell': 'shell'
   };
 
-  // 라이브러리명 매핑 (UI 표시명 → 내부 타입)
   const libraryMap: Record<string, Library> = {
     'Axios': 'axios',
     'Fetch': 'fetch',
@@ -95,40 +97,35 @@ export function ApiCodeSection({
     'cURL': 'native'
   };
 
-  // 언어 선택 핸들러
   const handleLanguageChange = (language: string) => {
     const lang = languageMap[language] || language.toLowerCase() as Language;
     setCurrentLanguage(lang);
 
-    // 해당 언어의 기본 라이브러리 설정
     const defaultLib = defaultLibraryMap[lang];
     if (defaultLib) {
       setCurrentLibrary(defaultLib);
     }
   };
 
-  // 라이브러리 선택 핸들러
   const handleLibraryChange = (library: string) => {
     const lib = libraryMap[library] || library.toLowerCase() as Library;
     setCurrentLibrary(lib);
   };
 
-  // 현재 언어에서 사용 가능한 라이브러리 목록 (표시용)
   const availableLibraryNames = getAvailableLibraries(currentLanguage).map(lib => {
-    const entry = Object.entries(libraryMap).find(([_, v]) => v === lib);
+    const entry = Object.entries(libraryMap).find(([, v]) => v === lib);
     return entry ? entry[0] : lib.charAt(0).toUpperCase() + lib.slice(1);
   });
 
-  // 현재 선택된 언어/라이브러리의 UI 표시명
-  const selectedLanguageName = Object.entries(languageMap).find(([_, v]) => v === currentLanguage)?.[0] || currentLanguage;
-  const selectedLibraryName = Object.entries(libraryMap).find(([_, v]) => v === currentLibrary)?.[0] || currentLibrary;
+  const selectedLanguageName = Object.entries(languageMap).find(([, v]) => v === currentLanguage)?.[0] || currentLanguage;
+  const selectedLibraryName = Object.entries(libraryMap).find(([, v]) => v === currentLibrary)?.[0] || currentLibrary;
 
   return (
     <CodeSection>
       <CodeBlock
         title="Request"
-        languages={languages as any}
-        libraryOptions={availableLibraryNames as any}
+        languages={languages as ("Shell" | "JavaScript" | "Python")[]}
+        libraryOptions={availableLibraryNames as ("Axios" | "Fetch" | "jQuery" | "Requests" | "cURL")[]}
         selectedLanguage={selectedLanguageName}
         selectedLibrary={selectedLibraryName}
         code={generatedCode}
@@ -149,9 +146,7 @@ function getDefaultSampleCode(): string {
 <span style="color: #ff7b72">const</span> response = <span style="color: #ff7b72">await</span> <span style="color: #cda3f9">axios</span>({
   <span style="color: #9fcef8">method</span>: <span style="color: #9fcef8">'post'</span>,
   <span style="color: #9fcef8">url</span>: <span style="color: #9fcef8">'/api/endpoint'</span>,
-  <span style="color: #9fcef8">headers</span>: {
-    <span style="color: #9fcef8">'Authorization'</span>: <span style="color: #9fcef8">'Bearer YOUR_TOKEN_HERE'</span>
-  },
+  <span style="color: #9fcef8">headers</span>: {},
   <span style="color: #9fcef8">data</span>: {
     <span style="color: #9fcef8">'key'</span>: <span style="color: #9fcef8">'value'</span>
   }

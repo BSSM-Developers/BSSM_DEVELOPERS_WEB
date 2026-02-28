@@ -2,7 +2,17 @@ import { SidebarNode } from "../ui/sidebarItem/types";
 
 type Node = SidebarNode & { id: string };
 
-// 부모 id 찾기
+export function findNodeById(list: Node[], id: string): Node | null {
+  for (const n of list) {
+    if (n.id === id) return n;
+    if (n.childrenItems?.length) {
+      const found = findNodeById(n.childrenItems as Node[], id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export function findParentId(list: Node[], childId: string, parentId: string | null = null): string | null {
   for (const n of list) {
     if (n.id === childId) return parentId;
@@ -14,7 +24,6 @@ export function findParentId(list: Node[], childId: string, parentId: string | n
   return null;
 }
 
-// 상위 노드인지 확인
 export function isTopLevel(list: Node[], topLevelId: string, targetId: string): boolean {
   const walk = (xs: Node[], foundTopLevel: boolean): boolean => {
     for (const n of xs) {
@@ -27,27 +36,25 @@ export function isTopLevel(list: Node[], topLevelId: string, targetId: string): 
   return walk(list, false);
 }
 
-// id를 제거하고 제거된 노드를 반환
 export function removeNodeWithReturn(list: Node[], id: string): { tree: Node[]; removed: Node | null } {
   let removed: Node | null = null;
   const walk = (xs: Node[]): Node[] =>
     xs.filter(n => {
       if (n.id === id) {
         removed = n;
-          return false;
-        }
-        return true;
+        return false;
+      }
+      return true;
     })
-  .map(n => ({
-    ...n,
-    childrenItems: n.childrenItems ? (walk(n.childrenItems as Node[]) as SidebarNode[]) : undefined,
-  }));
+      .map(n => ({
+        ...n,
+        childrenItems: n.childrenItems ? (walk(n.childrenItems as Node[]) as SidebarNode[]) : undefined,
+      }));
   const tree = walk(list);
 
   return { tree, removed };
 }
 
-// parentId의 children을 주어진 siblings로 갈아끼운다
 export function applySiblings(list: Node[], parentId: string | null, newSiblings: Node[]): Node[] {
   if (parentId === null) {
     return newSiblings as SidebarNode[];
@@ -59,4 +66,16 @@ export function applySiblings(list: Node[], parentId: string | null, newSiblings
         : { ...n, childrenItems: n.childrenItems ? (walk(n.childrenItems as Node[]) as SidebarNode[]) : undefined },
     );
   return walk(list);
+}
+
+export function updateNode(list: Node[], id: string, updates: Partial<Node>): Node[] {
+  return list.map(node => {
+    if (node.id === id) {
+      return { ...node, ...updates };
+    }
+    if (node.childrenItems) {
+      return { ...node, childrenItems: updateNode(node.childrenItems as Node[], id, updates) as SidebarNode[] };
+    }
+    return node;
+  });
 }

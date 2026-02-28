@@ -8,28 +8,54 @@ export const tokenManager = {
   setTokens: (accessToken: string, refreshToken?: string) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("access_token", accessToken);
       if (refreshToken) {
         localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("refresh_token", refreshToken);
       }
     }
   },
   getAccessToken: () => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("accessToken");
+      const keys = ["accessToken", "access_token", "access-token"];
+      for (const key of keys) {
+        const token = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (token) return token;
+      }
+
+      try {
+        const userStorage = localStorage.getItem("user-storage");
+        if (userStorage) {
+          const parsed = JSON.parse(userStorage);
+          if (parsed.state?.user?.accessToken) return parsed.state.user.accessToken;
+          if (parsed.state?.user?.access_token) return parsed.state.user.access_token;
+        }
+      } catch {
+      }
     }
     return null;
   },
   getRefreshToken: () => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem("refreshToken");
+      const keys = ["refreshToken", "refresh_token", "refresh-token"];
+      for (const key of keys) {
+        const token = localStorage.getItem(key) || sessionStorage.getItem(key);
+        if (token) return token;
+      }
     }
     return null;
   },
   clearTokens: () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("userName");
+      const keys = [
+        "accessToken", "access_token", "access-token",
+        "refreshToken", "refresh_token", "refresh-token",
+        "userName", "user_name"
+      ];
+      keys.forEach(key => {
+        localStorage.removeItem(key);
+        sessionStorage.removeItem(key);
+      });
     }
   },
   getUserRole: (): string | null => {
@@ -52,7 +78,7 @@ export const tokenManager = {
 
       const payload = JSON.parse(jsonPayload);
       return payload.role || null;
-    } catch (e) {
+    } catch {
       return null;
     }
   },
@@ -100,7 +126,6 @@ const request = async <T>(
   body?: unknown,
   options: ApiRequestOptions = {}
 ): Promise<T> => {
-  // BASE_URL이 상대 경로(/api/proxy)일 때 new URL()이 실패하지 않도록 항상 Base를 제공
   const fullUrl = `${BASE_URL}${endpoint}`;
   const url = new URL(fullUrl, typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
 
@@ -136,6 +161,38 @@ const request = async <T>(
   const response = await fetch(url.toString(), fetchOptions);
 
   if (response.status === 401 && !options.skipAuth) {
+    const refreshToken = tokenManager.getRefreshToken();
+    if (refreshToken && !options.suppressLogout) {
+      try {
+        const refreshUrl = new URL(`${BASE_URL}/auth/token/refresh`, typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+        const refreshResponse = await fetch(refreshUrl.toString(), {
+          method: "GET",
+          headers: {
+            "refresh-token": refreshToken
+          },
+          credentials: "include"
+        });
+
+        if (refreshResponse.ok) {
+          const refreshData = await refreshResponse.json();
+          const newAccessToken = refreshData.accessToken || refreshData.data?.accessToken;
+          if (newAccessToken) {
+            tokenManager.setTokens(newAccessToken, refreshToken);
+
+            const retryHeaders = { ...headers, "Authorization": `Bearer ${newAccessToken}` };
+            const retryOptions = { ...fetchOptions, headers: retryHeaders };
+            const retryResponse = await fetch(url.toString(), retryOptions);
+
+            if (retryResponse.ok) {
+              const text = await retryResponse.text();
+              return text ? JSON.parse(text) : ({} as T);
+            }
+          }
+        }
+      } catch {
+      }
+    }
+
     if (!options.suppressLogout) {
       tokenManager.clearTokens();
       if (typeof window !== "undefined") {

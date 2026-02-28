@@ -16,7 +16,7 @@ import { findNodeById } from "@/components/layout/treeUtils";
 
 const MODULE_OPTIONS = [
   { label: "기본", module: "default" },
-  { label: "메인", module: "main" },
+  { label: "메인", module: "main_title" },
   { label: "그룹", module: "collapse" },
   { label: "API(GET)", module: "api", method: "GET" as const },
   { label: "API(POST)", module: "api", method: "POST" as const },
@@ -305,7 +305,7 @@ export function DocsSidebar({
     }
   }, [editable, handleKeyDown]);
 
-  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE" }) => {
+  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main_title" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE" }) => {
     const node: SidebarNode = { id: crypto.randomUUID(), label: opt.label, module: opt.module, childrenItems: [] };
     if (opt.method) node.method = opt.method;
     if (picker.mode === "child" && picker.targetId) {

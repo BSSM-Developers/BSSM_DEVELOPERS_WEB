@@ -150,6 +150,19 @@ export default function DocsEditPage() {
     }
   };
 
+  const handleDuplicateBlock = (index: number) => {
+    if (isApiDoc) return;
+    const copy = [...(docsData[selected] || [])];
+    const original = copy[index];
+    const blockId = Math.random().toString(36).substring(2, 11);
+    const newBlock: BlockWithId = {
+      ...original,
+      id: blockId,
+    };
+    copy.splice(index + 1, 0, newBlock);
+    updateDocsData(selected, copy);
+  };
+
   const handleFocusMove = (index: number, direction: "up" | "down") => {
     const target = direction === "up" ? index - 1 : index + 1;
     const targetId = (blocks[target] as BlockWithId)?.id;
@@ -203,6 +216,7 @@ export default function DocsEditPage() {
               onChange={(idx, updated) => handleBlockChange(idx, updated)}
               onAddBlock={handleAddBlock}
               onRemoveBlock={handleRemoveBlock}
+              onDuplicateBlock={handleDuplicateBlock}
               onFocusMove={handleFocusMove}
             />
           ))

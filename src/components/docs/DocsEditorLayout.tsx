@@ -9,10 +9,11 @@ export interface DocsEditorLayoutProps {
   onChange: (index: number, block: DocsBlock) => void;
   onAdd: (index: number, block?: DocsBlock) => void;
   onRemove: (index: number) => void;
+  onDuplicate: (index: number) => void;
   onFocusMove?: (index: number, direction: "up" | "down") => void;
 }
 
-export function DocsEditorLayout({ blocks, onChange, onAdd, onRemove, onFocusMove }: DocsEditorLayoutProps) {
+export function DocsEditorLayout({ blocks, onChange, onAdd, onRemove, onDuplicate, onFocusMove }: DocsEditorLayoutProps) {
   return (
     <div
       style={{ padding: "40px 80px", maxWidth: "800px", margin: "0 auto", minHeight: "500px", flex: 1, display: "flex", flexDirection: "column", cursor: "text" }}
@@ -45,6 +46,7 @@ export function DocsEditorLayout({ blocks, onChange, onAdd, onRemove, onFocusMov
             onChange={onChange}
             onAddBlock={onAdd}
             onRemoveBlock={onRemove}
+            onDuplicateBlock={onDuplicate}
             onFocusMove={onFocusMove}
           />
         ))

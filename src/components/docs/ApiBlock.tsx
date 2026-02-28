@@ -1,9 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import styled from "@emotion/styled";
 import { ApiDocModule } from "./ApiDocModule";
 import type { ApiDoc } from "@/types/docs";
+import type { HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 
 interface ApiBlockProps {
   apiData: ApiDoc;
@@ -13,14 +13,13 @@ interface ApiBlockProps {
 }
 
 export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlockProps) {
-  const handleHeaderChange = (updated: any) => {
+  const handleHeaderChange = (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => {
     onChange?.({
       ...apiData,
       name: updated.title,
       description: updated.description,
-      method: updated.method,
+      method: updated.method as ApiDoc['method'],
       endpoint: updated.endpoint,
-      mappingEndpoint: updated.mappingEndpoint,
       isVerified: updated.isVerified !== undefined ? updated.isVerified : apiData.isVerified
     });
   };
@@ -33,7 +32,6 @@ export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlo
         domain={domain}
         method={apiData.method}
         endpoint={apiData.endpoint}
-        mappingEndpoint={apiData.mappingEndpoint}
         description={apiData.description}
         headerParams={apiData.headerParams}
         cookieParams={apiData.cookieParams}
@@ -57,6 +55,7 @@ export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlo
         onResponseStatusChange={(status) => onChange?.({ ...apiData, responseStatus: status })}
         responseMessage={apiData.responseMessage}
         onResponseMessageChange={(message) => onChange?.({ ...apiData, responseMessage: message })}
+        isVerified={apiData.isVerified}
       />
     </Container>
   );

@@ -44,7 +44,7 @@ export default function DocsRegisterPage() {
     restoreEditorState
   } = useDocsEditor(step, formData.title);
 
-  const { loading, handleSubmit: submitDocs } = useDocsSubmit();
+  const { loading, handleSubmit: submitDocs } = useDocsSubmit(confirm);
 
   const handleNextStep = async () => {
     if (step === 'INPUT') {
@@ -72,20 +72,11 @@ export default function DocsRegisterPage() {
             }
             uniqueApis.add(methodEndpoint);
 
-            if (!api.mappingEndpoint) {
-              await confirm({ title: "검증 실패", message: `[${docName}] 매핑 엔드포인트(MAPPING)를 입력해주세요.`, hideCancel: true });
-              return;
-            }
-
             if (api.pathParams && api.pathParams.length > 0) {
               for (const p of api.pathParams) {
                 if (!p.name) continue;
                 if (!api.endpoint.includes(`{${p.name}}`)) {
-                  await confirm({ title: "검증 실패", message: `[${docName}] 선언된 Path 파라미터 '{${p.name}}'가 메인 엔드포인트 문자열에 존재하지 않습니다.`, hideCancel: true });
-                  return;
-                }
-                if (api.mappingEndpoint && !api.mappingEndpoint.includes(`{${p.name}}`)) {
-                  await confirm({ title: "검증 실패", message: `[${docName}] 선언된 Path 파라미터 '{${p.name}}'가 매핑 엔드포인트 문자열에 존재하지 않습니다.`, hideCancel: true });
+                  await confirm({ title: "검증 실패", message: `[${docName}] 선언된 Path 파라미터 '{${p.name}}'가 엔드포인트 문자열에 존재하지 않습니다.`, hideCancel: true });
                   return;
                 }
               }
@@ -96,11 +87,6 @@ export default function DocsRegisterPage() {
 
             if (digitRegex.test(api.endpoint) || uuidRegex.test(api.endpoint)) {
               await confirm({ title: "검증 실패", message: `[${docName}] 메인 엔드포인트 경로에 실제 파라미터 값을 직접(하드코딩) 넣을 수 없습니다. (예: /book/1 금지)\n대신 {book_id} 형태의 동적 Path 파라미터를 사용해주세요.`, hideCancel: true });
-              return;
-            }
-
-            if (api.mappingEndpoint && (digitRegex.test(api.mappingEndpoint) || uuidRegex.test(api.mappingEndpoint))) {
-              await confirm({ title: "검증 실패", message: `[${docName}] 매핑 엔드포인트 경로에 실제 파라미터 값을 직접(하드코딩) 넣을 수 없습니다. (예: /book/1 금지)\n대신 {book_id} 형태의 동적 Path 파라미터를 사용해주세요.`, hideCancel: true });
               return;
             }
 
@@ -147,7 +133,8 @@ export default function DocsRegisterPage() {
   };
 
   const handleSubmit = () => {
-    submitDocs(formData, sidebarItems, contentMap, docsBlocks);
+    const selectedId = useDocsStore.getState().selected ?? 'draft-doc';
+    submitDocs(formData, sidebarItems, contentMap, docsBlocks, selectedId);
   };
 
   React.useEffect(() => {

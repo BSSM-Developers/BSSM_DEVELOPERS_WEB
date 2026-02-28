@@ -11,11 +11,10 @@ interface ApiHeaderProps {
   domain?: string;
   method: HttpMethod;
   endpoint: string;
-  mappingEndpoint?: string;
   onTryClick?: () => void;
   editable?: boolean;
   missingPathParams?: string[];
-  onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; mappingEndpoint: string; isVerified?: boolean }) => void;
+  onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
 }
 
 const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"];
@@ -26,7 +25,6 @@ export function ApiHeader({
   domain,
   method,
   endpoint,
-  mappingEndpoint = "",
   onTryClick,
   editable = false,
   missingPathParams = [],
@@ -84,12 +82,12 @@ export function ApiHeader({
 
       if (status !== 404 && status !== 405 && status < 500) {
         setVerifyState('success');
-        onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: true });
+        onChange?.({ title, description, method, endpoint, isVerified: true });
         return;
       }
 
       setVerifyState('fail');
-      onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: false });
+      onChange?.({ title, description, method, endpoint, isVerified: false });
 
       if (status === 404) {
         await confirm({ title: "검증 실패", message: "해당 엔드포인트를 찾을 수 없습니다 (404 Not Found).", hideCancel: true });
@@ -104,7 +102,7 @@ export function ApiHeader({
       await confirm({ title: "검증 실패", message: `서버 오류가 발생했습니다 (${status}).`, hideCancel: true });
     } catch {
       setVerifyState('fail');
-      onChange?.({ title, description, method, endpoint, mappingEndpoint, isVerified: false });
+      onChange?.({ title, description, method, endpoint, isVerified: false });
       await confirm({ title: "검증 실패", message: "서버에 연결할 수 없거나 CORS 정책에 의해 거부되었습니다.", hideCancel: true });
     } finally {
       setIsVerifying(false);
@@ -117,12 +115,12 @@ export function ApiHeader({
         <TitleSection>
           <EditTitleInput
             value={title}
-            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, mappingEndpoint, isVerified: false })}
+            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, isVerified: false })}
             placeholder="API 제목"
           />
           <EditDescInput
             value={description}
-            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, mappingEndpoint, isVerified: false })}
+            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, isVerified: false })}
             placeholder="API 설명"
           />
         </TitleSection>
@@ -136,11 +134,11 @@ export function ApiHeader({
         <EndpointSection>
           <MethodSelect
             value={method}
-            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, mappingEndpoint, isVerified: false })}
+            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, isVerified: false })}
           />
           <EditEndpointInput
             value={endpoint}
-            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, mappingEndpoint, isVerified: false })}
+            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, isVerified: false })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
           <VerifyButton
@@ -154,16 +152,6 @@ export function ApiHeader({
           </VerifyButton>
         </EndpointSection>
 
-        <EndpointSection>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-            <Label style={{ width: 'auto', color: '#58A6FF' }}>MAPPING</Label>
-            <EditEndpointInput
-              value={mappingEndpoint}
-              onChange={(e) => onChange?.({ title, description, method, endpoint, mappingEndpoint: e.target.value, isVerified: false })}
-              placeholder="매핑 엔드포인트 (e.g. /user/profile)"
-            />
-          </div>
-        </EndpointSection>
         {ConfirmDialog}
       </HeaderSection>
     );
@@ -180,7 +168,6 @@ export function ApiHeader({
         <HttpMethodTag method={method} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
           <EndpointPath>{endpoint}</EndpointPath>
-          {mappingEndpoint && <MappingPath>Mapping: {mappingEndpoint}</MappingPath>}
         </div>
         <VerifyButton
           state={verifyState}

@@ -26,7 +26,7 @@ export const useDocsEditor = (step: Step, title: string) => {
       const initialItems: SidebarNode[] = [{
         id: 'draft-root',
         label: title || '새 문서',
-        module: 'main',
+        module: 'main_title',
         childrenItems: [{
           id: 'draft-doc',
           label: '시작하기',

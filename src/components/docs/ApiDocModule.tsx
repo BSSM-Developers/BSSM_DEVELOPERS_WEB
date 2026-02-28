@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 "use client";
 
 import styled from "@emotion/styled";
@@ -15,7 +14,6 @@ type ApiDocModuleProps = {
   domain?: string;
   method: HttpMethod;
   endpoint: string;
-  mappingEndpoint?: string;
   description: string;
   breadcrumb?: {
     category?: string;
@@ -37,9 +35,10 @@ type ApiDocModuleProps = {
   responseData?: unknown;
   responseStatus?: number;
   responseMessage?: string;
+  isVerified?: boolean;
   onTryClick?: () => void;
   editable?: boolean;
-  onHeaderChange?: (updated: unknown) => void;
+  onHeaderChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
   onHeaderParamsChange?: (params: ApiParam[]) => void;
   onCookieParamsChange?: (params: ApiParam[]) => void;
   onPathParamsChange?: (params: ApiParam[]) => void;
@@ -57,7 +56,6 @@ export function ApiDocModule({
   domain,
   method,
   endpoint,
-  mappingEndpoint,
   description,
   breadcrumb,
   headerParams = [],
@@ -76,6 +74,7 @@ export function ApiDocModule({
   responseData,
   responseStatus = 200,
   responseMessage = "성공",
+  isVerified = false,
   onTryClick,
   editable = false,
   onHeaderChange,
@@ -94,15 +93,17 @@ export function ApiDocModule({
     name: apiName,
     method,
     endpoint,
-    mappingEndpoint,
     description,
     headerParams,
     cookieParams,
     pathParams,
     queryParams,
+    bodyParams,
+    responseParams,
     responseData,
     responseStatus,
-    responseMessage
+    responseMessage,
+    isVerified
   };
 
   const checkMissing = () => {
@@ -112,7 +113,6 @@ export function ApiDocModule({
       if (!p.name) continue;
       const t = `{${p.name}}`;
       if (endpoint && !endpoint.includes(t)) missing.add(p.name);
-      if (mappingEndpoint && !mappingEndpoint.includes(t)) missing.add(p.name);
     }
     return Array.from(missing);
   };
@@ -129,7 +129,6 @@ export function ApiDocModule({
             domain={domain}
             method={method}
             endpoint={endpoint}
-            mappingEndpoint={mappingEndpoint}
             onTryClick={onTryClick}
             editable={editable}
             missingPathParams={missingPathParams.map(p => `{${p}}`)}
@@ -162,8 +161,8 @@ export function ApiDocModule({
         apiDoc={apiDoc}
         sampleCode={sampleCode}
         responseCode={responseCode}
-        languages={languages as any}
-        libraryOptions={libraryOptions as any}
+        languages={languages as string[]}
+        libraryOptions={libraryOptions as string[]}
         baseUrl={baseUrl}
         includeAuth={includeAuth}
         authType={authType}

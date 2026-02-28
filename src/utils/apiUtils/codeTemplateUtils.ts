@@ -231,8 +231,13 @@ function generateShellCode(
   });
 
   if (hasBody && Object.keys(examples.body).length > 0) {
+    const bodyJson = JSON.stringify(examples.body, null, 2);
+    const indentedBody = bodyJson
+      .split('\n')
+      .map((line, i) => (i === 0 ? line : `  ${line}`))
+      .join('\n');
     curlParts.push(`  ${wrapColor('-H', 'keyword')} ${wrapColor('"Content-Type: application/json"', 'string')}`);
-    curlParts.push(`  ${wrapColor('-d', 'keyword')} ${wrapColor(`'${JSON.stringify(examples.body).replace(/'/g, "\\'")}'`, 'string')}`);
+    curlParts.push(`  ${wrapColor('-d', 'keyword')} ${wrapColor(`'${indentedBody.replace(/'/g, "\\'")}'`, 'string')}`);
   }
 
   curlParts.push(`  ${wrapColor(`"${url}"`, 'string')}`);

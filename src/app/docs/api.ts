@@ -1,5 +1,24 @@
 import { fetchClinet } from "@/utils/fetcher";
-import { SidebarNode } from "@/components/ui/sidebarItem/types";
+
+interface DocsPageBlock {
+  id?: string;
+  module: string;
+  content?: string;
+}
+
+interface DocsPage {
+  id: string;
+  endpoint?: string;
+  blocks: DocsPageBlock[];
+}
+
+interface SidebarBlock {
+  id: string;
+  label: string;
+  module?: string;
+  method?: string;
+  childrenItems?: SidebarBlock[];
+}
 
 interface CreateOriginalData {
   title: string;
@@ -7,10 +26,12 @@ interface CreateOriginalData {
   domain: string;
   repository_url: string;
   auto_approval: boolean;
+  writerId?: number;
+  writer_id?: number;
   sidebar: {
-    title: string;
-    sideBarBlocks: SidebarNode[];
+    blocks: SidebarBlock[];
   };
+  docs_pages: DocsPage[];
 }
 
 interface CreateCustomData {
@@ -19,6 +40,8 @@ interface CreateCustomData {
   domain: string;
   repository_url: string;
   auto_approval: boolean;
+  writerId?: number;
+  writer_id?: number;
 }
 
 interface UpdateDocsData {
@@ -38,19 +61,16 @@ interface ReplaceDocsData {
 
 interface DocsItem {
   docsId: number;
-  id?: number; // fallback for older structure if needed
+  id?: number;
   title: string;
   description: string;
   writer?: string;
-  // Add other properties as needed
 }
 
 export interface DocsListResponse {
   values: DocsItem[];
 }
 
-// Interfaces for response types should be defined more strictly ideally
-// but keeping minimal structure as per current needs.
 
 export const docsApi = {
   getList: async () => {
@@ -63,7 +83,7 @@ export const docsApi = {
     return fetchClinet.get<unknown>(`/docs/${docsId}`);
   },
   createOriginal: async (data: CreateOriginalData) => {
-    return fetchClinet.post<void>("/docs/original", data);
+    return fetchClinet.post<{ id: number }>("/docs/original", data);
   },
   createCustom: async (data: CreateCustomData) => {
     return fetchClinet.post<void>("/docs/custom", data);

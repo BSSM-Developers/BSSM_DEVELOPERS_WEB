@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 
 import styled from "@emotion/styled";
@@ -11,12 +10,12 @@ interface ApiCodeSectionProps {
   apiDoc?: ApiDoc;
   sampleCode?: string;
   responseCode?: string;
-  languages?: Language[];
-  libraryOptions?: Library[];
+  languages?: string[];
+  libraryOptions?: string[];
   baseUrl?: string;
   includeAuth?: boolean;
   authType?: 'bearer' | 'basic' | 'apikey';
-  responseData?: any;
+  responseData?: unknown;
   responseStatus?: number;
   responseMessage?: string;
 }
@@ -25,8 +24,8 @@ export function ApiCodeSection({
   apiDoc,
   sampleCode,
   responseCode,
-  languages = ["Shell", "JavaScript", "Python"] as any,
-  libraryOptions = ["Axios", "Fetch", "jQuery"] as any,
+  languages = ["Shell", "JavaScript", "Python"],
+  libraryOptions = ["Axios", "Fetch", "jQuery"],
   baseUrl = "",
   includeAuth = false,
   authType = 'bearer',
@@ -116,8 +115,8 @@ export function ApiCodeSection({
     <CodeSection>
       <CodeBlock
         title="Request"
-        languages={languages as any}
-        libraryOptions={availableLibraryNames as any}
+        languages={languages as ("Shell" | "JavaScript" | "Python")[]}
+        libraryOptions={availableLibraryNames as ("Axios" | "Fetch" | "jQuery" | "Requests" | "cURL")[]}
         selectedLanguage={selectedLanguageName}
         selectedLibrary={selectedLibraryName}
         code={generatedCode}

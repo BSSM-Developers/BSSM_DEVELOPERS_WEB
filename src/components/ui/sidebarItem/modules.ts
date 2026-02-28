@@ -1,9 +1,9 @@
 import { css, Theme } from "@emotion/react";
+import { applyTypography } from "../../../lib/themeHelper";
 
 type ThemeProps = {
   theme: Theme;
 };
-import { applyTypography } from "../../../lib/themeHelper";
 
 export const sidebarModules = {
   default: {
@@ -62,7 +62,6 @@ export const sidebarModules = {
       }
     `,
     active: ({ theme }: ThemeProps) => css`
-      /* border-left removed */
       background: ${theme.colors.grey[100]};
       color: ${theme.colors.bssmBlue};
     `,
@@ -70,25 +69,27 @@ export const sidebarModules = {
 
   main: {
     base: ({ theme }: ThemeProps) => css`
-      height: 83px;
+      height: 60px;
       display: flex;
       align-items: flex-end;
-      padding: 26px 13px 11px 5px;
-      font-size: 20px;
-      ${applyTypography(theme, "Body_1")}
-      color: ${theme.colors.bssmGrey}
+      padding: 12px 13px 8px 5px;
+      font-size: 16px;
+      ${applyTypography(theme, "Body_3")}
+      color: ${theme.colors.bssmGrey};
+      font-weight: 700;
     `,
     active: () => css``,
   },
 
-  mainTitle: {
+  main_title: {
     base: ({ theme }: ThemeProps) => css`
       display: flex;
       align-items: flex-end;
-      height: 63px;
-      padding: 32px 24px;
+      height: auto;
+      padding: 16px 24px 8px;
       color: ${theme.colors.bssmGrey};
       ${applyTypography(theme, "Caption_2")}
+      font-size: 14px;
     `,
     active: () => css``,
   },

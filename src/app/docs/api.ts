@@ -1,23 +1,66 @@
 import { fetchClinet } from "@/utils/fetcher";
 
-interface DocsPageBlock {
-  id?: string;
-  module: string;
-  content?: string;
+export interface DocsBlock {
+  id: string;
+  mappedId: string;
+  module: "main_title" | "default" | "collapse" | "api" | "docs_1" | "headline_1" | "headline_2" | "code" | "main";
+  content: string;
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
 }
 
-interface DocsPage {
+export interface SidebarBlock {
   id: string;
-  endpoint?: string;
-  blocks: DocsPageBlock[];
-}
-
-interface SidebarBlock {
-  id: string;
+  mappedId?: string;
   label: string;
-  module?: string;
-  method?: string;
+  module: "main_title" | "default" | "collapse" | "api";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
   childrenItems?: SidebarBlock[];
+}
+
+export interface DocsItem {
+  docsId: string;
+  id?: string;
+  title: string;
+  description: string;
+  domain?: string;
+  writer?: string;
+  writerId?: number;
+  autoApproval?: boolean;
+  repositoryUrl?: string;
+  type?: string;
+}
+
+export interface DocsListResponse {
+  message: string;
+  data: {
+    values: DocsItem[];
+    hasNext: boolean;
+  };
+}
+
+export interface SidebarResponse {
+  message: string;
+  data: {
+    id: string;
+    docsId: string;
+    blocks: SidebarBlock[];
+  };
+}
+
+export interface DocsPageResponse {
+  message: string;
+  data: {
+    id: string;
+    mappedId: string;
+    docsId: string;
+    endpoint: string;
+    docsBlocks: DocsBlock[];
+  };
+}
+
+export interface DocsDetailResponse {
+  message: string;
+  data: DocsItem;
 }
 
 interface CreateOriginalData {
@@ -26,12 +69,19 @@ interface CreateOriginalData {
   domain: string;
   repository_url: string;
   auto_approval: boolean;
-  writerId?: number;
   writer_id?: number;
   sidebar: {
     blocks: SidebarBlock[];
   };
-  docs_pages: DocsPage[];
+  docs_pages: {
+    id: string;
+    endpoint?: string;
+    blocks: {
+      id?: string;
+      module: string;
+      content?: string;
+    }[];
+  }[];
 }
 
 interface CreateCustomData {
@@ -40,7 +90,6 @@ interface CreateCustomData {
   domain: string;
   repository_url: string;
   auto_approval: boolean;
-  writerId?: number;
   writer_id?: number;
 }
 
@@ -59,28 +108,15 @@ interface ReplaceDocsData {
   auto_approval: boolean;
 }
 
-interface DocsItem {
-  docsId: number;
-  id?: number;
-  title: string;
-  description: string;
-  writer?: string;
-}
-
-export interface DocsListResponse {
-  values: DocsItem[];
-}
-
-
 export const docsApi = {
   getList: async () => {
-    return fetchClinet.get<DocsListResponse | DocsItem[]>("/docs");
+    return fetchClinet.get<DocsListResponse>("/docs", { skipAuth: true });
   },
   getSidebar: async (docsId: string) => {
-    return fetchClinet.get<unknown>(`/docs/${docsId}/sidebar`);
+    return fetchClinet.get<SidebarResponse>(`/docs/${docsId}/sidebar`, { skipAuth: true });
   },
   getDetail: async (docsId: string) => {
-    return fetchClinet.get<unknown>(`/docs/${docsId}`);
+    return fetchClinet.get<DocsDetailResponse>(`/docs/${docsId}`, { skipAuth: true });
   },
   createOriginal: async (data: CreateOriginalData) => {
     return fetchClinet.post<{ id: number }>("/docs/original", data);
@@ -100,7 +136,7 @@ export const docsApi = {
     });
   },
   getPage: async (docsId: string | number, mappedId: string) => {
-    return fetchClinet.get<unknown>(`/docs/${docsId}/page/${mappedId}`);
+    return fetchClinet.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, { skipAuth: true });
   },
   updatePage: async (docsId: string | number, mappedId: string | number, docsBlocks: unknown[]) => {
     return fetchClinet.put<void>(`/docs/${docsId}/page/${mappedId}`, { docsBlocks });

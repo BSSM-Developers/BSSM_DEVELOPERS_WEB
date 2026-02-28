@@ -6,7 +6,7 @@ export const docsKeys = {
   list: () => [...docsKeys.all, "list"] as const,
   detail: (id: string) => [...docsKeys.all, "detail", id] as const,
   sidebar: (id: string) => [...docsKeys.all, "sidebar", id] as const,
-  page: (id: number, mappedId: string) =>
+  page: (id: string, mappedId: string) =>
     [...docsKeys.all, "page", id, mappedId] as const,
 };
 
@@ -33,6 +33,14 @@ export function useDocsSidebarQuery(id: string) {
   });
 }
 
+export function useDocsPageQuery(id: string, mappedId: string) {
+  return useQuery({
+    queryKey: docsKeys.page(id, mappedId),
+    queryFn: () => docsApi.getPage(id, mappedId),
+    enabled: !!id && !!mappedId,
+  });
+}
+
 export function useCreateOriginalDocsMutation() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -52,4 +60,3 @@ export function useCreateCustomDocsMutation() {
     },
   });
 }
-// Additional mutations can be added as needed

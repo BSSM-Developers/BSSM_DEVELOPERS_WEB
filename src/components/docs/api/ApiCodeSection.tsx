@@ -4,6 +4,7 @@ import styled from "@emotion/styled";
 import { useState, useEffect } from "react";
 import { CodeBlock } from "@/components/ui/codeBlock/CodeBlock";
 import { generateRequestCode, generateResponseTemplate, type Language, type Library, defaultLibraryMap, libraryLanguageMap } from "@/utils/apiUtils/codeTemplateUtils";
+import { highlightJson } from "@/utils/apiUtils/highlightUtils";
 import type { ApiDoc } from "@/types/docs";
 
 interface ApiCodeSectionProps {
@@ -25,7 +26,6 @@ export function ApiCodeSection({
   sampleCode,
   responseCode,
   languages = ["Shell", "JavaScript", "Python"],
-  libraryOptions = ["Axios", "Fetch", "jQuery"],
   baseUrl = "",
   includeAuth = false,
   authType = 'bearer',
@@ -40,7 +40,7 @@ export function ApiCodeSection({
 
   const getAvailableLibraries = (lang: Language): Library[] => {
     return Object.entries(libraryLanguageMap)
-      .filter(([_, supportedLangs]) => supportedLangs.includes(lang))
+      .filter(([, supportedLangs]) => supportedLangs.includes(lang))
       .map(([lib]) => lib as Library);
   };
 
@@ -55,24 +55,33 @@ export function ApiCodeSection({
           authType
         });
         setGeneratedCode(code);
-      } catch (error) {
-        console.error('Code generation failed:', error);
+      } catch {
         setGeneratedCode(sampleCode || getDefaultSampleCode());
       }
     } else {
       setGeneratedCode(sampleCode || getDefaultSampleCode());
     }
 
+    if (responseData) {
+      const actualResponse = highlightJson(JSON.stringify({
+        status: responseStatus,
+        message: responseMessage,
+        data: responseData
+      }, null, 2));
+      setGeneratedResponse(actualResponse);
+      return;
+    }
+
     const response = generateResponseTemplate(responseStatus, responseMessage, apiDoc?.responseParams);
     setGeneratedResponse(responseCode || response);
-  }, [apiDoc, currentLanguage, currentLibrary, baseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage]);
+  }, [apiDoc, currentLanguage, currentLibrary, baseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage, responseData]);
 
   useEffect(() => {
     const availableLibraries = getAvailableLibraries(currentLanguage);
     if (availableLibraries.length > 0 && !availableLibraries.includes(currentLibrary)) {
       setCurrentLibrary(availableLibraries[0]);
     }
-  }, [currentLanguage]);
+  }, [currentLanguage, currentLibrary]);
 
   const languageMap: Record<string, Language> = {
     'JavaScript': 'javascript',
@@ -104,12 +113,12 @@ export function ApiCodeSection({
   };
 
   const availableLibraryNames = getAvailableLibraries(currentLanguage).map(lib => {
-    const entry = Object.entries(libraryMap).find(([_, v]) => v === lib);
+    const entry = Object.entries(libraryMap).find(([, v]) => v === lib);
     return entry ? entry[0] : lib.charAt(0).toUpperCase() + lib.slice(1);
   });
 
-  const selectedLanguageName = Object.entries(languageMap).find(([_, v]) => v === currentLanguage)?.[0] || currentLanguage;
-  const selectedLibraryName = Object.entries(libraryMap).find(([_, v]) => v === currentLibrary)?.[0] || currentLibrary;
+  const selectedLanguageName = Object.entries(languageMap).find(([, v]) => v === currentLanguage)?.[0] || currentLanguage;
+  const selectedLibraryName = Object.entries(libraryMap).find(([, v]) => v === currentLibrary)?.[0] || currentLibrary;
 
   return (
     <CodeSection>

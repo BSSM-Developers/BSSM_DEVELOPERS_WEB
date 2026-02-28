@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateOriginalDocsMutation } from "@/app/docs/queries";
-import { DocsBlock } from "@/types/docs";
+import { DocsBlock, ApiDoc, ApiParam } from "@/types/docs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { FormData } from "./useDocsForm";
 import { useUserStore } from "@/store/userStore";
 
 interface SidebarBlock {
   id: string;
+  mappedId?: string;
   label: string;
-  module?: string;
-  method?: string;
+  module: "main_title" | "api" | "default" | "collapse";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
   childrenItems?: SidebarBlock[];
 }
 
@@ -41,23 +42,34 @@ function toSidebarBlock(node: SidebarNode): SidebarBlock {
   const block: SidebarBlock = {
     id: node.id,
     label: node.label,
-    module: node.module === "main" ? "main_title" : node.module,
+    module: (node.module === "main" ? "main_title" : node.module) as SidebarBlock["module"],
   };
-  if (node.method) block.method = node.method;
+  if (node.method) block.method = node.method as SidebarBlock["method"];
   if (node.childrenItems && node.childrenItems.length > 0) {
     block.childrenItems = node.childrenItems.map(toSidebarBlock);
   }
   return block;
 }
 
+
 function toPageBlocks(blocks: DocsBlock[]): DocsPageBlock[] {
-  return blocks
-    .filter((b) => b.module !== "api")
-    .map((b) => ({
-      id: b.id,
-      module: b.module,
-      ...(b.content !== undefined ? { content: b.content } : {}),
-    }));
+  const result: DocsPageBlock[] = [];
+  for (const b of blocks) {
+    if (b.module === 'api' && b.apiData) {
+      result.push({
+        id: b.id,
+        module: 'docs_1',
+        content: JSON.stringify(b.apiData)
+      });
+    } else {
+      result.push({
+        id: b.id,
+        module: b.module,
+        ...(b.content !== undefined ? { content: b.content } : {}),
+      });
+    }
+  }
+  return result;
 }
 
 export const useDocsSubmit = (confirm: (options: { title: string; message: string; hideCancel?: boolean }) => Promise<boolean>) => {
@@ -106,7 +118,6 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
         domain: formData.domain,
         repository_url: formData.repository_url,
         auto_approval: formData.auto_approval,
-        writerId: user.id,
         writer_id: user.id,
         sidebar: {
           blocks: sidebarItems.map(toSidebarBlock),
@@ -114,20 +125,14 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
         docs_pages,
       };
 
-      const response = await createOriginalMutation.mutateAsync(payload);
-      const newDocId = response?.id;
-
-      if (newDocId) {
-        router.push(`/docs/${newDocId}/edit`);
-        return;
-      }
+      await createOriginalMutation.mutateAsync(payload);
 
       await confirm({
         title: "등록 완료",
-        message: "문서가 성공적으로 등록되었습니다. 목록으로 이동합니다.",
+        message: "문서가 성공적으로 등록되었습니다. 홈으로 이동합니다.",
         hideCancel: true
       });
-      router.push('/docs');
+      router.push('/');
 
     } catch (error) {
       console.error(error);

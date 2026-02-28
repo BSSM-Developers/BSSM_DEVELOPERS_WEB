@@ -1,4 +1,3 @@
-/* eslint-disable */
 /** @jsxImportSource @emotion/react */
 import { css, Theme } from "@emotion/react";
 import { applyTypography } from "@/lib/themeHelper";
@@ -18,7 +17,7 @@ export const docsModules = {
     color: ${theme.colors.grey[600]};
   `,
 
-  list: (theme: Theme) => css`
+  list: () => css`
     margin: 8px 0;
     padding-left: 20px;
     li {
@@ -35,7 +34,7 @@ export const docsModules = {
     white-space: pre-wrap;
   `,
 
-  image: (theme: Theme) => css`
+  image: () => css`
     display: flex;
     justify-content: center;
     margin: 32px 0;
@@ -45,21 +44,32 @@ export const docsModules = {
     }
   `,
 
-  api: (_theme: Theme) => css`
+  api: () => css`
     margin: 12px 0;
     width: 100%;
   `,
 
-  big_space: (_theme: Theme) => css`
+  big_space: () => css`
     height: 48px;
     width: 100%;
   `,
 
-  space: (_theme: Theme) => css`
+  space: () => css`
     height: 16px;
     width: 100%;
   `,
-
+  main: () => css`
+    width: 100%;
+  `,
+  main_title: () => css`
+    width: 100%;
+  `,
+  default: () => css`
+    width: 100%;
+  `,
+  collapse: () => css`
+    width: 100%;
+  `,
 };
 
 export type DocsModuleType = keyof typeof docsModules;

@@ -1,23 +1,40 @@
 "use client";
 
-import { useDocsListQuery } from "@/app/docs/queries";
-import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useDocsDetailQuery, useDocsListQuery, useDocsSidebarQuery } from "@/app/docs/queries";
+import { usePathname, useParams } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
 import { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { DocsLayout } from "@/components/layout/DocsLayout";
+import { SidebarBlock } from "./api";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const { data: docsData } = useDocsListQuery();
+  const params = useParams();
+  const slug = params?.slug as string;
+  const { data: docsListData } = useDocsListQuery();
+  const { data: sidebarData } = useDocsSidebarQuery(slug || "");
+
   const [sidebarItems, setSidebarItems] = useState<SidebarNode[]>([]);
   const pathname = usePathname();
   const isRegisterPage = pathname === "/docs/register";
 
-  useEffect(() => {
-    if (docsData) {
-      // Assuming docsData is array or { values: [] }
-      const list = (docsData as { values?: { docsId?: string | number; id?: string | number; title: string }[] }).values || (Array.isArray(docsData) ? docsData : []);
+  const mapSidebarBlocks = useCallback((blocks: SidebarBlock[]): SidebarNode[] => {
+    return blocks.map(block => ({
+      id: block.mappedId || block.id,
+      label: block.label,
+      module: block.module,
+      method: block.method,
+      childrenItems: block.childrenItems ? mapSidebarBlocks(block.childrenItems) : []
+    }));
+  }, []);
 
-      const items = list.map((doc: { docsId?: string | number; id?: string | number; title: string }) => ({
+  useEffect(() => {
+    if (slug && sidebarData?.data?.blocks) {
+      setSidebarItems(mapSidebarBlocks(sidebarData.data.blocks));
+      return;
+    }
+
+    if (docsListData?.data?.values) {
+      const items = docsListData.data.values.map((doc) => ({
         id: String(doc.docsId || doc.id),
         label: doc.title,
         module: "default",
@@ -27,18 +44,27 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       setSidebarItems([{
         id: "root",
         label: "문서 목록",
-        module: "main",
+        module: "main_title",
         childrenItems: items
       }]);
     }
-  }, [docsData]);
+  }, [docsListData, sidebarData, slug, mapSidebarBlocks]);
+
+  const { data: detailData } = useDocsDetailQuery(slug || "");
+  const sidebarTitle = sidebarData?.data?.blocks?.[0]?.module === "main_title"
+    ? sidebarData.data.blocks[0].label
+    : null;
 
   if (isRegisterPage) {
     return <>{children}</>;
   }
 
   return (
-    <DocsLayout sidebarItems={sidebarItems} showSidebar={true}>
+    <DocsLayout
+      sidebarItems={sidebarItems}
+      showSidebar={true}
+      projectName={sidebarTitle || detailData?.data?.title || "BSSM Developers"}
+    >
       {children}
     </DocsLayout>
   );

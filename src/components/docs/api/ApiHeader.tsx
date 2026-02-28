@@ -34,12 +34,6 @@ export function ApiHeader({
   const [isVerifying, setIsVerifying] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
 
-  useEffect(() => {
-    if (editable) {
-      setVerifyState('idle');
-    }
-  }, [domain, endpoint, method, editable]);
-
   const handleVerify = async (e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -276,27 +270,6 @@ const EditEndpointInput = styled.input`
   }
 `;
 
-const Label = styled.div`
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  color: #58A6FF;
-  background: #F0F7FF;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: 1px solid #58A6FF;
-  flex-shrink: 0;
-  text-transform: uppercase;
-`;
-
-const MappingPath = styled.div`
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-weight: 400;
-  font-size: 12px;
-  color: #8B95A1;
-  letter-spacing: -0.6px;
-`;
-
 const SelectContainer = styled.div`
   position: relative;
   min-width: 80px;
@@ -341,13 +314,6 @@ const SelectOption = styled.div`
   &:hover {
     background: #F3F4F6;
   }
-`;
-
-const SelectBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  background: transparent;
 `;
 
 const HeaderSection = styled.div`
@@ -438,32 +404,6 @@ const EndpointPath = styled.div`
   @media (max-width: 480px) {
     font-size: 12px;
     word-break: break-all;
-  }
-`;
-
-const TryButton = styled.button`
-  background: #16335C;
-  border-radius: 7px;
-  box-shadow: 0px 0px 4px 0px rgba(0,0,0,0.25);
-  border: none;
-  width: 80px;
-  height: 32px;
-  font-family: "Flight Sans", sans-serif;
-  font-weight: 700;
-  font-size: 12px;
-  color: white;
-  text-align: center;
-  cursor: pointer;
-  flex-shrink: 0;
-
-  &:hover {
-    background: #1a3a68;
-  }
-
-  @media (max-width: 480px) {
-    width: 100%;
-    height: 36px;
-    font-size: 14px;
   }
 `;
 

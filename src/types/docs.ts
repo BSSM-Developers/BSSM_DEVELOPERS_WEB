@@ -7,7 +7,11 @@ export type DocsModule =
   | "list"
   | "api"
   | "big_space"
-  | "space";
+  | "space"
+  | "main"
+  | "main_title"
+  | "default"
+  | "collapse";
 
 export interface DocsBlock {
   id?: string;

@@ -198,7 +198,9 @@ export function ParamItem({
             {example && !isComplexType && <ExampleText>{example}</ExampleText>}
           </DescriptionWrapper>
         </ParamInfo>
-        {!hideRequired ? (required ? <RequiredText>required</RequiredText> : null) : null}
+        {!hideRequired && required ? (
+          <RequiredText style={{ marginLeft: '12px' }}>required</RequiredText>
+        ) : null}
       </Container>
       {isComplexType && childrenProps.length > 0 && (
         <ChildrenContainer>
@@ -402,13 +404,6 @@ const SelectOption = styled.div<{ active: boolean }>`
   &:hover {
     background: #F3F4F6;
   }
-`;
-
-const SelectBackdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 99;
-  background: transparent;
 `;
 
 const EditInput = styled.input`

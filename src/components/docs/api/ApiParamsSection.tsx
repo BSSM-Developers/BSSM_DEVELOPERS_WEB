@@ -145,27 +145,6 @@ function AddParamButtonComponent({ onAdd }: { onAdd: (type: string) => void }) {
   );
 }
 
-const MenuContainer = styled.div`
-  background: white;
-  border: 1px solid #E5E7EB;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
-  overflow: hidden;
-`;
-
-const MenuItem = styled.div`
-  padding: 8px 12px;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 13px;
-  color: #4B5563;
-  cursor: pointer;
-  &:hover {
-    background: #F3F4F6;
-    color: #58A6FF;
-  }
-`;
-
 const AddParamButton = styled.button`
   width: 100%;
   padding: 8px;

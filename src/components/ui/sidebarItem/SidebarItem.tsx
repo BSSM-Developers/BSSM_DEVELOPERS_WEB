@@ -2,54 +2,59 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useParams } from "next/navigation";
 import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
 import { useDocsStore } from "@/store/docsStore";
 import { HttpMethodTag } from "@/components/ui/httpMethod/HttpMethodTag";
 
-type Mutators = {
+interface Mutators {
   addSibling: (targetId: string, node: Omit<SidebarNode, "id">) => void;
   addChild: (parentId: string, node: Omit<SidebarNode, "id">) => void;
   rename: (id: string, label: string) => void;
   remove: (id: string) => void;
-};
+}
 
-type SidebarItemProps = {
+interface SidebarItemProps {
   node: SidebarNode;
   editable: boolean;
   mutators: Mutators;
   renderChildren?: boolean;
-};
+}
 
 export function SidebarItem({ node, editable, mutators, renderChildren = true }: SidebarItemProps) {
   const [open, setOpen] = useState(true);
   const [renaming, setRenaming] = useState(false);
   const [label, setLabel] = useState(node.label);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
-  const selectedDocId = useDocsStore((state) => state.selected);
+
+  const selectedId = useDocsStore((state) => state.selected);
+  const setSelected = useDocsStore((state) => state.setSelected);
   const isFolder = node.module === "collapse" || node.module === "main";
-  const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedDocId);
-  const isActive = selectedDocId === node.id || childHasActive;
+  const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedId);
+  const isActive = selectedId === node.id || childHasActive;
 
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams();
+  const slug = params?.slug as string | undefined;
 
   const handleClick = () => {
-    useDocsStore.setState({ selected: node.id });
+    setSelected(node.id);
 
     if (isFolder) {
       setOpen(p => !p);
-    } else {
-      if (pathname?.includes('/docs/register')) {
-        return;
-      }
-
-      const isEditMode = pathname?.endsWith('/edit');
-      const targetPath = `/docs/${node.id}${isEditMode ? '/edit' : ''}`;
-      router.push(targetPath);
+      return;
     }
+
+    if (pathname?.includes('/docs/register')) {
+      return;
+    }
+
+    const isEditMode = pathname?.includes('/edit');
+    const targetPath = `/docs/${slug}/${isEditMode ? 'edit' : 'page'}/${node.id}`;
+    router.push(targetPath);
   };
 
   const commitRename = () => {
@@ -67,7 +72,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const closeContextMenu = () => setContextMenu(null);
 
   const duplicateItem = () => {
-    const { id, ...rest } = node;
+    const { id: _, ...rest } = node;
     const newNode = { ...rest, label: `${node.label} 복사` };
     mutators.addSibling(node.id, newNode);
     closeContextMenu();
@@ -170,11 +175,17 @@ const ItemWrapper = styled.div<{ module: keyof typeof sidebarModules; active: bo
   padding: 8px 12px;
   cursor: pointer;
   transition: all 0.2s ease;
+  overflow: hidden;
   ${({ theme, module }) => sidebarModules[module].base({ theme })};
   ${({ theme, module, active }) => active && sidebarModules[module].active({ theme })};
 `;
 
-const Label = styled.span` flex: 1; `;
+const Label = styled.span`
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
 
 const DeleteButton = styled.button`
   width: 16px;
@@ -195,10 +206,10 @@ const DeleteButton = styled.button`
 const SubMenu = styled.div<{ isMain?: boolean }>`
   display: flex;
   flex-direction: column;
-  margin-left: ${({ isMain }) => isMain ? '0px' : '16px'};
-  padding-left: ${({ isMain }) => isMain ? '0px' : '16px'};
-  border-left: ${({ isMain, theme }) => isMain ? 'none' : `2px solid ${theme.colors.grey[200] || '#E5E7EB'}`};
-  margin-top: ${({ isMain }) => isMain ? '8px' : '4px'};
+  margin-left: ${({ isMain }) => isMain ? "0px" : "16px"};
+  padding-left: ${({ isMain }) => isMain ? "0px" : "16px"};
+  border-left: ${({ isMain, theme }) => isMain ? "none" : `2px solid ${theme.colors.grey[200] || "#E5E7EB"}`};
+  margin-top: ${({ isMain }) => isMain ? "8px" : "4px"};
   gap: 2px;
 `;
 

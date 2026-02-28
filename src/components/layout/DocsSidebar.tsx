@@ -1,8 +1,7 @@
-/* eslint-disable */
 "use client";
 
 import styled from "@emotion/styled";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
@@ -25,8 +24,6 @@ const MODULE_OPTIONS = [
   { label: "API(PATCH)", module: "api", method: "PATCH" as const },
   { label: "API(UPDATE)", module: "api", method: "UPDATE" as const },
 ] as const;
-
-
 
 type DocsSidebarProps = {
   items?: SidebarNode[];
@@ -58,7 +55,7 @@ const RootZone = styled.div<{ isOver: boolean }>`
   transition: all 0.2s ease;
   ${({ isOver, theme }) => isOver && `
     background: rgba(22, 51, 92, 0.05);
-    border: 2px dashed ${theme.colors.bssmDarkBlue || '#16335C'};
+    border: 2px dashed ${theme.colors.bssmDarkBlue || "#16335C"};
   `}
 `;
 
@@ -71,13 +68,6 @@ const AddButton = styled.button`
   font-size: 24px;
   background: transparent;
   cursor: pointer;
-`;
-
-const Backdrop = styled.div`
-  position: fixed;
-  inset: 0;
-  z-index: 999;
-  background: transparent;
 `;
 
 const Picker = styled.div<{ anchor: { x: number; y: number } }>`
@@ -116,13 +106,9 @@ const DropTargetWrapper = styled.div<{
 
   ${({ isChildTarget, theme }) => isChildTarget && `
     background: rgba(22, 51, 92, 0.05);
-    outline: 2px solid ${theme.colors.bssmDarkBlue || '#16335C'};
+    outline: 2px solid ${theme.colors.bssmDarkBlue || "#16335C"};
     outline-offset: -2px;
     box-shadow: 0 0 0 4px rgba(22, 51, 92, 0.1);
-  `}
-
-  ${({ isSiblingTarget }) => isSiblingTarget && `
-    /* No outline needed, SiblingDropIndicator is sufficient */
   `}
 `;
 
@@ -131,7 +117,7 @@ const ChildDropIndicator = styled.div`
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
-  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
+  background: ${({ theme }) => theme.colors.bssmDarkBlue || "#16335C"};
   color: white;
   padding: 4px 8px;
   border-radius: 4px;
@@ -151,7 +137,7 @@ const SiblingDropIndicator = styled.div`
   left: 0;
   right: 0;
   height: 3px;
-  background: ${({ theme }) => theme.colors.bssmDarkBlue || '#16335C'};
+  background: ${({ theme }) => theme.colors.bssmDarkBlue || "#16335C"};
   border-radius: 2px;
   pointer-events: none;
   z-index: 10;
@@ -213,22 +199,16 @@ export function DocsSidebar({
   editable = false, onChange
 }: DocsSidebarProps) {
   const { confirm, ConfirmDialog } = useConfirm();
-  const propItems = Array.isArray(items) ? items : [];
+  const propItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
   const [localItems, setLocalItems] = useState<SidebarNode[]>([]);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
     setLocalItems(propItems);
-  }, []);
+  }, [propItems]);
 
-  useEffect(() => {
-    if (isClient) {
-      setLocalItems(propItems);
-    }
-  }, [propItems, isClient]);
-
-  const effectiveItems = isClient ? (editable && !onChange ? localItems : propItems) : [];
+  const effectiveItems = useMemo(() => isClient ? (editable && !onChange ? localItems : propItems) : [], [isClient, editable, onChange, localItems, propItems]);
   const [picker, setPicker] = useState<{
     open: boolean;
     anchor: { x: number; y: number } | null;
@@ -241,27 +221,23 @@ export function DocsSidebar({
     setPicker({ open: true, anchor: { x: rect.right + 8, y: rect.top }, mode, targetId });
   };
 
-  const closePicker = () => setPicker(p => ({ ...p, open: false }));
+  const closePicker = useCallback(() => setPicker(p => ({ ...p, open: false })), []);
 
   useEffect(() => {
     if (!picker.open) return;
-
-    const handleClick = (e: MouseEvent) => {
-      closePicker();
-    };
-
+    const handleClick = () => { closePicker(); };
     window.addEventListener("mousedown", handleClick);
     return () => window.removeEventListener("mousedown", handleClick);
-  }, [picker.open]);
+  }, [picker.open, closePicker]);
 
   const { sensors, onDragStart, onDragOver, onDragEnd, overIntent, activeId } = useSidebarDrag({
     effectiveItems,
     onChange: onChange || setLocalItems,
   });
 
-  const baseMutators = createMutators(effectiveItems, onChange, setLocalItems);
+  const baseMutators = useMemo(() => createMutators(effectiveItems, onChange, setLocalItems), [effectiveItems, onChange]);
 
-  const mutators: Mutators = {
+  const mutators: Mutators = useMemo(() => ({
     ...baseMutators,
     remove: async (id: string) => {
       const isConfirmed = await confirm({
@@ -272,36 +248,23 @@ export function DocsSidebar({
       });
       if (isConfirmed) baseMutators.remove(id);
     }
-  };
+  }), [baseMutators, confirm]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!editable) return;
-
     const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-
-    switch (e.key) {
-      case 'Delete':
-        break;
-      case 'n':
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          const baseId = effectiveItems[effectiveItems.length - 1]?.id ?? "";
-          mutators.addSibling(baseId, { label: "새 항목", module: "default" });
-        }
-        break;
-      case 'd':
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-        }
-        break;
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+    if (e.key === "n" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      const baseId = effectiveItems[effectiveItems.length - 1]?.id ?? "";
+      mutators.addSibling(baseId, { label: "새 항목", module: "default" });
     }
   }, [editable, effectiveItems, mutators]);
 
   useEffect(() => {
     if (editable) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
     }
   }, [editable, handleKeyDown]);
 
@@ -335,7 +298,7 @@ export function DocsSidebar({
         {editable && <RootDropZone />}
       </SidebarContainer>
 
-      {createPortal(
+      {isClient && typeof document !== "undefined" && createPortal(
         <DragOverlay dropAnimation={null}>
           {activeId ? (
             <div style={{ opacity: 0.8, cursor: "grabbing" }}>
@@ -352,12 +315,13 @@ export function DocsSidebar({
         document.body
       )}
 
-      {
-        picker.open && picker.anchor && createPortal(
-          <Picker
-            anchor={picker.anchor}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
+      {isClient && typeof document !== "undefined" && picker.open && picker.anchor && createPortal(
+        <>
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 999 }}
+            onClick={closePicker}
+          />
+          <Picker anchor={picker.anchor} onMouseDown={(e) => e.stopPropagation()}>
             {MODULE_OPTIONS.map((opt) => (
               <PickerItem
                 key={opt.label}
@@ -367,9 +331,10 @@ export function DocsSidebar({
                 {opt.label}
               </PickerItem>
             ))}
-          </Picker>,
-          document.body
-        )
+          </Picker>
+        </>,
+        document.body
+      )
       }
       {ConfirmDialog}
     </DndContext>
@@ -378,9 +343,8 @@ export function DocsSidebar({
 
 function RootDropZone() {
   const { isOver, setNodeRef } = useDroppable({
-    id: 'root-drop-zone',
+    id: "root-drop-zone",
   });
-
   return (
     <RootZone
       ref={setNodeRef}
@@ -388,6 +352,3 @@ function RootDropZone() {
     />
   );
 }
-
-
-

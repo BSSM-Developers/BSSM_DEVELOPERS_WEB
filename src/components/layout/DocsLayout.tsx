@@ -62,7 +62,21 @@ const testItems: SidebarNode[] = [
   }
 ];
 
-export function DocsLayout({ children, sidebarItems, showSidebar = true, onSidebarChange, projectName }: { children: React.ReactNode; sidebarItems?: SidebarNode[]; showSidebar?: boolean; onSidebarChange?: (items: SidebarNode[]) => void; projectName?: string; }) {
+export function DocsLayout({
+  children,
+  sidebarItems,
+  showSidebar = true,
+  onSidebarChange,
+  projectName,
+  editable = false,
+}: {
+  children: React.ReactNode;
+  sidebarItems?: SidebarNode[];
+  showSidebar?: boolean;
+  onSidebarChange?: (items: SidebarNode[]) => void;
+  projectName?: string;
+  editable?: boolean;
+}) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
@@ -84,7 +98,7 @@ export function DocsLayout({ children, sidebarItems, showSidebar = true, onSideb
                 </ToggleButton>
               </div>
             </SidebarHeader>
-            {!sidebarCollapsed && <DocsSidebar items={items} editable={true} onChange={onSidebarChange} />}
+            {!sidebarCollapsed && <DocsSidebar items={items} editable={editable} onChange={onSidebarChange} />}
           </Sidebar>
         )}
         <Content>

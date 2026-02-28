@@ -31,6 +31,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       sidebarItems={USER_SIDEBAR_ITEMS}
       projectName="마이페이지"
       showSidebar={true}
+      editable={false}
     >
       {children}
     </DocsLayout>

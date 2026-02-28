@@ -14,6 +14,7 @@ export default function ProfilePage() {
       <DocsHeader title="사용자 정보" breadcrumb={["마이페이지"]} />
 
       <ContentWrapper>
+        <Title>사용자 정보</Title>
         <Subtitle>나의 정보를 확인하거나 수정할 수 있어요</Subtitle>
 
         {isLoading ? (
@@ -58,6 +59,12 @@ const Subtitle = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_2")};
   color: ${({ theme }) => theme.colors.grey[400]};
   margin-bottom: 40px;
+`;
+
+const Title = styled.h2`
+  ${({ theme }) => applyTypography(theme, "Headline_1")};
+  color: ${({ theme }) => theme.colors.grey[900]};
+  margin-bottom: 12px;
 `;
 
 const LoadingText = styled.p`

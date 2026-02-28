@@ -3,7 +3,10 @@
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { SearchBar } from "@/components/apis/SearchBar";
+import { ApiSection } from "@/components/apis/ApiSection";
+import type { ApiItem } from "@/app/apis/mockData";
 
 interface MyDoc {
   id: string;
@@ -24,62 +27,66 @@ const MOCK_MY_DOCS: MyDoc[] = [
 
 export default function MyDocsPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"Original" | "Custom">("Original");
+  const [filter, setFilter] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
+  const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
 
-  const filteredDocs = MOCK_MY_DOCS.filter(doc =>
-    (filter === "Original" ? doc.isOriginal : !doc.isOriginal) &&
-    (doc.title.includes(searchTerm) || doc.description.includes(searchTerm))
-  );
+  const myApis: ApiItem[] = useMemo(() => {
+    return MOCK_MY_DOCS.map((doc) => ({
+      id: doc.id,
+      title: doc.title,
+      description: doc.description,
+      tags: [doc.type],
+      type: doc.type,
+    }));
+  }, []);
+
+  const searchItems = useCallback((items: ApiItem[]) => {
+    if (!searchTerm) return items;
+    const query = searchTerm.toLowerCase();
+    return items.filter(item =>
+      item.title.toLowerCase().includes(query) ||
+      item.description.toLowerCase().includes(query)
+    );
+  }, [searchTerm]);
+
+  const filteredDocs = useMemo(() => {
+    let items = myApis;
+    if (filter === "ORIGINAL") {
+      items = items.filter(item => item.type === "ORIGINAL");
+    } else if (filter === "CUSTOM") {
+      items = items.filter(item => item.type === "CUSTOM");
+    }
+    return searchItems(items);
+  }, [filter, myApis, searchItems]);
 
   return (
     <Container>
       <DocsHeader title="내 문서" breadcrumb={["마이페이지"]} />
 
       <ContentWrapper>
+        <Title>내 문서</Title>
         <Subtitle>내가 등록한 API 혹은 커스텀한 API의 문서를 확인할 수 있어요</Subtitle>
 
         <SearchSection>
-          <SearchInput
-            placeholder="검색어를 입력해주세요"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+          <SearchBar
+            onSearch={setSearchTerm}
+            onFilterChange={setFilter}
+            onSortChange={setSortType}
+            activeFilter={filter}
+            activeSort={sortType}
           />
-          <SearchButton>검색</SearchButton>
         </SearchSection>
 
-        <FilterSection>
-          <FilterButton
-            active={filter === "Original"}
-            onClick={() => setFilter("Original")}
-          >
-            Original API
-          </FilterButton>
-          <FilterButton
-            active={filter === "Custom"}
-            onClick={() => setFilter("Custom")}
-          >
-            Custom API
-          </FilterButton>
-        </FilterSection>
-
-        <DocGrid>
-          {filteredDocs.map((doc) => (
-            <DocCard key={doc.id}>
-              <CardHeader>
-                <TypeIndicator>
-                  <Dot type={doc.type} />
-                  {doc.type}
-                </TypeIndicator>
-                <CardTitle>{doc.title}</CardTitle>
-                <CardDescription>{doc.description}</CardDescription>
-              </CardHeader>
-              <CardFooter>
-                <ActionButton secondary>둘러보기</ActionButton>
-                <ActionButton primary>사용하기</ActionButton>
-              </CardFooter>
-            </DocCard>
-          ))}
-        </DocGrid>
+        {filteredDocs.length > 0 ? (
+          <ApiSection
+            title={filter === "ALL" ? "전체 문서" : `${filter} API`}
+            description={filter === "ALL" ? "회원님이 관리 중인 모든 API 문서입니다" : `${filter} API 문서 목록입니다`}
+            items={filteredDocs}
+            columns={3}
+          />
+        ) : (
+          <EmptyState>문서가 존재하지 않습니다.</EmptyState>
+        )}
       </ContentWrapper>
     </Container>
   );
@@ -95,6 +102,12 @@ const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
 `;
 
+const Title = styled.h2`
+  ${({ theme }) => applyTypography(theme, "Headline_1")};
+  color: ${({ theme }) => theme.colors.grey[900]};
+  margin-bottom: 12px;
+`;
+
 const Subtitle = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_2")};
   color: ${({ theme }) => theme.colors.grey[400]};
@@ -102,150 +115,13 @@ const Subtitle = styled.p`
 `;
 
 const SearchSection = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-bottom: 24px;
-`;
-
-const SearchInput = styled.input`
-  flex: 1;
-  height: 48px;
-  padding: 0 16px;
-  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
-  border-radius: 4px;
-  ${({ theme }) => applyTypography(theme, "Body_1")};
-  outline: none;
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.grey[300]};
-  }
-`;
-
-const SearchButton = styled.button`
-  height: 48px;
-  padding: 0 24px;
-  background: ${({ theme }) => theme.colors.bssmDarkBlue};
-  color: white;
-  border: none;
-  border-radius: 4px;
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  cursor: pointer;
-  
-  &:hover {
-    filter: brightness(1.1);
-  }
-`;
-
-const FilterSection = styled.div`
-  display: flex;
-  gap: 8px;
   margin-bottom: 40px;
 `;
 
-const FilterButton = styled.button<{ active: boolean }>`
-  padding: 6px 12px;
-  border: 1px solid ${({ theme, active }) => active ? theme.colors.bssmDarkBlue : theme.colors.grey[400]};
-  border-radius: 4px;
-  background: ${({ theme, active }) => active ? theme.colors.bssmDarkBlue : "transparent"};
-  color: ${({ theme, active }) => active ? "white" : theme.colors.grey[700]};
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  font-size: 11px;
-  cursor: pointer;
-
-  &:hover {
-    background: ${({ theme, active }) => active ? theme.colors.bssmDarkBlue : theme.colors.grey[50]};
-  }
-`;
-
-const DocGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-
-  @media (max-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const DocCard = styled.div`
-  background: white;
-  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
-  border-radius: 8px;
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 240px;
-  transition: transform 0.2s, box-shadow 0.2s;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-  }
-`;
-
-const CardHeader = styled.div``;
-
-const TypeIndicator = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  font-size: 11px;
-  color: ${({ theme }) => theme.colors.grey[800]};
-  margin-bottom: 8px;
-`;
-
-const Dot = styled.div<{ type: "INSERT" | "UPDATE" | "DELETE" }>`
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: ${({ type, theme }) =>
-    type === "INSERT" ? theme.colors.grey[800] :
-      type === "UPDATE" ? theme.colors.bssmBlue :
-        theme.colors.bssmRed};
-`;
-
-const CardTitle = styled.h3`
-  ${({ theme }) => applyTypography(theme, "Headline_2")};
-  font-size: 24px;
-  margin-bottom: 12px;
-  color: ${({ theme }) => theme.colors.grey[900]};
-`;
-
-const CardDescription = styled.p`
+const EmptyState = styled.div`
+  width: 100%;
+  padding: 100px 0;
+  text-align: center;
   ${({ theme }) => applyTypography(theme, "Body_2")};
-  color: ${({ theme }) => theme.colors.grey[700]};
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.4;
-`;
-
-const CardFooter = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 24px;
-`;
-
-const ActionButton = styled.button<{ primary?: boolean; secondary?: boolean }>`
-  padding: 8px 16px;
-  border-radius: 4px;
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  font-size: 12px;
-  cursor: pointer;
-  border: 1px solid ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : theme.colors.grey[300]};
-  background: ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : "white"};
-  color: ${({ theme, primary }) => primary ? "white" : theme.colors.grey[800]};
-
-  &:hover {
-    background: ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : theme.colors.grey[50]};
-    filter: ${({ primary }) => primary ? "brightness(1.1)" : "none"};
-  }
+  color: ${({ theme }) => theme.colors.grey[400]};
 `;

@@ -8,16 +8,17 @@ interface ApiSectionProps {
   title: string;
   description: string;
   items: ApiItem[];
+  columns?: number;
 }
 
-export function ApiSection({ title, description, items }: ApiSectionProps) {
+export function ApiSection({ title, description, items, columns = 4 }: ApiSectionProps) {
   return (
     <SectionContainer>
       <Header>
         <Title>{title}</Title>
         <Description>{description}</Description>
       </Header>
-      <Grid>
+      <Grid columns={columns}>
         {items.map((item) => (
           <ApiCard
             key={item.id}
@@ -26,6 +27,7 @@ export function ApiSection({ title, description, items }: ApiSectionProps) {
             description={item.description}
             tags={item.tags}
             logo={item.logo}
+            type={item.type}
           />
         ))}
       </Grid>
@@ -65,9 +67,9 @@ const Description = styled.p`
   letter-spacing: -0.35px;
 `;
 
-const Grid = styled.div`
+const Grid = styled.div<{ columns: number }>`
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: ${({ columns }) => `repeat(${columns}, 1fr)`};
   gap: 20px;
 
   @media (max-width: 1400px) {

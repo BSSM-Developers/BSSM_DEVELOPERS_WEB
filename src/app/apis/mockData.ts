@@ -5,7 +5,7 @@ export interface ApiItem {
   tags: string[];
   logo?: string; // URL 또는 컴포넌트 플레이스홀더
   isHot?: boolean;
-  type: "INSERT" | "BSM" | "RE:MEDY" | "CUSTOM" | "ORIGINAL";
+  type: "INSERT" | "UPDATE" | "DELETE" | "BSM" | "RE:MEDY" | "CUSTOM" | "ORIGINAL";
   author?: string;
 }
 

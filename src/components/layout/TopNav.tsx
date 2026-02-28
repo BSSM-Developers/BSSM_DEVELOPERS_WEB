@@ -8,43 +8,59 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { tokenManager } from "@/utils/fetcher";
-import { useMyProfileQuery } from "@/app/sign-up/queries";
+import { useUserQuery } from "@/app/user/queries";
 import { useLogoutMutation } from "@/app/login/queries";
 
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
-  // Fetch user profile if token exists
-  const { data: userData, isError } = useMyProfileQuery(!!tokenManager.getAccessToken());
+  const { data: userData, isError, error } = useUserQuery(isClient);
   const logoutMutation = useLogoutMutation();
 
   useEffect(() => {
-    const token = tokenManager.getAccessToken();
-    if (token) {
-      setIsLoggedIn(true);
+    setIsClient(true);
+  }, []);
 
-      // Update cached username if data is fetched successfully
+  useEffect(() => {
+    if (!isClient) return;
+
+    const token = tokenManager.getAccessToken();
+
+    if (token) {
+      if (isError) {
+        const errorData = error as { status?: number; message?: string };
+        const status = errorData?.status || errorData?.message;
+        if (status === "Unauthorized" || String(status).includes("401")) {
+          setIsLoggedIn(false);
+          setUserRole(null);
+          return;
+        }
+      }
+
+      setIsLoggedIn(true);
+      setUserRole(tokenManager.getUserRole());
       if (userData?.name) {
         tokenManager.setUserName(userData.name);
       }
-
-      // Optionally handle errors (e.g. 401) if needed, though useMyProfileQuery might handle it via global fetcher
     } else {
       setIsLoggedIn(false);
+      setUserRole(null);
     }
-  }, [pathname, userData]); // Re-run when path or user data changes
-
+  }, [isClient, pathname, userData, isError, error]);
 
   const handleLogout = async () => {
     try {
       await logoutMutation.mutateAsync();
     } catch (e) {
-      console.error("Logout failed", e);
+      console.error(e);
     } finally {
       tokenManager.clearTokens();
       setIsLoggedIn(false);
+      setUserRole(null);
       router.push("/");
     }
   };
@@ -87,22 +103,24 @@ export function TopNav() {
         </StyledLink>
       </Nav>
 
-      {isLoggedIn ? (
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          {tokenManager.getUserRole() === 'ROLE_ADMIN' && (
-            <StyledLink href="/admin/sign-ups">
-              <NavLink active={isActive("/admin/sign-ups")} style={{ fontSize: '14px', color: '#ef4444' }}>Admin</NavLink>
+      {isClient && (
+        isLoggedIn ? (
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {userRole === 'ROLE_ADMIN' && (
+              <StyledLink href="/admin/sign-ups">
+                <NavLink active={isActive("/admin/sign-ups")} style={{ fontSize: '14px', color: '#ef4444' }}>Admin</NavLink>
+              </StyledLink>
+            )}
+            <StyledLink href="/user/profile">
+              <NavLink active={isActive("/user/profile")} style={{ fontSize: '14px' }}>프로필</NavLink>
             </StyledLink>
-          )}
-          <StyledLink href="/sign-up">
-            <NavLink active={isActive("/sign-up")} style={{ fontSize: '14px' }}>프로필</NavLink>
+            <LoginButton onClick={handleLogout}>로그아웃</LoginButton>
+          </div>
+        ) : (
+          <StyledLink href="/login">
+            <LoginButton as="span">로그인</LoginButton>
           </StyledLink>
-          <LoginButton onClick={handleLogout}>로그아웃</LoginButton>
-        </div>
-      ) : (
-        <StyledLink href="/login">
-          <LoginButton as="span">로그인</LoginButton>
-        </StyledLink>
+        )
       )}
     </Header>
   );
@@ -132,8 +150,8 @@ const LogoWrapper = styled(Link)`
 const Nav = styled.nav`
   display: flex;
   align-items: center;
-  width: 1447px;
-  gap: 69px;
+  flex: 1;
+  gap: 60px;
 `;
 
 const StyledLink = styled(Link)`

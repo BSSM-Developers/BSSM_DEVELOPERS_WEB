@@ -48,6 +48,11 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
       return;
     }
 
+    if (node.path) {
+      router.push(node.path);
+      return;
+    }
+
     if (pathname?.includes('/docs/register')) {
       return;
     }

@@ -1,4 +1,3 @@
-/* eslint-disable */
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
@@ -6,10 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { tokenManager } from "@/utils/fetcher";
 import { signUpApi } from "@/app/sign-up/api";
 import { userApi } from "@/app/user/api";
-import { docsApi } from "@/app/docs/api";
 import styled from "@emotion/styled";
 
 import { useLoginMutation } from "@/app/login/queries";
+import { authApi } from "@/app/login/api";
 import { useUserStore } from "@/store/userStore";
 
 function GoogleCallbackContent() {
@@ -46,7 +45,23 @@ function GoogleCallbackContent() {
           response = await loginMutation.mutateAsync({ code, codeVerifier });
         } catch (error) {
           console.error("Login failed:", error);
-          router.push("/sign-up");
+          try {
+            const signUpProfile = await signUpApi.getMy();
+            if (signUpProfile.state === "APPROVED") {
+              const refreshed = await authApi.refreshAccessToken();
+              if (refreshed.accessToken) {
+                tokenManager.setTokens(refreshed.accessToken, refreshed.refreshToken);
+                const user = await userApi.getUser();
+                useUserStore.getState().setUser(user);
+                tokenManager.setUserName(user.name);
+                router.replace("/");
+                return;
+              }
+            }
+          } catch (innerError) {
+            console.error("Fallback login path failed:", innerError);
+          }
+          router.replace("/sign-up");
           return;
         }
 
@@ -68,7 +83,8 @@ function GoogleCallbackContent() {
             }
 
             router.push("/");
-          } catch (e) {
+          } catch (error) {
+            console.error(error);
             console.log("User not found, redirecting to sign-up");
             setStatus("회원가입이 필요합니다. 이동 중...");
             router.push("/sign-up");
@@ -78,14 +94,15 @@ function GoogleCallbackContent() {
           router.push("/sign-up");
         }
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Callback processing failed:", error);
-        setStatus(`처리 중 오류가 발생했습니다: ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : "알 수 없는 오류";
+        setStatus(`처리 중 오류가 발생했습니다: ${errorMessage}`);
       }
     };
 
     login();
-  }, [searchParams, router]);
+  }, [searchParams, router, loginMutation]);
 
   return (
     <Container>

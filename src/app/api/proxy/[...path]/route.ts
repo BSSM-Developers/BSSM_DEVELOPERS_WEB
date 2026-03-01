@@ -45,11 +45,24 @@ async function handleProxy(request: NextRequest, params: { path: string[] }) {
     });
 
     const responseHeaders = new Headers(backendResponse.headers);
+    responseHeaders.delete("set-cookie");
 
-    const setCookie = responseHeaders.get("set-cookie");
-    if (setCookie) {
-      const newSetCookie = setCookie.replace(/Domain=[^;]+;?/gi, "");
-      responseHeaders.set("set-cookie", newSetCookie);
+    const getSetCookie = (backendResponse.headers as Headers & {
+      getSetCookie?: () => string[];
+    }).getSetCookie;
+
+    const setCookies = typeof getSetCookie === "function" ? getSetCookie.call(backendResponse.headers) : [];
+
+    for (const cookie of setCookies) {
+      const sanitizedCookie = cookie.replace(/Domain=[^;]+;?/gi, "");
+      responseHeaders.append("set-cookie", sanitizedCookie);
+    }
+
+    if (setCookies.length === 0) {
+      const mergedSetCookie = backendResponse.headers.get("set-cookie");
+      if (mergedSetCookie) {
+        responseHeaders.append("set-cookie", mergedSetCookie.replace(/Domain=[^;]+;?/gi, ""));
+      }
     }
 
     return new NextResponse(backendResponse.body, {

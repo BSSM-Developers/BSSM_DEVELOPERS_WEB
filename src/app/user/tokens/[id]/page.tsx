@@ -97,8 +97,10 @@ export default function TokenDetailPage() {
     if (!tokenDetail) {
       return null;
     }
-    return tokenDetail.registeredApis.map((apiUsage) => (
-      <ApiItem key={apiUsage.apiId}>
+    return tokenDetail.registeredApis.map((apiUsage) => {
+      const apiIdentifier = String(apiUsage.apiId);
+      return (
+      <ApiItem key={apiIdentifier}>
         <ApiInfo>
           <ApiName>{apiUsage.name}</ApiName>
           <ApiMethod>API METHOD: {apiUsage.apiMethod}</ApiMethod>
@@ -108,11 +110,13 @@ export default function TokenDetailPage() {
           <EndpointValue>{apiUsage.endpoint}</EndpointValue>
         </ApiEndpointSection>
         <ActionGroup>
-          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&usageId=${apiUsage.apiId}`)}>수정</TinyButton>
+          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=USAGE_NAME&apiId=${apiIdentifier}`)}>이름 수정</TinyButton>
+          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&apiId=${apiIdentifier}`)}>주소 수정</TinyButton>
           <TinyButton onClick={() => void handleCopy(apiUsage.endpoint)}>복사</TinyButton>
         </ActionGroup>
       </ApiItem>
-    ));
+      );
+    });
   }, [handleCopy, router, tokenDetail]);
 
   const tokenName = tokenDetail?.apiTokenName ?? "토큰 상세";
@@ -128,7 +132,7 @@ export default function TokenDetailPage() {
             <Subtitle>내 토큰을 관리할 수 있어요</Subtitle>
           </TitleSection>
           <HeaderActions>
-            <HeaderButton onClick={() => router.push(`/user/tokens/edit/${tokenId ?? ""}?step=NAME`)} disabled={tokenId === null || isLoading || !!errorMessage}>
+            <HeaderButton onClick={() => router.push(`/user/tokens/edit/${tokenId ?? ""}?step=TOKEN_NAME`)} disabled={tokenId === null || isLoading || !!errorMessage}>
               이름 수정
             </HeaderButton>
             <HeaderButton primary onClick={() => void handleReissue()} disabled={tokenId === null || isLoading || !!errorMessage}>

@@ -10,6 +10,8 @@ interface CursorPage<T> {
   hasNext: boolean;
 }
 
+export type ApiUseStateFilter = "PENDING" | "APPROVED" | "REJECTED";
+
 export interface ApiUseReasonMineItem {
   apiUseReasonId: number;
   writerId: number;
@@ -52,6 +54,16 @@ export const apiUseReasonApi = {
       params.cursor = String(cursor);
     }
     return fetchClinet.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>(`/api/usage/by-api/${apiId}`, { params });
+  },
+  getAll: async (state?: ApiUseStateFilter, cursor?: number, size: number = 20) => {
+    const params: Record<string, string> = { size: String(size) };
+    if (cursor !== undefined) {
+      params.cursor = String(cursor);
+    }
+    if (state) {
+      params.state = state;
+    }
+    return fetchClinet.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>("/api/use-reason", { params });
   },
   approve: async (apiTokenId: number, apiUseReasonId: number) => {
     return fetchClinet.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/approve`, {});

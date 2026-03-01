@@ -4,6 +4,17 @@ export interface ApiRequestOptions extends RequestInit {
   suppressLogout?: boolean;
 }
 
+interface RefreshResponse {
+  accessToken?: string;
+  refreshToken?: string;
+  data?: {
+    accessToken?: string;
+    refreshToken?: string;
+    access_token?: string;
+    refresh_token?: string;
+  };
+}
+
 export const tokenManager = {
   setTokens: (accessToken: string, refreshToken?: string) => {
     if (typeof window !== "undefined") {
@@ -118,7 +129,50 @@ export const tokenManager = {
   },
 };
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL === "https://prod.bssm-dev.com" ? "/api/proxy" : (process.env.NEXT_PUBLIC_API_URL || "");
+const RAW_API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const BASE_URL = RAW_API_URL.startsWith("http://") || RAW_API_URL.startsWith("https://")
+  ? "/api/proxy"
+  : RAW_API_URL;
+
+let refreshPromise: Promise<string | null> | null = null;
+
+const requestAccessTokenRefresh = async (): Promise<string | null> => {
+  const refreshUrl = new URL(
+    `${BASE_URL}/auth/refresh`,
+    typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
+  );
+
+  const refreshResponse = await fetch(refreshUrl.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include"
+  });
+
+  if (!refreshResponse.ok) {
+    return null;
+  }
+
+  const refreshText = await refreshResponse.text();
+  const refreshData: RefreshResponse = refreshText ? JSON.parse(refreshText) : {};
+  const newAccessToken =
+    refreshData.accessToken ||
+    refreshData.data?.accessToken ||
+    refreshData.data?.access_token ||
+    null;
+  const newRefreshToken =
+    refreshData.refreshToken ||
+    refreshData.data?.refreshToken ||
+    refreshData.data?.refresh_token;
+
+  if (!newAccessToken) {
+    return null;
+  }
+
+  tokenManager.setTokens(newAccessToken, newRefreshToken);
+  return newAccessToken;
+};
 
 const request = async <T>(
   method: string,
@@ -162,48 +216,45 @@ const request = async <T>(
 
   if (response.status === 401 && !options.skipAuth) {
     if (!options.suppressLogout) {
+      let refreshedAccessToken: string | null = null;
       try {
-        const refreshUrl = new URL(
-          `${BASE_URL}/auth/refresh`,
-          typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
-        );
-        const refreshResponse = await fetch(refreshUrl.toString(), {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include"
-        });
+        if (!refreshPromise) {
+          refreshPromise = requestAccessTokenRefresh().finally(() => {
+            refreshPromise = null;
+          });
+        }
 
-        if (refreshResponse.ok) {
-          const refreshText = await refreshResponse.text();
-          const refreshData = refreshText ? JSON.parse(refreshText) : {};
-          const newAccessToken =
-            refreshData.accessToken ||
-            refreshData.data?.accessToken;
+        refreshedAccessToken = await refreshPromise;
 
-          if (newAccessToken) {
-            tokenManager.setTokens(newAccessToken);
+        if (refreshedAccessToken) {
+          const retryHeaders = { ...headers, "Authorization": `Bearer ${refreshedAccessToken}` };
+          const retryOptions = { ...fetchOptions, headers: retryHeaders };
+          const retryResponse = await fetch(url.toString(), retryOptions);
 
-            const retryHeaders = { ...headers, "Authorization": `Bearer ${newAccessToken}` };
-            const retryOptions = { ...fetchOptions, headers: retryHeaders };
-            const retryResponse = await fetch(url.toString(), retryOptions);
+          if (retryResponse.ok) {
+            const text = await retryResponse.text();
+            return text ? JSON.parse(text) : ({} as T);
+          }
 
-            if (retryResponse.ok) {
-              const text = await retryResponse.text();
-              return text ? JSON.parse(text) : ({} as T);
-            }
+          if (retryResponse.status !== 401) {
+            const retryErrorBody = await retryResponse.text();
+            throw new Error(
+              `API Error ${retryResponse.status}: ${retryResponse.statusText} - ${retryErrorBody}`
+            );
           }
         }
       } catch {
       }
-    }
 
-    if (!options.suppressLogout) {
-      tokenManager.clearTokens();
-      if (typeof window !== "undefined") {
-        window.location.href = "/login";
+      if (!refreshedAccessToken) {
+        tokenManager.clearTokens();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
+        throw new Error("Unauthorized");
       }
+
+      throw new Error("Unauthorized");
     }
     throw new Error("Unauthorized");
   }

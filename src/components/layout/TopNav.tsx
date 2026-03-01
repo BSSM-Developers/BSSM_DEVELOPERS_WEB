@@ -15,7 +15,6 @@ export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
 
   const { data: userData, isError, error } = useUserQuery(isClient);
@@ -36,19 +35,16 @@ export function TopNav() {
         const status = errorData?.status || errorData?.message;
         if (status === "Unauthorized" || String(status).includes("401")) {
           setIsLoggedIn(false);
-          setUserRole(null);
           return;
         }
       }
 
       setIsLoggedIn(true);
-      setUserRole(tokenManager.getUserRole());
       if (userData?.name) {
         tokenManager.setUserName(userData.name);
       }
     } else {
       setIsLoggedIn(false);
-      setUserRole(null);
     }
   }, [isClient, pathname, userData, isError, error]);
 
@@ -60,7 +56,6 @@ export function TopNav() {
     } finally {
       tokenManager.clearTokens();
       setIsLoggedIn(false);
-      setUserRole(null);
       router.push("/");
     }
   };
@@ -102,9 +97,6 @@ export function TopNav() {
       {isClient && (
         isLoggedIn ? (
           <AccountActions>
-            {userRole === 'ROLE_ADMIN' && (
-              <AdminLink href="/admin/sign-ups">Admin</AdminLink>
-            )}
             <StyledLink href="/user/profile">
               <ActionButton as="span" active={pathname?.startsWith("/user")}>
                 프로필
@@ -171,21 +163,6 @@ const AccountActions = styled.div`
   align-items: center;
   gap: 10px;
   margin-left: 20px;
-`;
-
-const AdminLink = styled(Link)`
-  height: 30px;
-  padding: 0 10px;
-  border-radius: 999px;
-  border: 1px solid #fecaca;
-  background: #fff1f2;
-  color: #b91c1c;
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
 `;
 
 const LoginButton = styled.button`

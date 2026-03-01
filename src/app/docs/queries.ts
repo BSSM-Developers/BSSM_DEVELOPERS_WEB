@@ -4,6 +4,12 @@ import { docsApi } from "./api";
 export const docsKeys = {
   all: ["docs"] as const,
   list: () => [...docsKeys.all, "list"] as const,
+  myList: (type?: string, cursor?: string, size?: number) =>
+    [...docsKeys.all, "my-list", type, cursor, size] as const,
+  popularList: (type?: string, cursor?: string, size?: number, tokenCount?: number) =>
+    [...docsKeys.all, "popular-list", type, cursor, size, tokenCount] as const,
+  myPopularList: (type?: string, cursor?: string, size?: number, tokenCount?: number) =>
+    [...docsKeys.all, "my-popular-list", type, cursor, size, tokenCount] as const,
   detail: (id: string) => [...docsKeys.all, "detail", id] as const,
   sidebar: (id: string) => [...docsKeys.all, "sidebar", id] as const,
   page: (id: string, mappedId: string) =>
@@ -14,6 +20,39 @@ export function useDocsListQuery() {
   return useQuery({
     queryKey: docsKeys.list(),
     queryFn: () => docsApi.getList(),
+  });
+}
+
+export function useDocsMyListQuery(
+  params: { type?: string; cursor?: string; size?: number } = {},
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: docsKeys.myList(params.type, params.cursor, params.size),
+    queryFn: () => docsApi.getMyList(params),
+    enabled,
+  });
+}
+
+export function useDocsPopularListQuery(
+  params: { type?: string; cursor?: string; size?: number; tokenCount?: number } = {},
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: docsKeys.popularList(params.type, params.cursor, params.size, params.tokenCount),
+    queryFn: () => docsApi.getPopularList(params),
+    enabled,
+  });
+}
+
+export function useDocsMyPopularListQuery(
+  params: { type?: string; cursor?: string; size?: number; tokenCount?: number } = {},
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: docsKeys.myPopularList(params.type, params.cursor, params.size, params.tokenCount),
+    queryFn: () => docsApi.getMyPopularList(params),
+    enabled,
   });
 }
 

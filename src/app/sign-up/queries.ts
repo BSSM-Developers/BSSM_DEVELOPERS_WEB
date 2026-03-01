@@ -1,3 +1,5 @@
+"use client";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { signUpApi } from "./api";
 import { tokenManager } from "@/utils/fetcher";

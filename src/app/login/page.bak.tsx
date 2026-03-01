@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
+    console.log("handleGoogleLogin called");
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const redirectUri = process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI;
 
@@ -41,6 +42,7 @@ export default function LoginPage() {
       });
 
       const url = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+      console.log("Redirecting to Google:", url);
       window.location.href = url;
     } catch (error: unknown) {
       console.error("Login failed", error);

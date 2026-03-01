@@ -161,23 +161,29 @@ const request = async <T>(
   const response = await fetch(url.toString(), fetchOptions);
 
   if (response.status === 401 && !options.skipAuth) {
-    const refreshToken = tokenManager.getRefreshToken();
-    if (refreshToken && !options.suppressLogout) {
+    if (!options.suppressLogout) {
       try {
-        const refreshUrl = new URL(`${BASE_URL}/auth/token/refresh`, typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+        const refreshUrl = new URL(
+          `${BASE_URL}/auth/refresh`,
+          typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
+        );
         const refreshResponse = await fetch(refreshUrl.toString(), {
-          method: "GET",
+          method: "POST",
           headers: {
-            "refresh-token": refreshToken
+            "Content-Type": "application/json",
           },
           credentials: "include"
         });
 
         if (refreshResponse.ok) {
-          const refreshData = await refreshResponse.json();
-          const newAccessToken = refreshData.accessToken || refreshData.data?.accessToken;
+          const refreshText = await refreshResponse.text();
+          const refreshData = refreshText ? JSON.parse(refreshText) : {};
+          const newAccessToken =
+            refreshData.accessToken ||
+            refreshData.data?.accessToken;
+
           if (newAccessToken) {
-            tokenManager.setTokens(newAccessToken, refreshToken);
+            tokenManager.setTokens(newAccessToken);
 
             const retryHeaders = { ...headers, "Authorization": `Bearer ${newAccessToken}` };
             const retryOptions = { ...fetchOptions, headers: retryHeaders };

@@ -32,19 +32,56 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const selectedId = useDocsStore((state) => state.selected);
   const setSelected = useDocsStore((state) => state.setSelected);
   const isFolder = node.module === "collapse" || node.module === "main";
-  const childHasActive = (node.childrenItems ?? []).some(c => c.id === selectedId);
-  const isActive = selectedId === node.id || childHasActive;
 
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
   const slug = params?.slug as string | undefined;
 
+  const hasPathInTree = (current: SidebarNode): boolean => {
+    if (current.path) {
+      return true;
+    }
+    return (current.childrenItems ?? []).some((child) => hasPathInTree(child));
+  };
+
+  const matchesPath = (path: string): boolean => {
+    if (!pathname) {
+      return false;
+    }
+    if (path === "/user") {
+      return pathname === "/user";
+    }
+    return pathname === path || pathname.startsWith(`${path}/`);
+  };
+
+  const routeActiveInTree = (current: SidebarNode): boolean => {
+    if (current.path && matchesPath(current.path)) {
+      return true;
+    }
+    return (current.childrenItems ?? []).some((child) => routeActiveInTree(child));
+  };
+
+  const selectedActiveInTree = (current: SidebarNode): boolean => {
+    if (current.id === selectedId) {
+      return true;
+    }
+    return (current.childrenItems ?? []).some((child) => selectedActiveInTree(child));
+  };
+
+  const isPathTree = hasPathInTree(node);
+  const isActive = isPathTree ? routeActiveInTree(node) : selectedActiveInTree(node);
+
   const handleClick = () => {
     setSelected(node.id);
 
     if (isFolder) {
       setOpen(p => !p);
+      return;
+    }
+
+    if (node.path) {
+      router.push(node.path);
       return;
     }
 
@@ -72,7 +109,13 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const closeContextMenu = () => setContextMenu(null);
 
   const duplicateItem = () => {
-    const { id: _, ...rest } = node;
+    const rest: Omit<SidebarNode, "id"> = {
+      label: node.label,
+      module: node.module,
+      path: node.path,
+      method: node.method,
+      childrenItems: node.childrenItems,
+    };
     const newNode = { ...rest, label: `${node.label} 복사` };
     mutators.addSibling(node.id, newNode);
     closeContextMenu();

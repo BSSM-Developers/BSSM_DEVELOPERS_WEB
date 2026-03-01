@@ -80,6 +80,7 @@ export const EditorStep = ({
         sidebarItems={sidebarItems}
         onSidebarChange={setSidebarItems}
         projectName={formData.title || "새 문서"}
+        editable={true}
       >
         <DocsHeader title={selectedNode?.label || formData.title || "새 문서"} breadcrumb={breadcrumb} isApi={false} />
         <div

@@ -23,6 +23,7 @@ export default function TokenDetailPage() {
   const { confirm, ConfirmDialog } = useConfirm();
   const tokenId = parseTokenId(id);
   const [tokenDetail, setTokenDetail] = useState<ApiTokenDetail | null>(null);
+  const [reissuedSecretKey, setReissuedSecretKey] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -71,7 +72,8 @@ export default function TokenDetailPage() {
 
     if (isConfirmed) {
       try {
-        await tokenApi.reissueSecret(tokenId);
+        const reissued = await tokenApi.reissueSecret(tokenId);
+        setReissuedSecretKey(reissued.secretKey);
         const refreshed = await tokenApi.getDetail(tokenId);
         setTokenDetail(refreshed);
       } catch (error) {
@@ -86,7 +88,7 @@ export default function TokenDetailPage() {
       }
       await confirm({
         title: "재발급 완료",
-        message: "시크릿 키가 성공적으로 재발급되었습니다.",
+        message: "시크릿 키가 성공적으로 재발급되었습니다. 아래에 표시된 키를 복사해 보관해주세요.",
         confirmText: "확인",
         hideCancel: true,
       });
@@ -158,6 +160,13 @@ export default function TokenDetailPage() {
           <SecretKeyNotice>
             시크릿 키는 토큰 생성 직후에만 확인할 수 있습니다. 분실 시 시크릿 키 재발급 버튼으로 새 키를 발급받아 다시 보관해주세요.
           </SecretKeyNotice>
+          {reissuedSecretKey ? (
+            <TokenRow>
+              <Label>재발급 시크릿 키</Label>
+              <SecretValue>{reissuedSecretKey}</SecretValue>
+              <TinyButton onClick={() => void handleCopy(reissuedSecretKey)}>복사</TinyButton>
+            </TokenRow>
+          ) : null}
         </Section>
 
         {!isLoading && !errorMessage ? (
@@ -261,6 +270,14 @@ const TokenValue = styled.span`
     color: ${({ theme }) => theme.colors.grey[600]};
     flex: 1;
     font-family: monospace;
+`;
+
+const SecretValue = styled.span`
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: ${({ theme }) => theme.colors.bssmDarkBlue};
+    flex: 1;
+    font-family: monospace;
+    font-weight: 600;
 `;
 
 const TinyButton = styled.button<{ primary?: boolean }>`

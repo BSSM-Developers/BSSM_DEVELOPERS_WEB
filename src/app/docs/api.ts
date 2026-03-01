@@ -108,9 +108,58 @@ interface ReplaceDocsData {
   auto_approval: boolean;
 }
 
+interface DocsCursorQueryParams {
+  type?: string;
+  cursor?: string;
+  size?: number;
+}
+
+interface DocsPopularQueryParams extends DocsCursorQueryParams {
+  tokenCount?: number;
+}
+
 export const docsApi = {
   getList: async () => {
     return fetchClinet.get<DocsListResponse>("/docs", { skipAuth: true });
+  },
+  getMyList: async ({ type, cursor, size = 20 }: DocsCursorQueryParams = {}) => {
+    const params: Record<string, string> = {};
+    if (type) {
+      params.type = type;
+    }
+    if (cursor) {
+      params.cursor = cursor;
+    }
+    params.size = String(size);
+    return fetchClinet.get<DocsListResponse>("/docs/my", { params });
+  },
+  getPopularList: async ({ type, cursor, size = 20, tokenCount }: DocsPopularQueryParams = {}) => {
+    const params: Record<string, string> = {};
+    if (type) {
+      params.type = type;
+    }
+    if (cursor) {
+      params.cursor = cursor;
+    }
+    if (tokenCount !== undefined) {
+      params.tokenCount = String(tokenCount);
+    }
+    params.size = String(size);
+    return fetchClinet.get<DocsListResponse>("/docs/popular", { params, skipAuth: true });
+  },
+  getMyPopularList: async ({ type, cursor, size = 20, tokenCount }: DocsPopularQueryParams = {}) => {
+    const params: Record<string, string> = {};
+    if (type) {
+      params.type = type;
+    }
+    if (cursor) {
+      params.cursor = cursor;
+    }
+    if (tokenCount !== undefined) {
+      params.tokenCount = String(tokenCount);
+    }
+    params.size = String(size);
+    return fetchClinet.get<DocsListResponse>("/docs/my/popular", { params });
   },
   getSidebar: async (docsId: string) => {
     return fetchClinet.get<SidebarResponse>(`/docs/${docsId}/sidebar`, { skipAuth: true });

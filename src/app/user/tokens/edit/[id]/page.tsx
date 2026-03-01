@@ -5,6 +5,16 @@ import { keyframes, css } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState, useCallback, useEffect, Suspense } from "react";
+import { tokenApi } from "../../api";
+
+const parseTokenId = (value: string | string[] | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
 const slideIn = keyframes`
   from {
@@ -66,12 +76,16 @@ const checkPop = keyframes`
 function TokenEditContent() {
   const router = useRouter();
   const { id } = useParams();
+  const tokenId = parseTokenId(id);
   const searchParams = useSearchParams();
   const initialStep = searchParams.get("step") as "NAME" | "ENDPOINT" | null;
 
   const [step, setStep] = useState<"NAME" | "ENDPOINT" | "SUCCESS">("NAME");
-  const [name, setName] = useState("최애의 사인 추모관 조회");
-  const [endpoint, setEndpoint] = useState("/get/chumoguahn");
+  const [name, setName] = useState("");
+  const [endpoint, setEndpoint] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     if (initialStep) {
@@ -79,13 +93,67 @@ function TokenEditContent() {
     }
   }, [initialStep]);
 
-  const handleNext = useCallback(() => {
+  useEffect(() => {
+    const loadDetail = async () => {
+      if (tokenId === null) {
+        setErrorMessage("유효하지 않은 토큰 ID입니다.");
+        setIsLoadingDetail(false);
+        return;
+      }
+      try {
+        setErrorMessage("");
+        setIsLoadingDetail(true);
+        const detail = await tokenApi.getDetail(tokenId);
+        setName(detail.apiTokenName);
+        setEndpoint(detail.registeredApis[0]?.endpoint ?? "");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "토큰 정보를 불러오지 못했습니다.";
+        setErrorMessage(message);
+      } finally {
+        setIsLoadingDetail(false);
+      }
+    };
+    void loadDetail();
+  }, [tokenId]);
+
+  const handleNext = useCallback(async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    if (step === "NAME") {
+      if (!name.trim()) {
+        setErrorMessage("토큰 이름을 입력해주세요.");
+        return;
+      }
+      if (tokenId === null) {
+        setErrorMessage("유효하지 않은 토큰 ID입니다.");
+        return;
+      }
+      try {
+        setErrorMessage("");
+        setIsSubmitting(true);
+        await tokenApi.updateName(tokenId, name.trim());
+        setStep("SUCCESS");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "토큰 이름 수정에 실패했습니다.";
+        setErrorMessage(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     setStep("SUCCESS");
-  }, []);
+  }, [isSubmitting, name, step, tokenId]);
 
   const handleComplete = useCallback(() => {
-    router.push(`/user/tokens/${id}`);
-  }, [router, id]);
+    if (tokenId === null) {
+      router.push("/user/tokens");
+      return;
+    }
+    router.push(`/user/tokens/${tokenId}`);
+  }, [router, tokenId]);
 
   if (step === "SUCCESS") {
     return (
@@ -120,11 +188,15 @@ function TokenEditContent() {
               setEndpoint(e.target.value);
             }
           }}
-          onKeyDown={(e) => e.key === "Enter" && handleNext()}
+          onKeyDown={(e) => e.key === "Enter" && void handleNext()}
           autoFocus
         />
 
-        <PrimaryButton onClick={handleNext}>수정하기</PrimaryButton>
+        {isLoadingDetail ? <StatusText>토큰 정보를 불러오는 중입니다.</StatusText> : null}
+        {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
+        <PrimaryButton onClick={() => void handleNext()} disabled={isSubmitting || isLoadingDetail}>
+          {isSubmitting ? "수정 중..." : "수정하기"}
+        </PrimaryButton>
       </FlexColumn>
     </Container>
   );
@@ -201,6 +273,11 @@ const PrimaryButton = styled.button`
   &:hover {
     opacity: 0.9;
   }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const CheckCircle = styled.div`
@@ -229,4 +306,16 @@ const CheckIcon = styled.svg`
   stroke-dashoffset: 100;
   transform-origin: center;
   animation: ${drawCheck} 0.5s ease-in-out 0.2s forwards, ${checkPop} 0.6s ease-out 0.2s forwards;
+`;
+
+const StatusText = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  margin-bottom: 16px;
+`;
+
+const ErrorText = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: #d32f2f;
+  margin-bottom: 16px;
 `;

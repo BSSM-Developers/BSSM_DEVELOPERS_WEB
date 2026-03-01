@@ -7,38 +7,50 @@ import { useState, useMemo, useCallback } from "react";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
 import type { ApiItem } from "@/app/apis/mockData";
+import { useDocsMyListQuery, useDocsMyPopularListQuery } from "@/app/docs/queries";
+import type { DocsItem } from "@/app/docs/api";
 
-interface MyDoc {
-  id: string;
-  type: "INSERT" | "UPDATE" | "DELETE";
-  title: string;
-  description: string;
-  isOriginal: boolean;
-}
+const toApiItemType = (value?: string): ApiItem["type"] => {
+  if (value === "CUSTOM") {
+    return "CUSTOM";
+  }
+  return "ORIGINAL";
+};
 
-const MOCK_MY_DOCS: MyDoc[] = [
-  { id: "1", type: "INSERT", title: "부마위키", description: "부산소프트웨어마이스터고등학교 학생들의 교내 위키 서비스 부마위키의 API입니다", isOriginal: true },
-  { id: "2", type: "INSERT", title: "부마위키", description: "부산소프트웨어마이스터고등학교 학생들의 교내 위키 서비스 부마위키의 API입니다", isOriginal: true },
-  { id: "3", type: "INSERT", title: "부마위키", description: "부산소프트웨어마이스터고등학교 학생들의 교내 위키 서비스 부마위키의 API입니다", isOriginal: true },
-  { id: "4", type: "INSERT", title: "부마위키", description: "부산소프트웨어마이스터고등학교 학생들의 교내 위키 서비스 부마위키의 API입니다", isOriginal: true },
-  { id: "5", type: "INSERT", title: "부마위키", description: "부산소프트웨어마이스터고등학교 학생들의 교내 위키 서비스 부마위키의 API입니다", isOriginal: true },
-  { id: "6", type: "INSERT", title: "부마위키", description: "부산소프트웨어마이스터고등학교 학생들의 교내 위키 서비스 부마위키의 API입니다", isOriginal: true },
-];
+const toApiItem = (doc: DocsItem): ApiItem => ({
+  id: String(doc.docsId ?? doc.id ?? ""),
+  title: doc.title || "Untitled API",
+  description: doc.description || "설명이 없습니다.",
+  tags: [doc.type || "ORIGINAL"],
+  type: toApiItemType(doc.type),
+  author: doc.writer,
+});
 
 export default function MyDocsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
+  const typeParam = filter === "ALL" ? undefined : filter;
+
+  const { data: latestData, isLoading: isLatestLoading, error: latestError } = useDocsMyListQuery(
+    { type: typeParam, size: 20 },
+    sortType === "LATEST"
+  );
+  const { data: popularData, isLoading: isPopularLoading, error: popularError } = useDocsMyPopularListQuery(
+    { type: typeParam, size: 20 },
+    sortType === "POPULAR"
+  );
+
+  const isLoading = sortType === "POPULAR" ? isPopularLoading : isLatestLoading;
+  const activeError = sortType === "POPULAR" ? popularError : latestError;
 
   const myApis: ApiItem[] = useMemo(() => {
-    return MOCK_MY_DOCS.map((doc) => ({
-      id: doc.id,
-      title: doc.title,
-      description: doc.description,
-      tags: [doc.type],
-      type: doc.type,
-    }));
-  }, []);
+    const values = sortType === "POPULAR" ? popularData?.data.values : latestData?.data.values;
+    if (!values) {
+      return [];
+    }
+    return values.map(toApiItem);
+  }, [latestData, popularData, sortType]);
 
   const searchItems = useCallback((items: ApiItem[]) => {
     if (!searchTerm) return items;
@@ -74,10 +86,13 @@ export default function MyDocsPage() {
             onSortChange={setSortType}
             activeFilter={filter}
             activeSort={sortType}
+            allowSortWhenAll
           />
         </SearchSection>
 
-        {filteredDocs.length > 0 ? (
+        {isLoading ? <StatusText>문서 목록을 불러오는 중입니다.</StatusText> : null}
+        {activeError ? <ErrorText>{activeError instanceof Error ? activeError.message : "문서 목록을 불러오지 못했습니다."}</ErrorText> : null}
+        {!isLoading && !activeError && filteredDocs.length > 0 ? (
           <ApiSection
             title={filter === "ALL" ? "전체 문서" : `${filter} API`}
             description={filter === "ALL" ? "회원님이 관리 중인 모든 API 문서입니다" : `${filter} API 문서 목록입니다`}
@@ -85,7 +100,7 @@ export default function MyDocsPage() {
             columns={3}
           />
         ) : (
-          <EmptyState>문서가 존재하지 않습니다.</EmptyState>
+          !isLoading && !activeError ? <EmptyState>문서가 존재하지 않습니다.</EmptyState> : null
         )}
       </ContentWrapper>
     </Container>
@@ -124,4 +139,16 @@ const EmptyState = styled.div`
   text-align: center;
   ${({ theme }) => applyTypography(theme, "Body_2")};
   color: ${({ theme }) => theme.colors.grey[400]};
+`;
+
+const StatusText = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_2")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  margin-bottom: 20px;
+`;
+
+const ErrorText = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_2")};
+  color: #d32f2f;
+  margin-bottom: 20px;
 `;

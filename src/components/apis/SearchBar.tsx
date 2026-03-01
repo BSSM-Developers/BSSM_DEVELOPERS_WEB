@@ -10,6 +10,7 @@ interface SearchBarProps {
   onSortChange?: (sort: "LATEST" | "POPULAR") => void;
   activeFilter?: "ALL" | "ORIGINAL" | "CUSTOM";
   activeSort?: "LATEST" | "POPULAR";
+  allowSortWhenAll?: boolean;
 }
 
 export function SearchBar({
@@ -17,27 +18,27 @@ export function SearchBar({
   onFilterChange,
   onSortChange,
   activeFilter = "ALL",
-  activeSort = "LATEST"
+  activeSort = "LATEST",
+  allowSortWhenAll = false,
 }: SearchBarProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
 
-  const isSortEnabled = activeFilter !== "ALL";
+  const isSortEnabled = allowSortWhenAll || activeFilter !== "ALL";
 
   useEffect(() => {
     if (isFilterOpen && filterButtonRef.current) {
       const rect = filterButtonRef.current.getBoundingClientRect();
       setCoords({
         top: rect.bottom + window.scrollY + 8,
-        left: rect.right + window.scrollX - 200 // 오른쪽 정렬
+        left: rect.right + window.scrollX - 200
       });
     }
   }, [isFilterOpen]);
 
   const handleFilterClick = (filter: "ALL" | "ORIGINAL" | "CUSTOM") => {
-    // 토글 로직: 이미 선택된 필터를 클릭하면 해제(전체로 변경)
     const newFilter = activeFilter === filter ? "ALL" : filter;
     onFilterChange?.(newFilter);
   };

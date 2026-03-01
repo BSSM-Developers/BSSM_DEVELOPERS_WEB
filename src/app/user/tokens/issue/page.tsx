@@ -5,6 +5,8 @@ import { keyframes, css } from "@emotion/react";
 import styled from "@emotion/styled";
 import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
+import { tokenApi, type ApiTokenWithSecret } from "../api";
+import { useConfirm } from "@/hooks/useConfirm";
 
 const slideIn = keyframes`
   from {
@@ -65,18 +67,48 @@ const checkPop = keyframes`
 
 export default function TokenIssuePage() {
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [step, setStep] = useState<"INPUT" | "SUCCESS">("INPUT");
   const [name, setName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [issuedToken, setIssuedToken] = useState<ApiTokenWithSecret | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  const handleIssue = useCallback(() => {
-    if (name.trim()) {
-      setStep("SUCCESS");
+  const handleIssue = useCallback(async () => {
+    if (!name.trim() || isSubmitting) {
+      return;
     }
-  }, [name]);
+
+    try {
+      setErrorMessage("");
+      setIsSubmitting(true);
+      const createdToken = await tokenApi.create(name.trim());
+      setIssuedToken(createdToken);
+      setStep("SUCCESS");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "토큰 발급에 실패했습니다.";
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [isSubmitting, name]);
 
   const handleComplete = useCallback(() => {
-    router.push("/user/tokens");
-  }, [router]);
+    if (!issuedToken) {
+      router.push("/user/tokens");
+      return;
+    }
+    router.push(`/user/tokens/${issuedToken.apiTokenId}`);
+  }, [issuedToken, router]);
+
+  const handleCopy = useCallback(async (value: string) => {
+    await navigator.clipboard.writeText(value);
+    await confirm({
+      title: "복사가 완료되었습니다",
+      message: "클립보드에 복사되었습니다.",
+      confirmText: "확인",
+    });
+  }, [confirm]);
 
   if (step === "SUCCESS") {
     return (
@@ -88,7 +120,26 @@ export default function TokenIssuePage() {
               <polyline points="20 6 9 17 4 12" />
             </CheckIcon>
           </CheckCircle>
+          {issuedToken ? (
+            <IssuedInfoList>
+              <IssuedInfoRow>
+                <IssuedInfoLabel>토큰 이름</IssuedInfoLabel>
+                <IssuedInfoValue>{issuedToken.apiTokenName}</IssuedInfoValue>
+              </IssuedInfoRow>
+              <IssuedInfoRow>
+                <IssuedInfoLabel>클라이언트 ID</IssuedInfoLabel>
+                <IssuedInfoValue>{issuedToken.apiTokenClientId}</IssuedInfoValue>
+                <InfoButton onClick={() => void handleCopy(issuedToken.apiTokenClientId)}>복사</InfoButton>
+              </IssuedInfoRow>
+              <IssuedInfoRow>
+                <IssuedInfoLabel>시크릿 키</IssuedInfoLabel>
+                <IssuedInfoValue>{issuedToken.secretKey}</IssuedInfoValue>
+                <InfoButton onClick={() => void handleCopy(issuedToken.secretKey)}>복사</InfoButton>
+              </IssuedInfoRow>
+            </IssuedInfoList>
+          ) : null}
           <CompleteButton onClick={handleComplete}>완료</CompleteButton>
+          {ConfirmDialog}
         </FlexColumn>
       </Container>
     );
@@ -102,10 +153,13 @@ export default function TokenIssuePage() {
           placeholder="토큰 이름을 입력해주세요"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleIssue()}
+          onKeyDown={(e) => e.key === "Enter" && void handleIssue()}
           autoFocus
         />
-        <IssueButton onClick={handleIssue} disabled={!name.trim()}>발급받기</IssueButton>
+        {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
+        <IssueButton onClick={() => void handleIssue()} disabled={!name.trim() || isSubmitting}>
+          {isSubmitting ? "발급 중..." : "발급받기"}
+        </IssueButton>
       </FlexColumn>
     </Container>
   );
@@ -185,8 +239,58 @@ const SuccessTitle = styled.h2`
   ${({ theme }) => applyTypography(theme, "Headline_1")};
   font-size: 32px;
   color: ${({ theme }) => theme.colors.grey[900]};
-  margin-bottom: 48px;
+  margin-bottom: 36px;
   text-align: center;
+`;
+
+const IssuedInfoList = styled.div`
+  width: 100%;
+  margin-bottom: 36px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
+const IssuedInfoRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.grey[100]};
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+`;
+
+const IssuedInfoLabel = styled.span`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  min-width: 110px;
+`;
+
+const IssuedInfoValue = styled.span`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[800]};
+  flex: 1;
+  font-family: monospace;
+  overflow-x: auto;
+  white-space: nowrap;
+`;
+
+const InfoButton = styled.button`
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  background: white;
+  cursor: pointer;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+`;
+
+const ErrorMessage = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: #d32f2f;
+  margin-bottom: 16px;
 `;
 
 const CheckCircle = styled.div`

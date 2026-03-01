@@ -4,31 +4,49 @@ import { DocsHeader } from "@/components/docs/DocsHeader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useParams, useRouter } from "next/navigation";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
+import { tokenApi, type ApiTokenDetail } from "../api";
 
-interface ApiPermission {
-  id: string;
-  name: string;
-  endpoint: string;
-  method: string;
-}
-
-const MOCK_PERMISSIONS: ApiPermission[] = [
-  { id: "1", name: "최애의 사인 추모관 조회", endpoint: "/get/chumoguahn", method: "GET" },
-  { id: "2", name: "최애의 사인 추모관 조회", endpoint: "/get/chumoguahn", method: "GET" },
-  { id: "3", name: "최애의 사인 추모관 조회", endpoint: "/get/chumoguahn", method: "GET" },
-  { id: "4", name: "최애의 사인 추모관 조회", endpoint: "/get/chumoguahn", method: "GET" },
-  { id: "5", name: "최애의 사인 추모관 조회", endpoint: "/get/chumoguahn", method: "GET" },
-  { id: "6", name: "최애의 사인 추모관 조회", endpoint: "/get/chumoguahn", method: "GET" },
-];
+const parseTokenId = (value: string | string[] | undefined): number | null => {
+  if (!value) {
+    return null;
+  }
+  const raw = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : null;
+};
 
 export default function TokenDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
-  const [tokenName, setTokenName] = useState("test_api_key1");
-  const secretKey = "test_ck_5OWRapdA8dmPpQlA09gX3o1zeQZK";
+  const tokenId = parseTokenId(id);
+  const [tokenDetail, setTokenDetail] = useState<ApiTokenDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const loadTokenDetail = async () => {
+      if (tokenId === null) {
+        setErrorMessage("유효하지 않은 토큰 ID입니다.");
+        setIsLoading(false);
+        return;
+      }
+      try {
+        setErrorMessage("");
+        setIsLoading(true);
+        const detail = await tokenApi.getDetail(tokenId);
+        setTokenDetail(detail);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "토큰 상세 정보를 불러오지 못했습니다.";
+        setErrorMessage(message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void loadTokenDetail();
+  }, [tokenId]);
 
   const handleCopy = useCallback(async (text: string) => {
     await navigator.clipboard.writeText(text);
@@ -40,6 +58,9 @@ export default function TokenDetailPage() {
   }, [confirm]);
 
   const handleReissue = useCallback(async () => {
+    if (tokenId === null) {
+      return;
+    }
     const isConfirmed = await confirm({
       title: "시크릿 키 재발급",
       message: "시크릿 키를 재발급 받으시겠습니까?",
@@ -48,36 +69,50 @@ export default function TokenDetailPage() {
     });
 
     if (isConfirmed) {
+      try {
+        await tokenApi.reissueSecret(tokenId);
+        const refreshed = await tokenApi.getDetail(tokenId);
+        setTokenDetail(refreshed);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "시크릿 키 재발급에 실패했습니다.";
+        await confirm({
+          title: "재발급 실패",
+          message,
+          confirmText: "확인",
+        });
+        return;
+      }
       await confirm({
         title: "재발급 완료",
         message: "시크릿 키가 성공적으로 재발급되었습니다.",
         confirmText: "확인",
       });
     }
-  }, [confirm]);
-
-  const handleBack = useCallback(() => {
-    router.push("/user/tokens");
-  }, [router]);
+  }, [confirm, tokenId]);
 
   const permissionItems = useMemo(() => {
-    return MOCK_PERMISSIONS.map((api, index) => (
-      <ApiItem key={index}>
+    if (!tokenDetail) {
+      return null;
+    }
+    return tokenDetail.registeredApis.map((apiUsage) => (
+      <ApiItem key={apiUsage.apiId}>
         <ApiInfo>
-          <ApiName>{api.name}</ApiName>
-          <ApiMethod>API METHOD: {api.method}</ApiMethod>
+          <ApiName>{apiUsage.name}</ApiName>
+          <ApiMethod>API METHOD: {apiUsage.apiMethod}</ApiMethod>
         </ApiInfo>
         <ApiEndpointSection>
           <Label>엔드포인트</Label>
-          <EndpointValue>{api.endpoint}</EndpointValue>
+          <EndpointValue>{apiUsage.endpoint}</EndpointValue>
         </ApiEndpointSection>
         <ActionGroup>
-          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${id}?step=ENDPOINT`)}>수정</TinyButton>
-          <TinyButton onClick={() => handleCopy(api.endpoint)}>복사</TinyButton>
+          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&usageId=${apiUsage.apiId}`)}>수정</TinyButton>
+          <TinyButton onClick={() => void handleCopy(apiUsage.endpoint)}>복사</TinyButton>
         </ActionGroup>
       </ApiItem>
     ));
-  }, [handleCopy, id, router]);
+  }, [handleCopy, router, tokenDetail]);
+
+  const tokenName = tokenDetail?.apiTokenName ?? "토큰 상세";
 
   return (
     <Container>
@@ -90,10 +125,17 @@ export default function TokenDetailPage() {
             <Subtitle>내 토큰을 관리할 수 있어요</Subtitle>
           </TitleSection>
           <HeaderActions>
-            <HeaderButton onClick={() => router.push(`/user/tokens/edit/${id}?step=NAME`)}>이름 수정</HeaderButton>
-            <HeaderButton primary onClick={handleReissue}>시크릿 키 재발급</HeaderButton>
+            <HeaderButton onClick={() => router.push(`/user/tokens/edit/${tokenId ?? ""}?step=NAME`)} disabled={tokenId === null || isLoading || !!errorMessage}>
+              이름 수정
+            </HeaderButton>
+            <HeaderButton primary onClick={() => void handleReissue()} disabled={tokenId === null || isLoading || !!errorMessage}>
+              시크릿 키 재발급
+            </HeaderButton>
           </HeaderActions>
         </HeaderRow>
+
+        {isLoading ? <StatusText>토큰 정보를 불러오는 중입니다.</StatusText> : null}
+        {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
 
         <Section>
           <SectionTitle>토큰</SectionTitle>
@@ -101,14 +143,18 @@ export default function TokenDetailPage() {
 
           <TokenRow>
             <Label>시크릿 키</Label>
-            <TokenValue>{secretKey}</TokenValue>
-            <TinyButton onClick={() => handleCopy(secretKey)}>복사</TinyButton>
+            <TokenValue>{tokenDetail?.secretKey ?? "-"}</TokenValue>
+            <TinyButton onClick={() => tokenDetail ? void handleCopy(tokenDetail.secretKey) : undefined} disabled={!tokenDetail}>
+              복사
+            </TinyButton>
           </TokenRow>
         </Section>
 
-        <ApiListSection>
-          {permissionItems}
-        </ApiListSection>
+        {!isLoading && !errorMessage ? (
+          <ApiListSection>
+            {permissionItems}
+          </ApiListSection>
+        ) : null}
       </ContentWrapper>
       {ConfirmDialog}
     </Container>
@@ -163,6 +209,11 @@ const HeaderButton = styled.button<{ primary?: boolean }>`
     &:hover {
         filter: brightness(0.95);
     }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
 `;
 
 const Section = styled.div`
@@ -210,6 +261,11 @@ const TinyButton = styled.button<{ primary?: boolean }>`
     border: 1px solid ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : theme.colors.grey[200]};
     background: ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : "white"};
     color: ${({ theme, primary }) => primary ? "white" : theme.colors.grey[900]};
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
 `;
 
 const ApiListSection = styled.div`
@@ -258,4 +314,16 @@ const EndpointValue = styled.span`
 const ActionGroup = styled.div`
     display: flex;
     gap: 8px;
+`;
+
+const StatusText = styled.p`
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: ${({ theme }) => theme.colors.grey[500]};
+    margin-bottom: 16px;
+`;
+
+const ErrorText = styled.p`
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: #d32f2f;
+    margin-bottom: 16px;
 `;

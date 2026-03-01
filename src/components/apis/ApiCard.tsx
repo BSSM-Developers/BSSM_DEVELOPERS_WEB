@@ -89,7 +89,7 @@ const Dot = styled.div<{ type: string }>`
       case "INSERT": return theme.colors.grey[800];
       case "UPDATE":
       case "ORIGINAL":
-        return theme.colors.bssmBlue;
+        return theme.colors.bssmDarkBlue;
       case "DELETE": return theme.colors.bssmRed;
       case "BSM": return "#00C3BD";
       case "RE:MEDY": return "#FFB800";

@@ -4,25 +4,14 @@ import { DocsHeader } from "@/components/docs/DocsHeader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useRouter } from "next/navigation";
-import { useMemo, useCallback } from "react";
-
-interface TokenInfo {
-  id: string;
-  name: string;
-  maskedId: string;
-}
-
-const MOCK_TOKENS: TokenInfo[] = [
-  { id: "1", name: "test_api_key1", maskedId: "8b3740b" },
-  { id: "2", name: "test_api_key2", maskedId: "8b3740b" },
-  { id: "3", name: "test_api_key3", maskedId: "8b3740b" },
-  { id: "4", name: "test_api_key4", maskedId: "8b3740b" },
-  { id: "5", name: "test_api_key5", maskedId: "8b3740b" },
-  { id: "6", name: "test_api_key6", maskedId: "8b3740b" },
-];
+import { useMemo, useCallback, useEffect, useState } from "react";
+import { tokenApi, type ApiTokenListItem } from "./api";
 
 export default function TokenListPage() {
   const router = useRouter();
+  const [tokens, setTokens] = useState<ApiTokenListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleIssueToken = useCallback(() => {
     router.push("/user/tokens/issue");
@@ -32,17 +21,34 @@ export default function TokenListPage() {
     router.push(`/user/tokens/${id}`);
   }, [router]);
 
+  useEffect(() => {
+    const loadTokens = async () => {
+      try {
+        setErrorMessage("");
+        setIsLoading(true);
+        const data = await tokenApi.getList();
+        setTokens(data.values);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "토큰 목록을 불러오지 못했습니다.";
+        setErrorMessage(message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void loadTokens();
+  }, []);
+
   const tokenListItems = useMemo(() => {
-    return MOCK_TOKENS.map((token) => (
-      <TokenItem key={token.id}>
+    return tokens.map((token) => (
+      <TokenItem key={token.apiTokenId}>
         <TokenInfoSection>
-          <TokenName>{token.name}</TokenName>
-          <TokenId>{token.maskedId}</TokenId>
+          <TokenName>{token.apiTokenName}</TokenName>
+          <TokenId>{token.apiTokenClientId}</TokenId>
         </TokenInfoSection>
-        <ManageButton onClick={() => handleManageToken(token.id)}>관리하기</ManageButton>
+        <ManageButton onClick={() => handleManageToken(String(token.apiTokenId))}>관리하기</ManageButton>
       </TokenItem>
     ));
-  }, [handleManageToken]);
+  }, [handleManageToken, tokens]);
 
   return (
     <Container>
@@ -57,9 +63,9 @@ export default function TokenListPage() {
           <IssueButton onClick={handleIssueToken}>신규 토큰 발급</IssueButton>
         </HeaderRow>
 
-        <TokenList>
-          {tokenListItems}
-        </TokenList>
+        {isLoading ? <StatusText>토큰 목록을 불러오는 중입니다.</StatusText> : null}
+        {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
+        {!isLoading && !errorMessage ? <TokenList>{tokenListItems}</TokenList> : null}
       </ContentWrapper>
     </Container>
   );
@@ -114,6 +120,18 @@ const TokenList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
+  padding: 0 24px;
+`;
+
+const StatusText = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  padding: 0 24px;
+`;
+
+const ErrorText = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: #d32f2f;
   padding: 0 24px;
 `;
 

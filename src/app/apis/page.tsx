@@ -5,7 +5,24 @@ import { useState, useMemo, useCallback } from "react";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
 import { type ApiItem } from "./mockData";
-import { useDocsListQuery } from "@/app/docs/queries";
+import { useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
+import type { DocsItem } from "@/app/docs/api";
+
+const toApiType = (value?: string): ApiItem["type"] => {
+  if (value === "CUSTOM") {
+    return "CUSTOM";
+  }
+  return "ORIGINAL";
+};
+
+const toApiItem = (item: DocsItem): ApiItem => ({
+  id: String(item.docsId || item.id || ""),
+  title: item.title || "Untitled API",
+  description: item.description || "설명이 없습니다.",
+  tags: [item.writer || "Unknown"],
+  type: toApiType(item.type),
+  author: item.writer || "Unknown",
+});
 
 export default function ApiExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -13,22 +30,22 @@ export default function ApiExplorePage() {
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
 
   const { data: docsData, isLoading } = useDocsListQuery();
+  const { data: popularDocsData, isLoading: isPopularLoading } = useDocsPopularListQuery({ size: 20 });
 
   const realOriginalApis: ApiItem[] = useMemo(() => {
     const list = docsData?.data?.values;
     if (!list || !Array.isArray(list)) return [];
-
-    return list.map((item) => ({
-      id: String(item.docsId || item.id || Math.random()),
-      title: item.title || "Untitled API",
-      description: item.description || "설명이 없습니다.",
-      tags: [item.writer || "Unknown"],
-      type: "ORIGINAL",
-      author: item.writer || "Unknown"
-    }));
+    return list.map(toApiItem);
   }, [docsData]);
 
   const displayOriginalApis = realOriginalApis;
+  const realPopularApis: ApiItem[] = useMemo(() => {
+    const list = popularDocsData?.data?.values;
+    if (!list || !Array.isArray(list)) {
+      return [];
+    }
+    return list.map(toApiItem);
+  }, [popularDocsData]);
 
   const searchItems = useCallback((items: ApiItem[]) => {
     if (!searchQuery) return items;
@@ -64,13 +81,13 @@ export default function ApiExplorePage() {
     return items;
   }, [filterType, sortType, searchItems, allItems]);
 
-  const displayPopular = useMemo(() => [], []);
+  const displayPopular = useMemo(() => searchItems(realPopularApis), [realPopularApis, searchItems]);
   const displayOriginal = useMemo(() => searchItems(displayOriginalApis), [searchItems, displayOriginalApis]);
   const displayCustom = useMemo(() => [], []);
 
   const isFilteredView = filterType !== "ALL";
 
-  if (isLoading) {
+  if (isLoading || isPopularLoading) {
     return (
       <PageContainer>
         <ContentWrapper>

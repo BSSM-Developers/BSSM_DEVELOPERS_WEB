@@ -67,7 +67,6 @@ export function TopNav() {
 
   const isActive = (path: string) => {
     if (path === "/apis" && pathname.startsWith("/apis")) return true;
-    if (path === "/static" && pathname.startsWith("/static")) return true;
     if (path === "/usage" && pathname.startsWith("/usage")) return true;
     if (path === "/guide" && pathname.startsWith("/guide")) return true;
     return false;
@@ -89,33 +88,30 @@ export function TopNav() {
         <StyledLink href="/apis">
           <NavLink active={isActive("/apis")}>API 둘러보기</NavLink>
         </StyledLink>
-        <StyledLink href="/static">
-          <NavLink active={isActive("/static")}>API 정적처리</NavLink>
-        </StyledLink>
         <StyledLink href="/usage">
           <NavLink active={isActive("/usage")}>API 사용하기</NavLink>
         </StyledLink>
-        <StyledLink href="/guide">
-          <NavLink active={isActive("/guide")}>가이드</NavLink>
-        </StyledLink>
         <StyledLink href="/docs/register">
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
+        </StyledLink>
+        <StyledLink href="/guide">
+          <NavLink active={isActive("/guide")}>가이드</NavLink>
         </StyledLink>
       </Nav>
 
       {isClient && (
         isLoggedIn ? (
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <AccountActions>
             {userRole === 'ROLE_ADMIN' && (
-              <StyledLink href="/admin/sign-ups">
-                <NavLink active={isActive("/admin/sign-ups")} style={{ fontSize: '14px', color: '#ef4444' }}>Admin</NavLink>
-              </StyledLink>
+              <AdminLink href="/admin/sign-ups">Admin</AdminLink>
             )}
             <StyledLink href="/user/profile">
-              <NavLink active={isActive("/user/profile")} style={{ fontSize: '14px' }}>프로필</NavLink>
+              <ActionButton as="span" active={pathname?.startsWith("/user")}>
+                프로필
+              </ActionButton>
             </StyledLink>
-            <LoginButton onClick={handleLogout}>로그아웃</LoginButton>
-          </div>
+            <ActionButton as="span" variant="ghost" onClick={handleLogout}>로그아웃</ActionButton>
+          </AccountActions>
         ) : (
           <StyledLink href="/login">
             <LoginButton as="span">로그인</LoginButton>
@@ -170,6 +166,28 @@ const NavLink = styled.span<{ active?: boolean }>`
   }
 `;
 
+const AccountActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 20px;
+`;
+
+const AdminLink = styled(Link)`
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #b91c1c;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+`;
+
 const LoginButton = styled.button`
   border: none;
   background: none;
@@ -182,4 +200,27 @@ const LoginButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
+`;
+
+const ActionButton = styled(LoginButton)<{ active?: boolean; variant?: "solid" | "ghost" }>`
+  width: auto;
+  min-width: 65px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme, variant }) => variant === "ghost" ? theme.colors.bssmDarkBlue : theme.colors.bssmDarkBlue};
+  color: ${({ theme, variant }) => variant === "ghost" ? theme.colors.bssmDarkBlue : "white"};
+  background: ${({ theme, active, variant }) => {
+    if (variant === "ghost") {
+      return active ? theme.colors.grey[50] : "white";
+    }
+    return theme.colors.bssmDarkBlue;
+  }};
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: ${({ theme, variant }) => variant === "ghost" ? theme.colors.bssmDarkBlue : "white"};
+    filter: ${({ variant }) => variant === "ghost" ? "none" : "brightness(1.08)"};
+    background: ${({ theme, variant }) => variant === "ghost" ? theme.colors.grey[50] : theme.colors.bssmDarkBlue};
+  }
 `;

@@ -11,7 +11,6 @@ const USER_SIDEBAR_ITEMS: SidebarNode[] = [
     childrenItems: [
       { id: "my-docs", label: "내 문서", module: "default", path: "/user" },
       { id: "tokens", label: "내 토큰 관리", module: "default", path: "/user/tokens" },
-      { id: "logs", label: "API 로그", module: "default", path: "/user/logs" },
     ],
   },
   {
@@ -20,7 +19,6 @@ const USER_SIDEBAR_ITEMS: SidebarNode[] = [
     module: "main_title",
     childrenItems: [
       { id: "profile", label: "사용자 정보", module: "default", path: "/user/profile" },
-      { id: "withdraw", label: "탈퇴하기", module: "default", path: "/user/withdraw" },
     ],
   },
 ];

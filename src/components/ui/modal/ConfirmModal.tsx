@@ -43,7 +43,7 @@ export function ConfirmModal({
 
   return createPortal(
     <Overlay>
-      <Backdrop onClick={onCancel} />
+      <Backdrop onClick={hideCancel ? undefined : onCancel} />
       <ModalContainer>
         <Title>{title}</Title>
         <Message>{message}</Message>

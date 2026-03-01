@@ -21,6 +21,14 @@ const USER_SIDEBAR_ITEMS: SidebarNode[] = [
       { id: "profile", label: "사용자 정보", module: "default", path: "/user/profile" },
     ],
   },
+  {
+    id: "api-management",
+    label: "내 API 관리",
+    module: "main_title",
+    childrenItems: [
+      { id: "api-request-management", label: "사용 신청 관리", module: "default", path: "/user/api-management" },
+    ],
+  },
 ];
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {

@@ -54,6 +54,7 @@ export default function TokenDetailPage() {
       title: "복사가 완료되었습니다",
       message: "클립보드에 복사되었습니다.",
       confirmText: "확인",
+      hideCancel: true,
     });
   }, [confirm]);
 
@@ -79,6 +80,7 @@ export default function TokenDetailPage() {
           title: "재발급 실패",
           message,
           confirmText: "확인",
+          hideCancel: true,
         });
         return;
       }
@@ -86,6 +88,7 @@ export default function TokenDetailPage() {
         title: "재발급 완료",
         message: "시크릿 키가 성공적으로 재발급되었습니다.",
         confirmText: "확인",
+        hideCancel: true,
       });
     }
   }, [confirm, tokenId]);
@@ -139,15 +142,18 @@ export default function TokenDetailPage() {
 
         <Section>
           <SectionTitle>토큰</SectionTitle>
-          <SectionSubtitle>발급 받은 토큰을 통해 다양한 API들을 사용할 수 있습니다</SectionSubtitle>
+          <SectionSubtitle>발급 받은 토큰 정보를 확인하고 시크릿 키를 재발급할 수 있습니다</SectionSubtitle>
 
           <TokenRow>
-            <Label>시크릿 키</Label>
-            <TokenValue>{tokenDetail?.secretKey ?? "-"}</TokenValue>
-            <TinyButton onClick={() => tokenDetail ? void handleCopy(tokenDetail.secretKey) : undefined} disabled={!tokenDetail}>
+            <Label>클라이언트 ID</Label>
+            <TokenValue>{tokenDetail?.apiTokenClientId ?? "-"}</TokenValue>
+            <TinyButton onClick={() => tokenDetail ? void handleCopy(tokenDetail.apiTokenClientId) : undefined} disabled={!tokenDetail}>
               복사
             </TinyButton>
           </TokenRow>
+          <SecretKeyNotice>
+            시크릿 키는 토큰 생성 직후에만 확인할 수 있습니다. 분실 시 시크릿 키 재발급 버튼으로 새 키를 발급받아 다시 보관해주세요.
+          </SecretKeyNotice>
         </Section>
 
         {!isLoading && !errorMessage ? (
@@ -237,6 +243,7 @@ const TokenRow = styled.div`
     display: flex;
     align-items: center;
     gap: 60px;
+    margin-bottom: 14px;
 `;
 
 const Label = styled.span`
@@ -260,7 +267,7 @@ const TinyButton = styled.button<{ primary?: boolean }>`
     cursor: pointer;
     border: 1px solid ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : theme.colors.grey[200]};
     background: ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : "white"};
-    color: ${({ theme, primary }) => primary ? "white" : theme.colors.grey[900]};
+    color: ${({ theme, primary }) => primary ? "white" : theme.colors.bssmDarkBlue} !important;
 
     &:disabled {
       opacity: 0.5;
@@ -272,6 +279,15 @@ const ApiListSection = styled.div`
     display: flex;
     flex-direction: column;
     gap: 24px;
+`;
+
+const SecretKeyNotice = styled.div`
+    border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+    background: ${({ theme }) => theme.colors.grey[50]};
+    border-radius: 8px;
+    padding: 12px 14px;
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: ${({ theme }) => theme.colors.grey[700]};
 `;
 
 const ApiItem = styled.div`

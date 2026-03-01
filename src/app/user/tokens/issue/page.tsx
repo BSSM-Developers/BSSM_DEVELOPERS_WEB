@@ -107,6 +107,7 @@ export default function TokenIssuePage() {
       title: "복사가 완료되었습니다",
       message: "클립보드에 복사되었습니다.",
       confirmText: "확인",
+      hideCancel: true,
     });
   }, [confirm]);
 
@@ -115,6 +116,9 @@ export default function TokenIssuePage() {
       <Container center>
         <FlexColumn center animated>
           <SuccessTitle>토큰 발급이 완료되었습니다!</SuccessTitle>
+          <SecretNotice>
+            시크릿 키는 지금 화면에서만 확인할 수 있습니다. 복사해서 안전한 곳에 보관해주세요.
+          </SecretNotice>
           <CheckCircle>
             <CheckIcon viewBox="0 0 24 24">
               <polyline points="20 6 9 17 4 12" />
@@ -134,7 +138,7 @@ export default function TokenIssuePage() {
               <IssuedInfoRow>
                 <IssuedInfoLabel>시크릿 키</IssuedInfoLabel>
                 <IssuedInfoValue>{issuedToken.secretKey}</IssuedInfoValue>
-                <InfoButton onClick={() => void handleCopy(issuedToken.secretKey)}>복사</InfoButton>
+                <PrimaryInfoButton onClick={() => void handleCopy(issuedToken.secretKey)}>시크릿 키 복사</PrimaryInfoButton>
               </IssuedInfoRow>
             </IssuedInfoList>
           ) : null}
@@ -239,7 +243,20 @@ const SuccessTitle = styled.h2`
   ${({ theme }) => applyTypography(theme, "Headline_1")};
   font-size: 32px;
   color: ${({ theme }) => theme.colors.grey[900]};
-  margin-bottom: 36px;
+  margin-bottom: 16px;
+  text-align: center;
+`;
+
+const SecretNotice = styled.div`
+  width: 100%;
+  max-width: 800px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  background: ${({ theme }) => theme.colors.grey[50]};
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 22px;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[700]};
   text-align: center;
 `;
 
@@ -283,6 +300,17 @@ const InfoButton = styled.button`
   border-radius: 4px;
   border: 1px solid ${({ theme }) => theme.colors.grey[200]};
   background: white;
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  cursor: pointer;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+`;
+
+const PrimaryInfoButton = styled.button`
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid ${({ theme }) => theme.colors.bssmDarkBlue};
+  background: ${({ theme }) => theme.colors.bssmDarkBlue};
+  color: white;
   cursor: pointer;
   ${({ theme }) => applyTypography(theme, "Body_4")};
 `;

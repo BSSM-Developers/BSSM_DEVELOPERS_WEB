@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateOriginalDocsMutation } from "@/app/docs/queries";
-import { DocsBlock, ApiDoc, ApiParam } from "@/types/docs";
+import { DocsBlock } from "@/types/docs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { FormData } from "./useDocsForm";
 import { useUserStore } from "@/store/userStore";
@@ -58,7 +58,7 @@ function toPageBlocks(blocks: DocsBlock[]): DocsPageBlock[] {
     if (b.module === 'api' && b.apiData) {
       result.push({
         id: b.id,
-        module: 'docs_1',
+        module: 'api',
         content: JSON.stringify(b.apiData)
       });
     } else {

@@ -190,19 +190,15 @@ export default function AdminApiUseReasonsPage() {
                 return (
                   <Card key={rowKey}>
                     <CardHeader>
-                      <ApiName>{item.apiName || item.name || "이름 없는 API"}</ApiName>
+                      <ApiName>{`요청 #${item.apiUseReasonId ?? "-"}`}</ApiName>
                       <StateBadge state={state}>{state || "UNKNOWN"}</StateBadge>
                     </CardHeader>
 
                     <MetaGrid>
-                      <MetaLabel>요청자</MetaLabel>
-                      <MetaValue>{item.name || item.writer || "-"}</MetaValue>
-                      <MetaLabel>도메인</MetaLabel>
-                      <MetaValue>{item.apiDomain || "-"}</MetaValue>
-                      <MetaLabel>엔드포인트</MetaLabel>
-                      <MetaValue>{item.endpoint || "-"}</MetaValue>
-                      <MetaLabel>메서드</MetaLabel>
-                      <MetaValue>{item.apiMethod || "-"}</MetaValue>
+                      <MetaLabel>apiUseReasonId</MetaLabel>
+                      <MetaValue>{item.apiUseReasonId ?? "-"}</MetaValue>
+                      <MetaLabel>writerId</MetaLabel>
+                      <MetaValue>{item.writerId ?? "-"}</MetaValue>
                       <MetaLabel>신청 사유</MetaLabel>
                       <MetaValue>{item.apiUseReason || "-"}</MetaValue>
                     </MetaGrid>

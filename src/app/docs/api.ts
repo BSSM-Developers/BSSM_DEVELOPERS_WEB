@@ -26,7 +26,9 @@ export interface DocsItem {
   writer?: string;
   writerId?: number;
   autoApproval?: boolean;
+  auto_approval?: boolean;
   repositoryUrl?: string;
+  repository_url?: string;
   type?: string;
 }
 
@@ -93,11 +95,11 @@ interface CreateCustomData {
   writer_id?: number;
 }
 
-interface UpdateDocsData {
-  title?: string;
-  description?: string;
-  domain?: string;
-  repository_url?: string;
+export interface UpdateDocsData {
+  title: string;
+  description: string;
+  domain: string;
+  repositoryUrl: string;
 }
 
 interface ReplaceDocsData {

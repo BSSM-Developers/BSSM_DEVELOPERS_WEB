@@ -99,3 +99,24 @@ export function useCreateCustomDocsMutation() {
     },
   });
 }
+
+export function useUpdateDocsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ docsId, data }: { docsId: string | number; data: Parameters<typeof docsApi.update>[1] }) =>
+      docsApi.update(docsId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docsKeys.all });
+    },
+  });
+}
+
+export function useDeleteDocsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (docsId: string | number) => docsApi.delete(docsId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docsKeys.all });
+    },
+  });
+}

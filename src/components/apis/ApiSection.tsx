@@ -9,9 +9,10 @@ interface ApiSectionProps {
   description: string;
   items: ApiItem[];
   columns?: number;
+  onUse?: (item: ApiItem) => void;
 }
 
-export function ApiSection({ title, description, items, columns = 4 }: ApiSectionProps) {
+export function ApiSection({ title, description, items, columns = 4, onUse }: ApiSectionProps) {
   return (
     <SectionContainer>
       <Header>
@@ -28,6 +29,7 @@ export function ApiSection({ title, description, items, columns = 4 }: ApiSectio
             tags={item.tags}
             logo={item.logo}
             type={item.type}
+            onUse={onUse ? () => onUse(item) : undefined}
           />
         ))}
       </Grid>

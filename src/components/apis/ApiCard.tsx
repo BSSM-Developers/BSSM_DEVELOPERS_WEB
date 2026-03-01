@@ -2,6 +2,7 @@
 
 import styled from "@emotion/styled";
 import { useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
 import { applyTypography } from "@/lib/themeHelper";
 
 interface ApiCardProps {
@@ -26,6 +27,12 @@ export function ApiCard({ id, title, description, tags, type, onExplore, onUse }
     }
   };
 
+  const handleUse = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onUse?.();
+  };
+
   const dotType = type || tags[0];
 
   return (
@@ -40,8 +47,8 @@ export function ApiCard({ id, title, description, tags, type, onExplore, onUse }
       </CardHeader>
       <CardFooter>
         <ButtonGroup>
-          <ActionButton onClick={handleExplore}>둘러보기</ActionButton>
-          <ActionButton primary onClick={onUse}>사용하기</ActionButton>
+          <ActionButton type="button" onClick={handleExplore}>둘러보기</ActionButton>
+          <ActionButton type="button" primary onClick={handleUse} disabled={!onUse}>사용하기</ActionButton>
         </ButtonGroup>
       </CardFooter>
     </CardContainer>
@@ -141,5 +148,10 @@ const ActionButton = styled.button<{ primary?: boolean }>`
   &:hover {
     background: ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : theme.colors.grey[50]};
     filter: ${({ primary }) => primary ? "brightness(1.1)" : "none"};
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 `;

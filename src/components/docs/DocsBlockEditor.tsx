@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2, Copy, MoreHorizontal } from "lucide-react";
+import Image from "next/image";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
@@ -277,9 +278,12 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                   margin: '0 auto',
                 }}
               >
-                <img
+                <Image
                   src={block.imageSrc}
                   alt="Preview"
+                  width={1200}
+                  height={800}
+                  unoptimized
                   draggable={false}
                   style={{
                     width: '100%',

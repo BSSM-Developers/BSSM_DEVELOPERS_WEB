@@ -16,5 +16,5 @@ export const sortApiUseReasonItems = (items: ApiUsageByApiItem[]): ApiUsageByApi
 };
 
 export const createApiUseReasonRowKey = (item: ApiUsageByApiItem): string => {
-  return `${item.apiTokenId}-${item.apiUseReasonId}`;
+  return `${item.apiUseReasonId}-${item.writerId ?? "unknown"}`;
 };

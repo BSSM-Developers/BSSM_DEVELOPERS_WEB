@@ -84,14 +84,14 @@ export function TopNav() {
         <StyledLink href="/apis">
           <NavLink active={isActive("/apis")}>API 둘러보기</NavLink>
         </StyledLink>
-        <StyledLink href="/announcements">
-          <NavLink active={isActive("/announcements")}>공지사항</NavLink>
-        </StyledLink>
         <StyledLink href="/docs/register">
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
         </StyledLink>
         <StyledLink href="/guide">
           <NavLink active={isActive("/guide")}>가이드</NavLink>
+        </StyledLink>
+        <StyledLink href="/announcements">
+          <NavLink active={isActive("/announcements")}>공지사항</NavLink>
         </StyledLink>
       </Nav>
 

@@ -23,14 +23,6 @@ const BASE_USER_SIDEBAR_ITEMS: SidebarNode[] = [
       { id: "profile", label: "사용자 정보", module: "default", path: "/user/profile" },
     ],
   },
-  {
-    id: "api-management",
-    label: "내 API 관리",
-    module: "main_title",
-    childrenItems: [
-      { id: "api-request-management", label: "사용 신청 관리", module: "default", path: "/user/api-management" },
-    ],
-  },
 ];
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
@@ -40,22 +32,25 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     const items = [...BASE_USER_SIDEBAR_ITEMS];
     if (user?.role === "ADMIN" || user?.role === "ROLE_ADMIN") {
       items.push({
-        id: "signup-management",
-        label: "회원가입 신청",
+        id: "admin",
+        label: "어드민",
         module: "main_title",
         childrenItems: [
+          { id: "api-request-management", label: "사용 신청 관리", module: "default", path: "/user/api-management" },
           { id: "signup-request-management", label: "회원가입 신청 관리", module: "default", path: "/user/sign-up-requests" },
-        ],
-      });
-      items.push({
-        id: "admin-api-use-management",
-        label: "어드민 API 관리",
-        module: "main_title",
-        childrenItems: [
           { id: "admin-api-use-reasons", label: "전체 사용 신청 관리", module: "default", path: "/user/api-use-reasons" },
         ],
       });
+      return items;
     }
+    items.push({
+      id: "api-management",
+      label: "내 API 관리",
+      module: "main_title",
+      childrenItems: [
+        { id: "api-request-management", label: "사용 신청 관리", module: "default", path: "/user/api-management" },
+      ],
+    });
     return items;
   }, [user?.role]);
 

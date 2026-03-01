@@ -22,6 +22,7 @@ export function TopNav() {
 
   useEffect(() => {
     setIsClient(true);
+    tokenManager.initializeRefreshCycle();
   }, []);
 
   useEffect(() => {

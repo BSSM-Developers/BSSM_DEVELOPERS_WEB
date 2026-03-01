@@ -15,6 +15,23 @@ interface RefreshResponse {
   };
 }
 
+const decodeJwtExpMs = (token: string): number | null => {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) {
+      return null;
+    }
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = JSON.parse(atob(normalized)) as { exp?: number };
+    if (!decoded.exp) {
+      return null;
+    }
+    return decoded.exp * 1000;
+  } catch {
+    return null;
+  }
+};
+
 export const tokenManager = {
   setTokens: (accessToken: string, refreshToken?: string) => {
     if (typeof window !== "undefined") {
@@ -24,6 +41,7 @@ export const tokenManager = {
         localStorage.setItem("refreshToken", refreshToken);
         localStorage.setItem("refresh_token", refreshToken);
       }
+      scheduleAccessTokenRefresh(accessToken);
     }
   },
   getAccessToken: () => {
@@ -67,6 +85,16 @@ export const tokenManager = {
         localStorage.removeItem(key);
         sessionStorage.removeItem(key);
       });
+      clearRefreshTimer();
+    }
+  },
+  initializeRefreshCycle: () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const accessToken = tokenManager.getAccessToken();
+    if (accessToken) {
+      scheduleAccessTokenRefresh(accessToken);
     }
   },
   getUserRole: (): string | null => {
@@ -135,6 +163,50 @@ const BASE_URL = RAW_API_URL.startsWith("http://") || RAW_API_URL.startsWith("ht
   : RAW_API_URL;
 
 let refreshPromise: Promise<string | null> | null = null;
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let timerToken: string | null = null;
+
+const REFRESH_SKEW_MS = 60_000;
+const REFRESH_FALLBACK_MS = 9 * 60 * 1000;
+const REFRESH_MIN_DELAY_MS = 5_000;
+
+const clearRefreshTimer = () => {
+  if (refreshTimer) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
+  timerToken = null;
+};
+
+const scheduleAccessTokenRefresh = (accessToken: string) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (timerToken === accessToken && refreshTimer) {
+    return;
+  }
+
+  clearRefreshTimer();
+  timerToken = accessToken;
+
+  const expiresAtMs = decodeJwtExpMs(accessToken);
+  const delay = expiresAtMs
+    ? Math.max(REFRESH_MIN_DELAY_MS, expiresAtMs - Date.now() - REFRESH_SKEW_MS)
+    : REFRESH_FALLBACK_MS;
+
+  refreshTimer = setTimeout(async () => {
+    const refreshed = await ensureRefreshedAccessToken();
+    if (!refreshed) {
+      tokenManager.clearTokens();
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+      return;
+    }
+    scheduleAccessTokenRefresh(refreshed);
+  }, delay);
+};
 
 const requestAccessTokenRefresh = async (): Promise<string | null> => {
   const refreshUrl = new URL(
@@ -172,6 +244,16 @@ const requestAccessTokenRefresh = async (): Promise<string | null> => {
 
   tokenManager.setTokens(newAccessToken, newRefreshToken);
   return newAccessToken;
+};
+
+const ensureRefreshedAccessToken = async (): Promise<string | null> => {
+  if (!refreshPromise) {
+    refreshPromise = requestAccessTokenRefresh().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
 };
 
 const request = async <T>(
@@ -218,13 +300,7 @@ const request = async <T>(
     if (!options.suppressLogout) {
       let refreshedAccessToken: string | null = null;
       try {
-        if (!refreshPromise) {
-          refreshPromise = requestAccessTokenRefresh().finally(() => {
-            refreshPromise = null;
-          });
-        }
-
-        refreshedAccessToken = await refreshPromise;
+        refreshedAccessToken = await ensureRefreshedAccessToken();
 
         if (refreshedAccessToken) {
           const retryHeaders = { ...headers, "Authorization": `Bearer ${refreshedAccessToken}` };

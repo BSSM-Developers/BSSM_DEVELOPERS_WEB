@@ -17,10 +17,17 @@ interface UserProfileResponse {
 
 export const signUpApi = {
   getMy: async (options: ApiRequestOptions = {}) => {
-    const response = await fetchClinet.get<UserProfileResponse>("/signup/me", options);
+    const response = await fetchClinet.get<UserProfileResponse>("/signup/me", {
+      ...options,
+      skipAuth: true,
+      suppressLogout: true,
+    });
     return response.data;
   },
-  updatePurpose: async (id: number, purpose: string) => {
-    return fetchClinet.patch<void>(`/signup/${id}/purpose`, { purpose });
+  updatePurpose: async (signupRequestId: number, purpose: string) => {
+    return fetchClinet.patch<void>(`/signup/${signupRequestId}/purpose`, { purpose }, {
+      skipAuth: true,
+      suppressLogout: true,
+    });
   },
 };

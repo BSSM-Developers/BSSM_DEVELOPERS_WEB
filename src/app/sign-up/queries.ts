@@ -2,7 +2,6 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { signUpApi } from "./api";
-import { tokenManager } from "@/utils/fetcher";
 
 export const signUpKeys = {
   all: ["signUp"] as const,
@@ -12,8 +11,8 @@ export const signUpKeys = {
 export function useMyProfileQuery(enabled: boolean = true) {
   return useQuery({
     queryKey: signUpKeys.my(),
-    queryFn: () => signUpApi.getMy({ suppressLogout: true }),
-    enabled: enabled && !!tokenManager.getAccessToken(),
+    queryFn: () => signUpApi.getMy(),
+    enabled,
     retry: false,
   });
 }

@@ -17,6 +17,7 @@ export interface ApiTokenListData {
 }
 
 export interface RegisteredApiSummary {
+  apiUsageId?: number | string;
   apiId: string;
   name: string;
   endpoint: string;
@@ -70,6 +71,12 @@ export const tokenApi = {
   },
 
   updateName: async (apiTokenId: number, apiTokenName: string) => {
-    await fetchClinet.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/name`, { apiTokenName });
+    await fetchClinet.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/name`, { apiTokenName }, { suppressLogout: true });
+  },
+  updateUsageName: async (apiId: string, apiTokenId: number, name: string) => {
+    await fetchClinet.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/name`, { name }, { suppressLogout: true });
+  },
+  updateUsageEndpoint: async (apiId: string, apiTokenId: number, endpoint: string) => {
+    await fetchClinet.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/endpoint`, { endpoint }, { suppressLogout: true });
   },
 };

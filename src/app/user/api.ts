@@ -4,7 +4,7 @@ export interface User {
   id: number;
   email: string;
   name: string;
-  role: "USER" | "ADMIN";
+  role: "USER" | "ADMIN" | "ROLE_USER" | "ROLE_ADMIN";
 }
 
 interface UserResponse {

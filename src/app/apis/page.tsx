@@ -4,6 +4,7 @@ import styled from "@emotion/styled";
 import { useState, useMemo, useCallback } from "react";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
+import { ApiUseApplyModal } from "@/components/apis/ApiUseApplyModal";
 import { type ApiItem } from "./mockData";
 import { useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
 import type { DocsItem } from "@/app/docs/api";
@@ -16,7 +17,7 @@ const toApiType = (value?: string): ApiItem["type"] => {
 };
 
 const toApiItem = (item: DocsItem): ApiItem => ({
-  id: String(item.docsId || item.id || ""),
+  id: String(item.docsId ?? item.id ?? ""),
   title: item.title || "Untitled API",
   description: item.description || "설명이 없습니다.",
   tags: [item.writer || "Unknown"],
@@ -28,17 +29,20 @@ export default function ApiExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
+  const [isApplyOpen, setIsApplyOpen] = useState(false);
+  const [selectedApi, setSelectedApi] = useState<ApiItem | null>(null);
 
   const { data: docsData, isLoading } = useDocsListQuery();
   const { data: popularDocsData, isLoading: isPopularLoading } = useDocsPopularListQuery({ size: 20 });
 
   const realOriginalApis: ApiItem[] = useMemo(() => {
     const list = docsData?.data?.values;
-    if (!list || !Array.isArray(list)) return [];
+    if (!list || !Array.isArray(list)) {
+      return [];
+    }
     return list.map(toApiItem);
   }, [docsData]);
 
-  const displayOriginalApis = realOriginalApis;
   const realPopularApis: ApiItem[] = useMemo(() => {
     const list = popularDocsData?.data?.values;
     if (!list || !Array.isArray(list)) {
@@ -48,44 +52,58 @@ export default function ApiExplorePage() {
   }, [popularDocsData]);
 
   const searchItems = useCallback((items: ApiItem[]) => {
-    if (!searchQuery) return items;
+    if (!searchQuery) {
+      return items;
+    }
     const query = searchQuery.toLowerCase();
-    return items.filter(item =>
-      item.title.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      item.tags.some(tag => tag.toLowerCase().includes(query))
+    return items.filter(
+      (item) =>
+        item.title.toLowerCase().includes(query) ||
+        item.description.toLowerCase().includes(query) ||
+        item.tags.some((tag) => tag.toLowerCase().includes(query))
     );
   }, [searchQuery]);
 
-  const allItems = useMemo(() => {
-    return [...displayOriginalApis];
-  }, [displayOriginalApis]);
+  const allItems = useMemo(() => [...realOriginalApis], [realOriginalApis]);
 
   const filteredList = useMemo(() => {
-    if (filterType === "ALL") return [];
+    if (filterType === "ALL") {
+      return [];
+    }
 
     let items = allItems;
 
     if (filterType === "ORIGINAL") {
-      items = items.filter(item => item.type !== "CUSTOM");
-    } else if (filterType === "CUSTOM") {
-      items = items.filter(item => item.type === "CUSTOM");
+      items = items.filter((item) => item.type !== "CUSTOM");
     }
 
-    items = searchItems(items);
+    if (filterType === "CUSTOM") {
+      items = items.filter((item) => item.type === "CUSTOM");
+    }
+
+    const searchedItems = searchItems(items);
 
     if (sortType === "POPULAR") {
-      return [...items].reverse();
+      return [...searchedItems].reverse();
     }
 
-    return items;
-  }, [filterType, sortType, searchItems, allItems]);
+    return searchedItems;
+  }, [allItems, filterType, searchItems, sortType]);
 
   const displayPopular = useMemo(() => searchItems(realPopularApis), [realPopularApis, searchItems]);
-  const displayOriginal = useMemo(() => searchItems(displayOriginalApis), [searchItems, displayOriginalApis]);
+  const displayOriginal = useMemo(() => searchItems(realOriginalApis), [realOriginalApis, searchItems]);
   const displayCustom = useMemo(() => [], []);
 
   const isFilteredView = filterType !== "ALL";
+
+  const handleUseClick = useCallback((item: ApiItem) => {
+    setSelectedApi(item);
+    setIsApplyOpen(true);
+  }, []);
+
+  const closeApplyModal = useCallback(() => {
+    setIsApplyOpen(false);
+  }, []);
 
   if (isLoading || isPopularLoading) {
     return (
@@ -125,42 +143,54 @@ export default function ApiExplorePage() {
               title={`${filterType} API`}
               description={`${filterType} API 목록입니다`}
               items={filteredList}
+              onUse={handleUseClick}
             />
           ) : (
             <EmptyState>검색 결과가 없습니다.</EmptyState>
           )
         ) : (
           <>
-            {displayPopular.length > 0 && (
+            {displayPopular.length > 0 ? (
               <ApiSection
                 title="인기 API"
                 description="최근 인기있는 API를 확인해보세요"
                 items={displayPopular}
+                onUse={handleUseClick}
               />
-            )}
+            ) : null}
 
-            {displayOriginal.length > 0 && (
+            {displayOriginal.length > 0 ? (
               <ApiSection
                 title="ORIGINAL API"
                 description="BSSM Developers에 등록된 최신 API를 확인해보세요"
                 items={displayOriginal}
+                onUse={handleUseClick}
               />
-            )}
+            ) : null}
 
-            {displayCustom.length > 0 && (
+            {displayCustom.length > 0 ? (
               <ApiSection
                 title="CUSTOM API"
                 description="BSSM Developers에서 사용자가 커스텀한 최신 API를 확인해보세요"
                 items={displayCustom}
+                onUse={handleUseClick}
               />
-            )}
+            ) : null}
 
-            {displayPopular.length === 0 && displayOriginal.length === 0 && displayCustom.length === 0 && (
+            {displayPopular.length === 0 && displayOriginal.length === 0 && displayCustom.length === 0 ? (
               <EmptyState>검색 결과가 없습니다.</EmptyState>
-            )}
+            ) : null}
           </>
         )}
+
       </ContentWrapper>
+
+      <ApiUseApplyModal
+        isOpen={isApplyOpen}
+        docsId={selectedApi?.id ?? null}
+        docsTitle={selectedApi?.title}
+        onClose={closeApplyModal}
+      />
     </PageContainer>
   );
 }
@@ -193,7 +223,7 @@ const Title = styled.h1`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 36px;
   font-weight: 700;
-  color: #191F28;
+  color: #191f28;
   margin: 0;
   letter-spacing: -1.8px;
 `;
@@ -202,7 +232,7 @@ const Subtitle = styled.p`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 16px;
   font-weight: 400;
-  color: #8B95A1;
+  color: #8b95a1;
   margin: 0;
   letter-spacing: -0.8px;
 `;
@@ -217,5 +247,5 @@ const EmptyState = styled.div`
   text-align: center;
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 16px;
-  color: #8B95A1;
+  color: #8b95a1;
 `;

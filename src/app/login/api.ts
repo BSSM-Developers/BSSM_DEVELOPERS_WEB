@@ -25,4 +25,11 @@ export const authApi = {
     }
     tokenManager.clearTokens();
   },
+  refreshAccessToken: async () => {
+    const response = await fetchClinet.post<AuthResponse>("/auth/refresh", {}, {
+      skipAuth: true,
+      suppressLogout: true,
+    });
+    return response.data;
+  },
 };

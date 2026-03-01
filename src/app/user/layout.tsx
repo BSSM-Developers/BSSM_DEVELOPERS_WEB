@@ -2,8 +2,10 @@
 
 import { DocsLayout } from "@/components/layout/DocsLayout";
 import { SidebarNode } from "@/components/ui/sidebarItem/types";
+import { useUserQuery } from "@/app/user/queries";
+import { useMemo } from "react";
 
-const USER_SIDEBAR_ITEMS: SidebarNode[] = [
+const BASE_USER_SIDEBAR_ITEMS: SidebarNode[] = [
   {
     id: "manage",
     label: "관리하기",
@@ -24,9 +26,37 @@ const USER_SIDEBAR_ITEMS: SidebarNode[] = [
 ];
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const { data: user } = useUserQuery();
+
+  const sidebarItems = useMemo<SidebarNode[]>(() => {
+    const items = [...BASE_USER_SIDEBAR_ITEMS];
+    if (user?.role === "ADMIN" || user?.role === "ROLE_ADMIN") {
+      items.push({
+        id: "admin",
+        label: "어드민",
+        module: "main_title",
+        childrenItems: [
+          { id: "api-request-management", label: "사용 신청 관리", module: "default", path: "/user/api-management" },
+          { id: "signup-request-management", label: "회원가입 신청 관리", module: "default", path: "/user/sign-up-requests" },
+          { id: "admin-api-use-reasons", label: "전체 사용 신청 관리", module: "default", path: "/user/api-use-reasons" },
+        ],
+      });
+      return items;
+    }
+    items.push({
+      id: "api-management",
+      label: "내 API 관리",
+      module: "main_title",
+      childrenItems: [
+        { id: "api-request-management", label: "사용 신청 관리", module: "default", path: "/user/api-management" },
+      ],
+    });
+    return items;
+  }, [user?.role]);
+
   return (
     <DocsLayout
-      sidebarItems={USER_SIDEBAR_ITEMS}
+      sidebarItems={sidebarItems}
       projectName="마이페이지"
       showSidebar={true}
       editable={false}

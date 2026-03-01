@@ -15,11 +15,16 @@ export const useDocsEditor = (step: Step, title: string) => {
 
   const prevSelectedIdRef = useRef<string | null>(null);
   const docsBlocksRef = useRef(docsBlocks);
+  const contentMapRef = useRef<Record<string, DocsBlock[]>>({});
   const sidebarUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     docsBlocksRef.current = docsBlocks;
   }, [docsBlocks]);
+
+  useEffect(() => {
+    contentMapRef.current = contentMap;
+  }, [contentMap]);
 
   useEffect(() => {
     if (step === 'EDITOR' && sidebarItems.length === 0) {
@@ -36,9 +41,11 @@ export const useDocsEditor = (step: Step, title: string) => {
       }];
       setSidebarItems(initialItems);
       useDocsStore.setState({ selected: 'draft-doc' });
-      setContentMap({
+      const initialMap: Record<string, DocsBlock[]> = {
         'draft-doc': [{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }]
-      });
+      };
+      setContentMap(initialMap);
+      contentMapRef.current = initialMap;
     }
   }, [step, title, sidebarItems.length]);
 
@@ -47,43 +54,61 @@ export const useDocsEditor = (step: Step, title: string) => {
 
     const prevId = prevSelectedIdRef.current;
     const currentId = selectedId;
+    if (!currentId) {
+      prevSelectedIdRef.current = null;
+      return;
+    }
+    if (prevId === currentId) {
+      return;
+    }
+
+    let nextMap = contentMapRef.current;
+    let mapChanged = false;
 
     if (prevId && prevId !== currentId) {
-      setContentMap(prev => ({
-        ...prev,
+      nextMap = {
+        ...nextMap,
         [prevId]: docsBlocksRef.current
-      }));
+      };
+      mapChanged = true;
     }
 
-    if (currentId && prevId !== currentId) {
-      if (contentMap[currentId]) {
-        setDocsBlocks(contentMap[currentId]);
+    let nextBlocks = nextMap[currentId];
+    if (!nextBlocks) {
+      const node = findNodeById(sidebarItems, currentId);
+
+      if (node?.module === 'api') {
+        nextBlocks = [{
+          id: Math.random().toString(36).substring(2, 11),
+          module: "api",
+          apiData: {
+            id: node.id,
+            name: node.label,
+            method: node.method || "GET",
+            endpoint: "",
+            description: "",
+            responseStatus: 200,
+            responseMessage: "OK"
+          }
+        }];
       } else {
-        const node = findNodeById(sidebarItems, currentId);
-
-        if (node?.module === 'api') {
-          const apiBlock: DocsBlock = {
-            id: Math.random().toString(36).substring(2, 11),
-            module: "api",
-            apiData: {
-              id: node.id,
-              name: node.label,
-              method: node.method || "GET",
-              endpoint: "",
-              description: "",
-              responseStatus: 200,
-              responseMessage: "OK"
-            }
-          };
-          setDocsBlocks([apiBlock]);
-        } else {
-          setDocsBlocks([{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }]);
-        }
+        nextBlocks = [{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }];
       }
+      nextMap = {
+        ...nextMap,
+        [currentId]: nextBlocks
+      };
+      mapChanged = true;
     }
 
+    if (mapChanged) {
+      contentMapRef.current = nextMap;
+      setContentMap(nextMap);
+    }
+
+    setDocsBlocks(nextBlocks);
     prevSelectedIdRef.current = currentId;
-  }, [selectedId, step, contentMap, sidebarItems]);
+  }, [selectedId, step, sidebarItems]);
 
   useEffect(() => {
     if (!selectedId || sidebarItems.length === 0) return;

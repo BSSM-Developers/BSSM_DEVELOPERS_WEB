@@ -13,6 +13,7 @@ interface ApiHeaderProps {
   endpoint: string;
   onTryClick?: () => void;
   editable?: boolean;
+  disableVerification?: boolean;
   missingPathParams?: string[];
   onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
 }
@@ -27,6 +28,7 @@ export function ApiHeader({
   endpoint,
   onTryClick,
   editable = false,
+  disableVerification = false,
   missingPathParams = [],
   onChange
 }: ApiHeaderProps) {
@@ -135,15 +137,17 @@ export function ApiHeader({
             onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, isVerified: false })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
-          <VerifyButton
-            state={verifyState}
-            onClick={handleVerify}
-            disabled={isVerifying}
-          >
-            {isVerifying ? "검증 중..." :
-              verifyState === 'success' ? "검증 완료" :
-                verifyState === 'fail' ? "검증 실패" : "검증"}
-          </VerifyButton>
+          {!disableVerification ? (
+            <VerifyButton
+              state={verifyState}
+              onClick={handleVerify}
+              disabled={isVerifying}
+            >
+              {isVerifying ? "검증 중..." :
+                verifyState === 'success' ? "검증 완료" :
+                  verifyState === 'fail' ? "검증 실패" : "검증"}
+            </VerifyButton>
+          ) : null}
         </EndpointSection>
 
         {ConfirmDialog}

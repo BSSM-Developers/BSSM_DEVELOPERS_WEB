@@ -23,6 +23,7 @@ export default function TokenDetailPage() {
   const { confirm, ConfirmDialog } = useConfirm();
   const tokenId = parseTokenId(id);
   const [tokenDetail, setTokenDetail] = useState<ApiTokenDetail | null>(null);
+  const [reissuedSecretKey, setReissuedSecretKey] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -54,6 +55,7 @@ export default function TokenDetailPage() {
       title: "복사가 완료되었습니다",
       message: "클립보드에 복사되었습니다.",
       confirmText: "확인",
+      hideCancel: true,
     });
   }, [confirm]);
 
@@ -70,7 +72,8 @@ export default function TokenDetailPage() {
 
     if (isConfirmed) {
       try {
-        await tokenApi.reissueSecret(tokenId);
+        const reissued = await tokenApi.reissueSecret(tokenId);
+        setReissuedSecretKey(reissued.secretKey);
         const refreshed = await tokenApi.getDetail(tokenId);
         setTokenDetail(refreshed);
       } catch (error) {
@@ -79,13 +82,15 @@ export default function TokenDetailPage() {
           title: "재발급 실패",
           message,
           confirmText: "확인",
+          hideCancel: true,
         });
         return;
       }
       await confirm({
         title: "재발급 완료",
-        message: "시크릿 키가 성공적으로 재발급되었습니다.",
+        message: "시크릿 키가 성공적으로 재발급되었습니다. 아래에 표시된 키를 복사해 보관해주세요.",
         confirmText: "확인",
+        hideCancel: true,
       });
     }
   }, [confirm, tokenId]);
@@ -94,8 +99,10 @@ export default function TokenDetailPage() {
     if (!tokenDetail) {
       return null;
     }
-    return tokenDetail.registeredApis.map((apiUsage) => (
-      <ApiItem key={apiUsage.apiId}>
+    return tokenDetail.registeredApis.map((apiUsage) => {
+      const apiIdentifier = String(apiUsage.apiId);
+      return (
+      <ApiItem key={apiIdentifier}>
         <ApiInfo>
           <ApiName>{apiUsage.name}</ApiName>
           <ApiMethod>API METHOD: {apiUsage.apiMethod}</ApiMethod>
@@ -105,11 +112,13 @@ export default function TokenDetailPage() {
           <EndpointValue>{apiUsage.endpoint}</EndpointValue>
         </ApiEndpointSection>
         <ActionGroup>
-          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&usageId=${apiUsage.apiId}`)}>수정</TinyButton>
+          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=USAGE_NAME&apiId=${apiIdentifier}`)}>이름 수정</TinyButton>
+          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&apiId=${apiIdentifier}`)}>주소 수정</TinyButton>
           <TinyButton onClick={() => void handleCopy(apiUsage.endpoint)}>복사</TinyButton>
         </ActionGroup>
       </ApiItem>
-    ));
+      );
+    });
   }, [handleCopy, router, tokenDetail]);
 
   const tokenName = tokenDetail?.apiTokenName ?? "토큰 상세";
@@ -125,7 +134,7 @@ export default function TokenDetailPage() {
             <Subtitle>내 토큰을 관리할 수 있어요</Subtitle>
           </TitleSection>
           <HeaderActions>
-            <HeaderButton onClick={() => router.push(`/user/tokens/edit/${tokenId ?? ""}?step=NAME`)} disabled={tokenId === null || isLoading || !!errorMessage}>
+            <HeaderButton onClick={() => router.push(`/user/tokens/edit/${tokenId ?? ""}?step=TOKEN_NAME`)} disabled={tokenId === null || isLoading || !!errorMessage}>
               이름 수정
             </HeaderButton>
             <HeaderButton primary onClick={() => void handleReissue()} disabled={tokenId === null || isLoading || !!errorMessage}>
@@ -139,15 +148,25 @@ export default function TokenDetailPage() {
 
         <Section>
           <SectionTitle>토큰</SectionTitle>
-          <SectionSubtitle>발급 받은 토큰을 통해 다양한 API들을 사용할 수 있습니다</SectionSubtitle>
+          <SectionSubtitle>발급 받은 토큰 정보를 확인하고 시크릿 키를 재발급할 수 있습니다</SectionSubtitle>
 
           <TokenRow>
-            <Label>시크릿 키</Label>
-            <TokenValue>{tokenDetail?.secretKey ?? "-"}</TokenValue>
-            <TinyButton onClick={() => tokenDetail ? void handleCopy(tokenDetail.secretKey) : undefined} disabled={!tokenDetail}>
+            <Label>클라이언트 ID</Label>
+            <TokenValue>{tokenDetail?.apiTokenClientId ?? "-"}</TokenValue>
+            <TinyButton onClick={() => tokenDetail ? void handleCopy(tokenDetail.apiTokenClientId) : undefined} disabled={!tokenDetail}>
               복사
             </TinyButton>
           </TokenRow>
+          <SecretKeyNotice>
+            시크릿 키는 토큰 생성 직후에만 확인할 수 있습니다. 분실 시 시크릿 키 재발급 버튼으로 새 키를 발급받아 다시 보관해주세요.
+          </SecretKeyNotice>
+          {reissuedSecretKey ? (
+            <TokenRow>
+              <Label>재발급 시크릿 키</Label>
+              <SecretValue>{reissuedSecretKey}</SecretValue>
+              <TinyButton onClick={() => void handleCopy(reissuedSecretKey)}>복사</TinyButton>
+            </TokenRow>
+          ) : null}
         </Section>
 
         {!isLoading && !errorMessage ? (
@@ -237,6 +256,7 @@ const TokenRow = styled.div`
     display: flex;
     align-items: center;
     gap: 60px;
+    margin-bottom: 14px;
 `;
 
 const Label = styled.span`
@@ -252,6 +272,14 @@ const TokenValue = styled.span`
     font-family: monospace;
 `;
 
+const SecretValue = styled.span`
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: ${({ theme }) => theme.colors.bssmDarkBlue};
+    flex: 1;
+    font-family: monospace;
+    font-weight: 600;
+`;
+
 const TinyButton = styled.button<{ primary?: boolean }>`
     padding: 6px 16px;
     border-radius: 4px;
@@ -260,7 +288,7 @@ const TinyButton = styled.button<{ primary?: boolean }>`
     cursor: pointer;
     border: 1px solid ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : theme.colors.grey[200]};
     background: ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : "white"};
-    color: ${({ theme, primary }) => primary ? "white" : theme.colors.grey[900]};
+    color: ${({ theme, primary }) => primary ? "white" : theme.colors.bssmDarkBlue} !important;
 
     &:disabled {
       opacity: 0.5;
@@ -272,6 +300,15 @@ const ApiListSection = styled.div`
     display: flex;
     flex-direction: column;
     gap: 24px;
+`;
+
+const SecretKeyNotice = styled.div`
+    border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+    background: ${({ theme }) => theme.colors.grey[50]};
+    border-radius: 8px;
+    padding: 12px 14px;
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: ${({ theme }) => theme.colors.grey[700]};
 `;
 
 const ApiItem = styled.div`

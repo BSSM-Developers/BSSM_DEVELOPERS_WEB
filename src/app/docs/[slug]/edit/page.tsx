@@ -1,227 +1,628 @@
-/* eslint-disable */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import styled from "@emotion/styled";
+import { useParams, useRouter } from "next/navigation";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DocsHeader } from "@/components/docs/DocsHeader";
+import { DocsLayout } from "@/components/layout/DocsLayout";
 import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
-import { ApiDocModule } from "@/components/docs/ApiDocModule";
-import { DocsBlock } from "@/types/docs";
-import { docsSubData, DocsSubEntry } from "../../mock/docsSubData";
-import { apiMockData } from "../../mock/apiMockData";
+import { useConfirm } from "@/hooks/useConfirm";
+import { useDocsStore } from "@/store/docsStore";
 import { docsApi } from "@/app/docs/api";
-import { useDocsStore, DocsStoreState } from "@/store/docsStore";
-import { useParams } from "next/navigation";
-
-type BlockWithId = DocsBlock & { id: string };
-
+import { useDocsSidebarQuery } from "@/app/docs/queries";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
+import type { ApiParam, DocsBlock } from "@/types/docs";
+import { findNodeById, updateNode } from "@/components/layout/treeUtils";
+import {
+  buildPageSignature,
+  buildSidebarSignature,
+  collectPageTargetsFromSidebar,
+  createDefaultBlocksByModule,
+  inferMethodFromBlocks,
+  nodesToSidebarBlockRequests,
+  sidebarBlocksToNodes,
+  toDocsPageBlockRequests,
+  toEditorBlocksWithOptions,
+} from "./helpers";
 
-// 사이드바 노드와 경로를 찾는 헬퍼 함수
-const findSidebarNodeWithPath = (items: SidebarNode[], id: string, path: string[] = []): { node: SidebarNode; path: string[] } | null => {
-  for (const item of items) {
-    if (item.id === id) return { node: item, path };
-    if (item.childrenItems) {
-      const found = findSidebarNodeWithPath(item.childrenItems, id, [...path, item.label]);
-      if (found) return found;
-    }
+const ContentArea = styled.div`
+  min-height: 500px;
+  padding: 0 48px 120px;
+  display: flex;
+  flex-direction: column;
+`;
+
+const SaveButton = styled.button`
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  width: 132px;
+  height: 48px;
+  border-radius: 10px;
+  border: none;
+  background: #16335c;
+  color: white;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  z-index: 4000;
+  box-shadow: 0 10px 24px rgba(22, 51, 92, 0.2);
+
+  &:hover {
+    filter: brightness(1.05);
   }
-  return null;
-};
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 1280px) {
+    right: 20px;
+    bottom: 20px;
+  }
+`;
+
+const EmptyText = styled.div`
+  padding: 20px 0;
+  color: #9ca3af;
+`;
+
+const LoadingBox = styled.div`
+  padding: 40px;
+  text-align: center;
+  color: #6b7280;
+`;
+
+const ErrorBox = styled.div`
+  padding: 40px;
+  text-align: center;
+  color: #ef4444;
+`;
 
 export default function DocsEditPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const router = useRouter();
+  const slug = params?.slug as string;
 
-  // HMR 업데이트 트리거
-  const selected = useDocsStore((s: DocsStoreState) => s.selected);
-  const setSelected = useDocsStore((s: DocsStoreState) => s.setSelected);
-  const docsData = useDocsStore((s: DocsStoreState) => s.docsData);
-  const apiData = useDocsStore((s: DocsStoreState) => s.apiData);
-  const updateDocsData = useDocsStore((s: DocsStoreState) => s.updateDocsData);
-  const updateApiData = useDocsStore((s: DocsStoreState) => s.updateApiData);
+  const selectedId = useDocsStore((state) => state.selected);
+  const setSelected = useDocsStore((state) => state.setSelected);
+  const { confirm, ConfirmDialog } = useConfirm();
+
+  const { data: sidebarData, isLoading: sidebarLoading, error: sidebarError } = useDocsSidebarQuery(slug || "");
 
   const [sidebarItems, setSidebarItems] = useState<SidebarNode[]>([]);
+  const [contentMap, setContentMap] = useState<Record<string, DocsBlock[]>>({});
+  const [docsBlocks, setDocsBlocks] = useState<DocsBlock[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // 사이드바 가져오기는 layout.tsx에서 처리되므로 제거됨
-  // 제목 정보는 getDetail에 의존
+  const initializedRef = useRef(false);
+  const prevSelectedRef = useRef<string | null>(null);
+  const docsBlocksRef = useRef<DocsBlock[]>([]);
+  const contentMapRef = useRef<Record<string, DocsBlock[]>>({});
+  const sidebarUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialSidebarSignatureRef = useRef("");
+  const initialPageSignatureByMappedIdRef = useRef<Record<string, string>>({});
 
-  // 문서 내용 가져오기
   useEffect(() => {
-    const fetchDocContent = async () => {
-      if (!slug) return;
-      try {
-        // 상세 정보 가져오기 시도
-        // 참고: docsApi.getDetail(slug)는 문서 객체를 직접 반환하거나 data로 감싸서 반환할 수 있음
-        const response: any = await docsApi.getDetail(slug);
-        console.log("Doc Detail Response:", response);
+    docsBlocksRef.current = docsBlocks;
+  }, [docsBlocks]);
 
-        const doc = response.data || response;
+  useEffect(() => {
+    contentMapRef.current = contentMap;
+  }, [contentMap]);
 
-        if (doc && doc.title) {
-          setDocTitle(doc.title);
-        }
-
-        if (doc && doc.contents) {
-          // 가져온 블록으로 스토어 업데이트
-          // 블록에 ID가 없으면 생성
-          const blocksWithIds = doc.contents.map((b: any) => ({
-            ...b,
-            id: b.id || Math.random().toString(36).substring(2, 11)
-          }));
-          updateDocsData(slug, blocksWithIds);
-        } else if (doc) {
-          // 문서는 존재하지만 내용이 없음, 플레이스홀더를 표시하기 위해 빈 배열 설정
-          updateDocsData(slug, []);
-        }
-      } catch (e) {
-        console.error("Failed to fetch doc content:", e);
-        // 실패한 경우, 새 문서이거나 오류일 수 있음
-        // 스토어에 데이터가 없으면 플레이스홀더 표시 (또는 오류 상태)
-        if (!docsData[slug]) {
-          updateDocsData(slug, []);
-        }
+  useEffect(() => {
+    return () => {
+      if (sidebarUpdateTimeoutRef.current) {
+        clearTimeout(sidebarUpdateTimeoutRef.current);
       }
     };
-    fetchDocContent();
-  }, [slug, updateDocsData]);
+  }, []);
 
-  const [docTitle, setDocTitle] = useState("문서 로딩 중...");
+  const pageTargets = useMemo(() => collectPageTargetsFromSidebar(sidebarItems), [sidebarItems]);
 
-  // 사이드바에서 선택된 노드 찾기
-  // const result = findSidebarNodeWithPath(sidebarItems, selected);
-  // const node = result?.node;
-  // const isApiDoc = node?.module === "api";
-  // 현재는 API 정보를 가져오지 않는 한 표준 문서로 가정
-  const isApiDoc = false; // TODO: 가능하면 getDetail 응답에서 이를 결정
+  useEffect(() => {
+    const hydrate = async () => {
+      if (!slug || !sidebarData?.data?.blocks || initializedRef.current) {
+        return;
+      }
 
-  const blocks = isApiDoc
-    ? (apiData[selected] ? [{ id: 'api-spec-block', module: 'api', apiData: apiData[selected] }] : [])
-    : (docsData[selected] || []);
+      const nodes = sidebarBlocksToNodes(sidebarData.data.blocks);
+      const targets = collectPageTargetsFromSidebar(nodes);
 
-  const handleBlockChange = (index: number, updated: DocsBlock) => {
-    if (isApiDoc && updated.apiData) {
-      updateApiData(selected, updated.apiData);
-    } else if (!isApiDoc) {
-      const copy = [...(docsData[selected] || [])];
-      copy[index] = { ...copy[index], ...updated } as BlockWithId;
-      updateDocsData(selected, copy);
-    }
-  };
+      if (targets.length === 0) {
+        setSidebarItems(nodes);
+        setContentMap({});
+        setDocsBlocks([]);
+        contentMapRef.current = {};
+        initialSidebarSignatureRef.current = buildSidebarSignature(nodes);
+        initialPageSignatureByMappedIdRef.current = {};
+        initializedRef.current = true;
+        return;
+      }
 
-  const handleAddBlock = (index: number, newBlock?: DocsBlock) => {
-    if (isApiDoc) return; // 현재로서는 API 명세에 블록 추가 안 함
+      const loadedContentMap: Record<string, DocsBlock[]> = {};
+      const loadedSignatureMap: Record<string, string> = {};
+      let normalizedNodes = nodes;
 
-    const copy = [...(docsData[selected] || [])];
-    const blockId = Math.random().toString(36).substring(2, 11);
-    const blockToInsert: BlockWithId = {
-      id: blockId,
-      ...(newBlock ?? { module: "docs_1", content: "" }),
-    } as BlockWithId;
+      await Promise.all(
+        targets.map(async (target) => {
+          try {
+            const response = await docsApi.getPage(slug, target.mappedId);
+            const blocks = toEditorBlocksWithOptions(response.data.docsBlocks, {
+              preferredModule: target.module,
+              method: target.method,
+              label: target.label,
+              id: target.mappedId,
+            });
+            loadedContentMap[target.mappedId] = blocks;
+            loadedSignatureMap[target.mappedId] = buildPageSignature(blocks);
 
-    copy.splice(index + 1, 0, blockToInsert);
-    updateDocsData(selected, copy);
+            if (target.module === "api") {
+              const inferredMethod = inferMethodFromBlocks(blocks);
+              if (inferredMethod && !target.method) {
+                normalizedNodes = updateNode(normalizedNodes, target.mappedId, { method: inferredMethod });
+              }
+            }
+          } catch {
+            const fallback = createDefaultBlocksByModule(
+              target.module,
+              target.label,
+              target.mappedId,
+              target.method
+            );
+            loadedContentMap[target.mappedId] = fallback;
+            loadedSignatureMap[target.mappedId] = buildPageSignature(fallback);
+          }
+        })
+      );
 
-    setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockId}']`);
-      el?.focus();
-    }, 0);
-  };
+      const firstMappedId = targets[0].mappedId;
 
-  const handleRemoveBlock = (index: number) => {
-    if (isApiDoc) return;
+      setSidebarItems(normalizedNodes);
+      setContentMap(loadedContentMap);
+      setSelected(firstMappedId);
+      setDocsBlocks(loadedContentMap[firstMappedId] ?? []);
+      contentMapRef.current = loadedContentMap;
 
-    const copy = [...(docsData[selected] || [])];
-    if (copy.length <= 1) {
-      // 블록을 삭제하는 대신 마지막 블록 초기화
-      copy[0] = { ...copy[0], module: "docs_1", content: "" };
-      updateDocsData(selected, copy);
+      initialSidebarSignatureRef.current = buildSidebarSignature(normalizedNodes);
+      initialPageSignatureByMappedIdRef.current = loadedSignatureMap;
+      prevSelectedRef.current = firstMappedId;
+      initializedRef.current = true;
+    };
+
+    void hydrate();
+  }, [setSelected, sidebarData, slug]);
+
+  useEffect(() => {
+    if (!initializedRef.current || !selectedId) {
       return;
     }
 
-    const focusTargetId = index > 0 ? copy[index - 1]?.id : copy[index + 1]?.id;
-    copy.splice(index, 1);
-    updateDocsData(selected, copy);
-
-    if (focusTargetId) {
-      setTimeout(() => {
-        const el = document.querySelector<HTMLInputElement>(`[data-block-id='${focusTargetId}']`);
-        el?.focus();
-      }, 0);
+    if (prevSelectedRef.current === selectedId) {
+      return;
     }
-  };
 
-  const handleDuplicateBlock = (index: number) => {
-    if (isApiDoc) return;
-    const copy = [...(docsData[selected] || [])];
-    const original = copy[index];
-    const blockId = Math.random().toString(36).substring(2, 11);
-    const newBlock: BlockWithId = {
-      ...original,
-      id: blockId,
-    };
-    copy.splice(index + 1, 0, newBlock);
-    updateDocsData(selected, copy);
-  };
+    const prevId = prevSelectedRef.current;
+    let nextMap = contentMapRef.current;
+    let mapChanged = false;
 
-  const handleFocusMove = (index: number, direction: "up" | "down") => {
-    const target = direction === "up" ? index - 1 : index + 1;
-    const targetId = (blocks[target] as BlockWithId)?.id;
-    if (!targetId) return;
-    setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${targetId}']`);
-      el?.focus();
-    }, 0);
-  };
+    if (prevId && prevId !== selectedId) {
+      nextMap = { ...nextMap, [prevId]: docsBlocksRef.current };
+      mapChanged = true;
+    }
 
+    let selectedBlocks = nextMap[selectedId];
+    if (!selectedBlocks) {
+      const selectedNode = findNodeById(sidebarItems, selectedId);
+      selectedBlocks = createDefaultBlocksByModule(
+        selectedNode?.module,
+        selectedNode?.label || "새 문서",
+        selectedId,
+        selectedNode?.method
+      );
+      nextMap = { ...nextMap, [selectedId]: selectedBlocks };
+      mapChanged = true;
+    }
 
+    if (mapChanged) {
+      contentMapRef.current = nextMap;
+      setContentMap(nextMap);
+    }
 
-  const title = docTitle;
-  const breadcrumb = ["문서 목록", docTitle];
+    setDocsBlocks(selectedBlocks);
+    prevSelectedRef.current = selectedId;
+  }, [selectedId, sidebarItems]);
 
+  const currentLabel = useMemo(() => {
+    if (!selectedId) {
+      return "문서 수정";
+    }
+    return pageTargets.find((target) => target.mappedId === selectedId)?.label || "문서 수정";
+  }, [pageTargets, selectedId]);
 
+  const validateApiParams = useCallback((params: ApiParam[] | undefined, typeLabel: string, apiName: string): string | null => {
+    if (!params || params.length === 0) {
+      return null;
+    }
 
-  return (
-    <>
-      <DocsHeader title={title} breadcrumb={breadcrumb} isApi={isApiDoc} />
+    for (const param of params) {
+      if (!param.name || !param.description) {
+        return `[${apiName}] ${typeLabel} 파라미터의 이름과 설명을 모두 채워주세요.`;
+      }
+    }
 
-      <div
-        style={{ minHeight: "500px", flex: 1, display: "flex", flexDirection: "column", cursor: "text" }}
-        onClick={() => {
-          if (blocks.length > 0 && !isApiDoc) {
-            const lastBlock = blocks[blocks.length - 1] as any;
-            if ((lastBlock.module === "docs_1" || lastBlock.module === "list" || lastBlock.module === "headline_1" || lastBlock.module === "headline_2") && lastBlock.content === "") {
-              const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${lastBlock.id}']`);
-              el?.focus();
-              return;
+    return null;
+  }, []);
+
+  const validateBeforeSave = useCallback((blocksMap: Record<string, DocsBlock[]>): string | null => {
+    let hasApiModule = false;
+    const uniqueApis = new Set<string>();
+
+    for (const target of pageTargets) {
+      const blocks = blocksMap[target.mappedId] || [];
+      for (const block of blocks) {
+        if (block.module !== "api" || !block.apiData) {
+          continue;
+        }
+
+        hasApiModule = true;
+        const api = block.apiData;
+        const apiName = api.name || target.label || "API 문서";
+
+        if (!api.endpoint || !api.endpoint.trim()) {
+          return `[${apiName}] 엔드포인트를 입력해주세요.`;
+        }
+
+        const methodEndpoint = `${api.method} ${api.endpoint}`;
+        if (uniqueApis.has(methodEndpoint)) {
+          return `중복된 API가 존재합니다: ${methodEndpoint}`;
+        }
+        uniqueApis.add(methodEndpoint);
+
+        if (api.pathParams && api.pathParams.length > 0) {
+          for (const pathParam of api.pathParams) {
+            if (!pathParam.name) {
+              continue;
+            }
+            if (!api.endpoint.includes(`{${pathParam.name}}`)) {
+              return `[${apiName}] 선언된 Path 파라미터 '{${pathParam.name}}'가 엔드포인트 문자열에 존재하지 않습니다.`;
             }
           }
-          if (blocks.length === 0 && !isApiDoc) {
-            const blockId = Math.random().toString(36).substring(2, 11);
-            updateDocsData(selected, [{ id: blockId, module: "docs_1", content: "" }]);
-          } else if (!isApiDoc) {
-            handleAddBlock(blocks.length);
+        }
+
+        const hardCodedNumberRegex = /\/[0-9]+(\/|$)/;
+        const hardCodedUuidRegex = /\/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(\/|$)/;
+        if (hardCodedNumberRegex.test(api.endpoint) || hardCodedUuidRegex.test(api.endpoint)) {
+          return `[${apiName}] 메인 엔드포인트 경로에 실제 파라미터 값을 직접 넣을 수 없습니다.`;
+        }
+
+        const parameterErrors = [
+          validateApiParams(api.headerParams, "Header", apiName),
+          validateApiParams(api.cookieParams, "Cookie", apiName),
+          validateApiParams(api.pathParams, "Path", apiName),
+          validateApiParams(api.queryParams, "Query", apiName),
+          validateApiParams(api.bodyParams, "Body", apiName),
+          validateApiParams(api.responseParams, "Response Body", apiName),
+        ].filter(Boolean);
+
+        if (parameterErrors.length > 0) {
+          return parameterErrors[0] || null;
+        }
+      }
+    }
+
+    if (!hasApiModule) {
+      return "최소 1개 이상의 API 문서(모듈)가 필요합니다.";
+    }
+
+    return null;
+  }, [pageTargets, validateApiParams]);
+
+  const handleBlockChange = useCallback((index: number, updated: DocsBlock) => {
+    setDocsBlocks((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], ...updated };
+
+      if (selectedId) {
+        const currentBlock = copy[index];
+        let labelToUpdate = "";
+        let methodToUpdate: SidebarNode["method"] | undefined;
+
+        if (currentBlock.module === "api" && currentBlock.apiData) {
+          labelToUpdate = currentBlock.apiData.name || "";
+          methodToUpdate = currentBlock.apiData.method;
+        } else if (index === 0 && currentBlock.module === "headline_1") {
+          labelToUpdate = currentBlock.content || "";
+        }
+
+        if (labelToUpdate || methodToUpdate) {
+          if (sidebarUpdateTimeoutRef.current) {
+            clearTimeout(sidebarUpdateTimeoutRef.current);
+          }
+
+          sidebarUpdateTimeoutRef.current = setTimeout(() => {
+            setSidebarItems((prevItems) =>
+              updateNode(prevItems, selectedId, {
+                ...(labelToUpdate ? { label: labelToUpdate } : {}),
+                ...(methodToUpdate ? { method: methodToUpdate } : {}),
+              })
+            );
+          }, 250);
+        } else {
+          const selectedNode = findNodeById(sidebarItems, selectedId);
+          if (selectedNode?.module === "api") {
+            const inferredMethod = inferMethodFromBlocks(copy);
+            if (inferredMethod && selectedNode.method !== inferredMethod) {
+              setSidebarItems((prevItems) => updateNode(prevItems, selectedId, { method: inferredMethod }));
+            }
+          }
+        }
+      }
+
+      return copy;
+    });
+  }, [selectedId, sidebarItems]);
+
+  const handleAddBlock = useCallback((index: number, newBlock?: DocsBlock) => {
+    const blockId = crypto.randomUUID();
+    const blockToInsert = { id: blockId, ...(newBlock ?? { module: "docs_1", content: "" }) } as DocsBlock;
+    setDocsBlocks((prev) => {
+      const copy = [...prev];
+      copy.splice(index + 1, 0, blockToInsert);
+      return copy;
+    });
+
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${blockId}']`);
+      el?.focus();
+    }, 0);
+  }, []);
+
+  const handleDuplicateBlock = useCallback((index: number) => {
+    setDocsBlocks((prev) => {
+      const source = prev[index];
+      if (!source) {
+        return prev;
+      }
+      const copy = [...prev];
+      copy.splice(index + 1, 0, { ...source, id: crypto.randomUUID() });
+      return copy;
+    });
+  }, []);
+
+  const handleRemoveBlock = useCallback((index: number) => {
+    setDocsBlocks((prev) => {
+      if (prev.length <= 1) {
+        return [{ id: crypto.randomUUID(), module: "docs_1", content: "" }];
+      }
+      const copy = [...prev];
+      copy.splice(index, 1);
+      return copy;
+    });
+  }, []);
+
+  const handleFocusMove = useCallback((index: number, direction: "up" | "down") => {
+    const target = direction === "up" ? index - 1 : index + 1;
+    const targetId = docsBlocks[target]?.id;
+    if (!targetId) {
+      return;
+    }
+    setTimeout(() => {
+      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${targetId}']`);
+      el?.focus();
+    }, 0);
+  }, [docsBlocks]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) {
+      return;
+    }
+    setDocsBlocks((prev) => {
+      const oldIndex = prev.findIndex((block) => String(block.id) === String(active.id));
+      const newIndex = prev.findIndex((block) => String(block.id) === String(over.id));
+      if (oldIndex < 0 || newIndex < 0) {
+        return prev;
+      }
+      return arrayMove(prev, oldIndex, newIndex);
+    });
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!slug || isSaving) {
+      return;
+    }
+
+    const mergedMap = {
+      ...contentMap,
+      ...(selectedId ? { [selectedId]: docsBlocksRef.current } : {}),
+    };
+
+    const validationError = validateBeforeSave(mergedMap);
+    if (validationError) {
+      await confirm({
+        title: "검증 실패",
+        message: validationError,
+        confirmText: "확인",
+        hideCancel: true,
+      });
+      return;
+    }
+
+    const targets = collectPageTargetsFromSidebar(sidebarItems);
+    if (targets.length === 0) {
+      await confirm({
+        title: "저장 실패",
+        message: "저장할 페이지가 없습니다.",
+        confirmText: "확인",
+        hideCancel: true,
+      });
+      return;
+    }
+
+    const currentSidebarSignature = buildSidebarSignature(sidebarItems);
+    const isSidebarChanged = currentSidebarSignature !== initialSidebarSignatureRef.current;
+
+    const changedPages = targets
+      .map((target) => {
+        const blocks =
+          mergedMap[target.mappedId] ??
+          createDefaultBlocksByModule(target.module, target.label, target.mappedId, target.method);
+        const signature = buildPageSignature(blocks);
+        const hasChanged = initialPageSignatureByMappedIdRef.current[target.mappedId] !== signature;
+        return {
+          target,
+          blocks,
+          signature,
+          hasChanged,
+        };
+      })
+      .filter((entry) => entry.hasChanged);
+
+    if (!isSidebarChanged && changedPages.length === 0) {
+      await confirm({
+        title: "변경 없음",
+        message: "변경된 내용이 없습니다.",
+        confirmText: "확인",
+        hideCancel: true,
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (isSidebarChanged) {
+        await docsApi.updateSidebar(slug, nodesToSidebarBlockRequests(sidebarItems));
+      }
+
+      await Promise.all(
+        changedPages.map((entry) =>
+          docsApi.updatePage(slug, entry.target.mappedId, toDocsPageBlockRequests(entry.blocks))
+        )
+      );
+
+      initialSidebarSignatureRef.current = currentSidebarSignature;
+      initialPageSignatureByMappedIdRef.current = {
+        ...initialPageSignatureByMappedIdRef.current,
+        ...Object.fromEntries(changedPages.map((entry) => [entry.target.mappedId, entry.signature])),
+      };
+
+      await confirm({
+        title: "저장 완료",
+        message: "문서 수정사항이 저장되었습니다.",
+        confirmText: "확인",
+        hideCancel: true,
+      });
+
+      const targetId = selectedId || targets[0].mappedId;
+      router.push(`/docs/${slug}/page/${targetId}`);
+    } catch (error) {
+      await confirm({
+        title: "저장 실패",
+        message: error instanceof Error ? error.message : "문서 저장에 실패했습니다.",
+        confirmText: "확인",
+        hideCancel: true,
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [confirm, contentMap, isSaving, router, selectedId, sidebarItems, slug, validateBeforeSave]);
+
+  if (sidebarLoading) {
+    return <LoadingBox>문서 정보를 불러오는 중입니다.</LoadingBox>;
+  }
+
+  if (sidebarError) {
+    return <ErrorBox>{sidebarError instanceof Error ? sidebarError.message : "문서를 불러오지 못했습니다."}</ErrorBox>;
+  }
+
+  return (
+    <DocsLayout
+      showSidebar={true}
+      sidebarItems={sidebarItems}
+      onSidebarChange={setSidebarItems}
+      projectName={sidebarItems[0]?.label || "문서 수정"}
+      editable={true}
+    >
+      <DocsHeader title={currentLabel} breadcrumb={[sidebarItems[0]?.label || "문서"]} isApi={false} />
+
+      <ContentArea
+        onClick={() => {
+          if (docsBlocks.length > 0) {
+            const lastBlock = docsBlocks[docsBlocks.length - 1];
+            const isTextBlock =
+              lastBlock.module === "docs_1" ||
+              lastBlock.module === "list" ||
+              lastBlock.module === "headline_1" ||
+              lastBlock.module === "headline_2";
+
+            if (isTextBlock && (lastBlock.content || "") === "") {
+              const lastId = String(lastBlock.id || "");
+              if (lastId) {
+                const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+                  `[data-block-id='${lastId}']`
+                );
+                el?.focus();
+              }
+              return;
+            }
+
+            handleAddBlock(docsBlocks.length);
+            return;
+          }
+
+          if (docsBlocks.length === 0) {
+            handleAddBlock(-1);
           }
         }}
       >
-        {blocks.length === 0 && !isApiDoc ? (
-          <div style={{ padding: "20px 0", color: "#9CA3AF", cursor: "text" }}>
-            내용을 입력하려면 클릭하세요...
-          </div>
+        {docsBlocks.length === 0 ? (
+          <EmptyText>내용을 입력하려면 클릭하세요...</EmptyText>
         ) : (
-          (blocks as BlockWithId[]).map((block, i: number) => (
-            <DocsBlockEditor
-              key={block.id || i}
-              index={i}
-              block={block}
-              onChange={(idx, updated) => handleBlockChange(idx, updated)}
-              onAddBlock={handleAddBlock}
-              onRemoveBlock={handleRemoveBlock}
-              onDuplicateBlock={handleDuplicateBlock}
-              onFocusMove={handleFocusMove}
-            />
-          ))
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={docsBlocks.map((block) => String(block.id))} strategy={verticalListSortingStrategy}>
+              {docsBlocks.map((block, index) => (
+                <DocsBlockEditor
+                  key={String(block.id)}
+                  index={index}
+                  block={block}
+                  domain=""
+                  disableApiVerification={true}
+                  onChange={handleBlockChange}
+                  onAddBlock={handleAddBlock}
+                  onDuplicateBlock={handleDuplicateBlock}
+                  onRemoveBlock={handleRemoveBlock}
+                  onFocusMove={handleFocusMove}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
-      </div>
-    </>
+      </ContentArea>
+
+      <SaveButton type="button" onClick={() => void handleSave()} disabled={isSaving}>
+        {isSaving ? "저장 중..." : "저장하기"}
+      </SaveButton>
+
+      {ConfirmDialog}
+    </DocsLayout>
   );
 }

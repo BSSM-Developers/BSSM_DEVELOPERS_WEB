@@ -5,5 +5,5 @@ export const moduleMap = {
   list: "list",
   code: "code",
   image: "image",
-  api: "docs_1",
+  api: "api",
 };

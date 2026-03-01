@@ -1,96 +1,53 @@
 "use client";
 
-import { applyTypography } from "@/lib/themeHelper";
-import { keyframes, css } from "@emotion/react";
-import styled from "@emotion/styled";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState, useCallback, useEffect, Suspense } from "react";
 import { tokenApi } from "../../api";
-
-const parseTokenId = (value: string | string[] | undefined): number | null => {
-  if (!value) {
-    return null;
-  }
-  const raw = Array.isArray(value) ? value[0] : value;
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) ? parsed : null;
-};
-
-const slideIn = keyframes`
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-`;
-
-const drawCheck = keyframes`
-  from {
-    stroke-dashoffset: 100;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-`;
-
-const popIn = keyframes`
-  0% {
-    opacity: 0;
-    transform: scale(0.92);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-  }
-`;
-
-const ringPulse = keyframes`
-  0% {
-    box-shadow: 0 0 0 0 rgba(17, 38, 146, 0.35);
-  }
-  100% {
-    box-shadow: 0 0 0 18px rgba(17, 38, 146, 0);
-  }
-`;
-
-const checkPop = keyframes`
-  0% {
-    opacity: 0;
-    transform: scale(0.6) rotate(-6deg);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.1) rotate(2deg);
-  }
-  100% {
-    transform: scale(1) rotate(0);
-  }
-`;
+import {
+  getPlaceholderText,
+  getSuccessText,
+  getTitleText,
+  parseTokenId,
+  type TokenEditStep,
+} from "./model";
+import {
+  CheckCircle,
+  CheckIcon,
+  Container,
+  ErrorText,
+  FlexColumn,
+  MainTitle,
+  PrimaryButton,
+  StatusText,
+  StyledInput,
+} from "./styles";
 
 function TokenEditContent() {
   const router = useRouter();
   const { id } = useParams();
   const tokenId = parseTokenId(id);
   const searchParams = useSearchParams();
-  const initialStep = searchParams.get("step") as "NAME" | "ENDPOINT" | null;
+  const initialStep = searchParams.get("step");
+  const apiIdParam = searchParams.get("apiId") ?? searchParams.get("usageId");
 
-  const [step, setStep] = useState<"NAME" | "ENDPOINT" | "SUCCESS">("NAME");
-  const [name, setName] = useState("");
+  const [step, setStep] = useState<TokenEditStep>("TOKEN_NAME");
+  const [tokenName, setTokenName] = useState("");
+  const [usageName, setUsageName] = useState("");
   const [endpoint, setEndpoint] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (initialStep) {
-      setStep(initialStep);
+    if (initialStep === "ENDPOINT") {
+      setStep("ENDPOINT");
+      return;
     }
+    if (initialStep === "USAGE_NAME") {
+      setStep("USAGE_NAME");
+      return;
+    }
+    setStep("TOKEN_NAME");
   }, [initialStep]);
 
   useEffect(() => {
@@ -104,39 +61,47 @@ function TokenEditContent() {
         setErrorMessage("");
         setIsLoadingDetail(true);
         const detail = await tokenApi.getDetail(tokenId);
-        setName(detail.apiTokenName);
-        setEndpoint(detail.registeredApis[0]?.endpoint ?? "");
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "토큰 정보를 불러오지 못했습니다.";
+        setTokenName(detail.apiTokenName);
+        const targetUsage = apiIdParam
+          ? detail.registeredApis.find(
+              (apiUsage) =>
+                String(apiUsage.apiId) === apiIdParam || String(apiUsage.apiUsageId ?? "") === apiIdParam
+            )
+          : detail.registeredApis[0];
+        setUsageName(targetUsage?.name ?? "");
+        setEndpoint(targetUsage?.endpoint ?? "");
+      } catch (loadError) {
+        const message = loadError instanceof Error ? loadError.message : "토큰 정보를 불러오지 못했습니다.";
         setErrorMessage(message);
       } finally {
         setIsLoadingDetail(false);
       }
     };
     void loadDetail();
-  }, [tokenId]);
+  }, [apiIdParam, tokenId]);
 
   const handleNext = useCallback(async () => {
     if (isSubmitting) {
       return;
     }
 
-    if (step === "NAME") {
-      if (!name.trim()) {
+    if (tokenId === null) {
+      setErrorMessage("유효하지 않은 토큰 ID입니다.");
+      return;
+    }
+
+    if (step === "TOKEN_NAME") {
+      if (!tokenName.trim()) {
         setErrorMessage("토큰 이름을 입력해주세요.");
-        return;
-      }
-      if (tokenId === null) {
-        setErrorMessage("유효하지 않은 토큰 ID입니다.");
         return;
       }
       try {
         setErrorMessage("");
         setIsSubmitting(true);
-        await tokenApi.updateName(tokenId, name.trim());
+        await tokenApi.updateName(tokenId, tokenName.trim());
         setStep("SUCCESS");
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "토큰 이름 수정에 실패했습니다.";
+      } catch (submitError) {
+        const message = submitError instanceof Error ? submitError.message : "토큰 이름 수정에 실패했습니다.";
         setErrorMessage(message);
       } finally {
         setIsSubmitting(false);
@@ -144,8 +109,65 @@ function TokenEditContent() {
       return;
     }
 
-    setStep("SUCCESS");
-  }, [isSubmitting, name, step, tokenId]);
+    if (!apiIdParam) {
+      setErrorMessage("유효하지 않은 API ID입니다.");
+      return;
+    }
+
+    if (step === "USAGE_NAME") {
+      if (!usageName.trim()) {
+        setErrorMessage("API 이름을 입력해주세요.");
+        return;
+      }
+      try {
+        setErrorMessage("");
+        setIsSubmitting(true);
+        await tokenApi.updateUsageName(apiIdParam, tokenId, usageName.trim());
+        setStep("SUCCESS");
+      } catch (submitError) {
+        const message = submitError instanceof Error ? submitError.message : "API 이름 수정에 실패했습니다.";
+        setErrorMessage(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
+    if (!endpoint.trim()) {
+      setErrorMessage("엔드포인트를 입력해주세요.");
+      return;
+    }
+
+    try {
+      setErrorMessage("");
+      setIsSubmitting(true);
+      await tokenApi.updateUsageEndpoint(apiIdParam, tokenId, endpoint.trim());
+      setStep("SUCCESS");
+    } catch (submitError) {
+      const message = submitError instanceof Error ? submitError.message : "엔드포인트 수정에 실패했습니다.";
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [apiIdParam, endpoint, isSubmitting, step, tokenId, tokenName, usageName]);
+
+  const titleText = getTitleText(step);
+  const placeholderText = getPlaceholderText(step);
+  const inputValue = step === "TOKEN_NAME" ? tokenName : step === "USAGE_NAME" ? usageName : endpoint;
+
+  const handleInputChange = (value: string) => {
+    if (step === "TOKEN_NAME") {
+      setTokenName(value);
+      return;
+    }
+    if (step === "USAGE_NAME") {
+      setUsageName(value);
+      return;
+    }
+    setEndpoint(value);
+  };
+
+  const successText = getSuccessText(step);
 
   const handleComplete = useCallback(() => {
     if (tokenId === null) {
@@ -159,7 +181,7 @@ function TokenEditContent() {
     return (
       <Container center>
         <FlexColumn center animated>
-          <MainTitle>토큰 수정이 완료되었습니다!</MainTitle>
+          <MainTitle>{successText}</MainTitle>
           <CheckCircle>
             <CheckIcon viewBox="0 0 24 24">
               <polyline points="20 6 9 17 4 12" />
@@ -174,20 +196,12 @@ function TokenEditContent() {
   return (
     <Container center>
       <FlexColumn center animated>
-        <MainTitle>
-          {step === "NAME" ? "수정하고 싶은 이름을 입력해주세요" : "수정하고 싶은 엔드포인트를 입력해주세요"}
-        </MainTitle>
+        <MainTitle>{titleText}</MainTitle>
 
         <StyledInput
-          placeholder={step === "NAME" ? "이름을 입력해주세요" : "엔드포인트를 입력해주세요"}
-          value={step === "NAME" ? name : endpoint}
-          onChange={(e) => {
-            if (step === "NAME") {
-              setName(e.target.value);
-            } else {
-              setEndpoint(e.target.value);
-            }
-          }}
+          placeholder={placeholderText}
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void handleNext()}
           autoFocus
         />
@@ -209,113 +223,3 @@ export default function TokenEditPage() {
     </Suspense>
   );
 }
-
-const Container = styled.div<{ center?: boolean }>`
-  display: flex;
-  flex: 1;
-  background: white;
-  ${({ center }) => center && "justify-content: center; align-items: center;"}
-  padding: 24px;
-`;
-
-const FlexColumn = styled.div<{ center?: boolean; animated?: boolean }>`
-  display: flex;
-  flex-direction: column;
-  ${({ center }) => center && "align-items: center;"}
-  width: 100%;
-  max-width: 800px;
-  ${({ animated }) => animated && css`
-    animation: ${slideIn} 0.6s ease-out forwards;
-  `}
-`;
-
-const MainTitle = styled.h2`
-  ${({ theme }) => applyTypography(theme, "Headline_1")};
-  font-size: 32px;
-  color: ${({ theme }) => theme.colors.grey[900]};
-  margin-bottom: 32px;
-  text-align: center;
-`;
-
-const StyledInput = styled.input`
-  width: 100%;
-  height: 56px;
-  padding: 0 24px;
-  border: 1px solid ${({ theme }) => theme.colors.grey[100]};
-  border-radius: 4px;
-  background-color: white;
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  margin-bottom: 120px;
-  outline: none;
-  color: ${({ theme }) => theme.colors.grey[900]};
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.grey[400]};
-  }
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.bssmDarkBlue};
-  }
-`;
-
-const PrimaryButton = styled.button`
-  width: 200px;
-  height: 56px;
-  background: ${({ theme }) => theme.colors.bssmDarkBlue};
-  color: white;
-  border-radius: 4px;
-  ${({ theme }) => applyTypography(theme, "Headline_2")};
-  font-size: 20px;
-  cursor: pointer;
-  border: none;
-  transition: opacity 0.2s;
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const CheckCircle = styled.div`
-  width: 140px;
-  height: 140px;
-  border-radius: 50%;
-  background: white;
-  border: 10px solid ${({ theme }) => theme.colors.bssmDarkBlue};
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 60px;
-  animation: ${popIn} 0.45s ease-out forwards, ${ringPulse} 0.8s ease-out 0.3s forwards;
-  will-change: transform, box-shadow, opacity;
-`;
-
-const CheckIcon = styled.svg`
-  width: 70px;
-  height: 70px;
-  fill: none;
-  stroke: ${({ theme }) => theme.colors.bssmDarkBlue};
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-dasharray: 100;
-  stroke-dashoffset: 100;
-  transform-origin: center;
-  animation: ${drawCheck} 0.5s ease-in-out 0.2s forwards, ${checkPop} 0.6s ease-out 0.2s forwards;
-`;
-
-const StatusText = styled.p`
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  color: ${({ theme }) => theme.colors.grey[500]};
-  margin-bottom: 16px;
-`;
-
-const ErrorText = styled.p`
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  color: #d32f2f;
-  margin-bottom: 16px;
-`;

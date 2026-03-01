@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter, usePathname, useParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import styled from "@emotion/styled";
 import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
@@ -31,13 +31,10 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
 
   const selectedId = useDocsStore((state) => state.selected);
   const setSelected = useDocsStore((state) => state.setSelected);
-  const isFolder = node.module === "collapse" || node.module === "main";
+  const isFolder = node.module === "collapse" || node.module === "main" || node.module === "main_title";
 
   const router = useRouter();
   const pathname = usePathname();
-  const params = useParams();
-  const slug = params?.slug as string | undefined;
-
   const hasPathInTree = (current: SidebarNode): boolean => {
     if (current.path) {
       return true;
@@ -85,13 +82,9 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
       return;
     }
 
-    if (pathname?.includes('/docs/register')) {
+    if (pathname?.includes('/docs/register') || pathname?.includes('/edit')) {
       return;
     }
-
-    const isEditMode = pathname?.includes('/edit');
-    const targetPath = `/docs/${slug}/${isEditMode ? 'edit' : 'page'}/${node.id}`;
-    router.push(targetPath);
   };
 
   const commitRename = () => {

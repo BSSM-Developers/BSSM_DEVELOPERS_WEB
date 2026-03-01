@@ -4,12 +4,13 @@ import React, { useState, useEffect, useRef, memo } from "react";
 import styled from "@emotion/styled";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2, Copy } from "lucide-react";
+import { GripVertical, Plus, Trash2, Copy, MoreHorizontal } from "lucide-react";
+import Image from "next/image";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 import { highlightCode } from "@/utils/apiUtils/highlightUtils";
-import TextareaAutosize from 'react-textarea-autosize';
+import TextareaAutosize from "react-textarea-autosize";
 
 interface DocsBlockEditorProps {
   block: DocsBlockType;
@@ -20,6 +21,7 @@ interface DocsBlockEditorProps {
   onRemoveBlock?: (index: number) => void;
   onFocusMove?: (index: number, direction: "up" | "down") => void;
   domain?: string;
+  disableApiVerification?: boolean;
 }
 
 export const DocsBlockEditor = memo(function DocsBlockEditor({
@@ -30,13 +32,15 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   onDuplicateBlock,
   onRemoveBlock,
   onFocusMove,
-  domain
+  domain,
+  disableApiVerification = false
 }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
   const [imageValue, setImageValue] = useState(block.imageSrc ?? "");
   const [showImageInput, setShowImageInput] = useState(!block.imageSrc);
   const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
   const [imageWidth, setImageWidth] = useState<number | string>(block.imageWidth || "100%");
   const [showContextMenu, setShowContextMenu] = useState(false);
 
@@ -110,6 +114,23 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   useEffect(() => {
     setImageValue(block.imageSrc ?? "");
   }, [block.imageSrc]);
+
+  useEffect(() => {
+    if (!showContextMenu) {
+      return;
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setShowContextMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [showContextMenu]);
 
   const detectModuleType = (text: string): { module: DocsBlockType["module"]; content: string; imageSrc?: string } | null => {
     if (/^#\s/.test(text)) return { module: "headline_1", content: text.replace(/^#\s*/, "") };
@@ -229,6 +250,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
           apiData={block.apiData}
           domain={domain}
           editable={true}
+          disableVerification={disableApiVerification}
           onChange={(updatedApiData) => onChange(index, { ...block, apiData: updatedApiData })}
         />
       );
@@ -256,9 +278,12 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                   margin: '0 auto',
                 }}
               >
-                <img
+                <Image
                   src={block.imageSrc}
                   alt="Preview"
+                  width={1200}
+                  height={800}
+                  unoptimized
                   draggable={false}
                   style={{
                     width: '100%',
@@ -596,16 +621,20 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
       className="block-editor-container"
     >
       <Gutter className="gutter-controls">
-        <DragHandle
-          {...attributes}
-          {...listeners}
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowContextMenu((prev) => !prev);
-          }}
-          isActive={showContextMenu}
-        >
-          <GripVertical size={16} />
+        <HandleGroup ref={contextMenuRef}>
+          <DragHandle {...attributes} {...listeners}>
+            <GripVertical size={16} />
+          </DragHandle>
+          <MenuButton
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowContextMenu((prev) => !prev);
+            }}
+            isActive={showContextMenu}
+          >
+            <MoreHorizontal size={14} />
+          </MenuButton>
           {showContextMenu ? (
             <ContextMenu>
               <ContextMenuItem onClick={() => { onDuplicateBlock(index); setShowContextMenu(false); }}>
@@ -618,7 +647,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
               </ContextMenuItem>
             </ContextMenu>
           ) : null}
-        </DragHandle>
+        </HandleGroup>
         <PlusButton onClick={() => onAddBlock(index)}>
           <Plus size={16} />
         </PlusButton>
@@ -654,23 +683,46 @@ const Gutter = styled.div`
   z-index: 100;
 `;
 
-const DragHandle = styled.div<{ isActive?: boolean }>`
+const HandleGroup = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`;
+
+const DragHandle = styled.div`
   width: 18px;
   height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.isActive ? '#191F28' : '#ACB3BA'};
+  color: #ACB3BA;
   cursor: grab;
   border-radius: 4px;
-  position: relative;
-  background: ${props => props.isActive ? '#F2F4F6' : 'transparent'};
+  background: transparent;
   &:hover {
     background: #F2F4F6;
     color: #191F28;
   }
   &:active {
     cursor: grabbing;
+  }
+`;
+
+const MenuButton = styled.button<{ isActive: boolean }>`
+  width: 18px;
+  height: 18px;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${({ isActive }) => (isActive ? "#191F28" : "#ACB3BA")};
+  background: ${({ isActive }) => (isActive ? "#F2F4F6" : "transparent")};
+  border-radius: 4px;
+  cursor: pointer;
+  &:hover {
+    background: #F2F4F6;
+    color: #191F28;
   }
 `;
 
@@ -764,5 +816,3 @@ const MenuLabel = styled.div`
   font-size: 14px;
   color: #374151;
 `;
-
-

@@ -4,6 +4,7 @@ import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType, ApiDoc } from "@/types/docs";
 import { highlightCode } from "@/utils/apiUtils/highlightUtils";
+import Image from "next/image";
 
 interface DocsBlockViewerProps {
   block: DocsBlockType;
@@ -37,7 +38,16 @@ export function DocsBlockViewer({ block, domain }: DocsBlockViewerProps) {
   if (block.module === "image") {
     return (
       <DocsBlock module="image">
-        {block.imageSrc && <img src={block.imageSrc} alt="Content" />}
+        {block.imageSrc ? (
+          <Image
+            src={block.imageSrc}
+            alt="Content"
+            width={1200}
+            height={800}
+            unoptimized
+            style={{ width: "100%", height: "auto" }}
+          />
+        ) : null}
       </DocsBlock>
     );
   }

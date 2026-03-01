@@ -112,6 +112,17 @@ export default function MyDocsPage() {
     setIsEditOpen(true);
   }, []);
 
+  const handleOpenDocsEditor = useCallback(
+    (doc: DocsItem) => {
+      const docsId = getDocsId(doc);
+      if (!docsId) {
+        return;
+      }
+      router.push(`/docs/${docsId}/edit`);
+    },
+    [router]
+  );
+
   const handleCloseEdit = useCallback(() => {
     setIsEditOpen(false);
   }, []);
@@ -256,7 +267,8 @@ export default function MyDocsPage() {
                     autoApproval={doc.autoApproval ?? doc.auto_approval ?? null}
                     repositoryUrl={doc.repositoryUrl || doc.repository_url || ""}
                     onExplore={() => handleExplore(doc)}
-                    onEdit={() => handleOpenEdit(doc)}
+                    onEditDocs={() => handleOpenDocsEditor(doc)}
+                    onEditInfo={() => handleOpenEdit(doc)}
                     onDelete={() => void handleDelete(doc)}
                   />
                 );

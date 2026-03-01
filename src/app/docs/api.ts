@@ -102,12 +102,34 @@ export interface UpdateDocsData {
   repositoryUrl: string;
 }
 
-interface ReplaceDocsData {
+export interface DocsSideBarBlockRequest {
+  id: string;
+  label: string;
+  module: "main_title" | "default" | "collapse" | "api";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
+  childrenItems?: DocsSideBarBlockRequest[];
+}
+
+export interface DocsPageBlockRequest {
+  id: string;
+  module: string;
+  content: string;
+}
+
+export interface ReplaceDocsData {
   title: string;
   description: string;
   domain: string;
   repository_url: string;
   auto_approval: boolean;
+  sidebar: {
+    blocks: DocsSideBarBlockRequest[];
+  };
+  docs_pages: {
+    id: string;
+    endpoint?: string;
+    blocks: DocsPageBlockRequest[];
+  }[];
 }
 
 interface DocsCursorQueryParams {
@@ -192,8 +214,11 @@ export const docsApi = {
   updatePage: async (docsId: string | number, mappedId: string | number, docsBlocks: unknown[]) => {
     return fetchClinet.put<void>(`/docs/${docsId}/page/${mappedId}`, { docsBlocks });
   },
-  updateSidebar: async (docsId: string | number, sideBarBlocks: unknown[]) => {
-    return fetchClinet.put<void>(`/docs/${docsId}/sidebar`, { sideBarBlocks });
+  updateSidebar: async (docsId: string | number, blocks: unknown[]) => {
+    return fetchClinet.put<void>(`/docs/${docsId}/sidebar`, {
+      blocks,
+      sideBarBlocks: blocks,
+    });
   },
   replace: async (docsId: string | number, data: ReplaceDocsData) => {
     return fetchClinet.put<void>(`/docs/${docsId}`, data);

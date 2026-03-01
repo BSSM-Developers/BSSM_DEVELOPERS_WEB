@@ -5,25 +5,32 @@ import { useParams } from "next/navigation";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
 import { ApiUseApplyModal } from "@/components/apis/ApiUseApplyModal";
-import { useDocsDetailQuery, useDocsPageQuery, useDocsSidebarQuery } from "@/app/docs/queries";
+import { useDocsPageQuery, useDocsSidebarQuery } from "@/app/docs/queries";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 import { SidebarBlock } from "@/app/docs/api";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useDocsStore } from "@/store/docsStore";
 
 export default function DocsPageDetail() {
   const params = useParams();
   const slug = params?.slug as string;
   const id = params?.id as string;
+  const setSelected = useDocsStore((state) => state.setSelected);
 
   const [isApplyOpen, setIsApplyOpen] = useState(false);
 
   const { data: pageData, isLoading: isPageLoading, error: pageError } = useDocsPageQuery(slug || "", id || "");
   const { data: sidebarData } = useDocsSidebarQuery(slug || "");
-  const { data: detailData } = useDocsDetailQuery(slug || "");
 
   const closeApplyModal = useCallback(() => {
     setIsApplyOpen(false);
   }, []);
+
+  useEffect(() => {
+    if (id) {
+      setSelected(id);
+    }
+  }, [id, setSelected]);
 
   if (isPageLoading) {
     return (
@@ -60,7 +67,7 @@ export default function DocsPageDetail() {
     ? sidebarData.data.blocks[0].label
     : null;
 
-  const projectTitle = sidebarTitle || detailData?.data?.title || "Project";
+  const projectTitle = sidebarTitle || "Project";
   const pageLabel = sidebarData?.data?.blocks ? findLabel(sidebarData.data.blocks, id) : null;
   const displayTitle = pageLabel || "문서";
   const blocks = pageData?.data?.docsBlocks || [];
@@ -71,7 +78,7 @@ export default function DocsPageDetail() {
       <ContentArea>
         {blocks.length > 0 ? (
           blocks.map((block: DocsBlockType, index: number) => (
-            <DocsBlockViewer key={index} block={block} domain={detailData?.data?.domain} />
+            <DocsBlockViewer key={index} block={block} />
           ))
         ) : (
           <EmptyText>
@@ -109,7 +116,7 @@ const ErrorBox = styled.div`
 
 const ContentArea = styled.div`
   min-height: 500px;
-  padding: 0 48px 120px;
+  padding: 0 48px 120px 28px;
 `;
 
 const EmptyText = styled.div`

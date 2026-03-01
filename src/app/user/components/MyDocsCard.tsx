@@ -2,6 +2,7 @@
 
 import styled from "@emotion/styled";
 import { applyTypography } from "@/lib/themeHelper";
+import { useEffect, useRef, useState } from "react";
 
 interface MyDocsCardProps {
   title: string;
@@ -10,7 +11,8 @@ interface MyDocsCardProps {
   autoApproval: boolean | null;
   repositoryUrl: string;
   onExplore: () => void;
-  onEdit: () => void;
+  onEditDocs: () => void;
+  onEditInfo: () => void;
   onDelete: () => void;
 }
 
@@ -21,11 +23,58 @@ export function MyDocsCard({
   autoApproval,
   repositoryUrl,
   onExplore,
-  onEdit,
+  onEditDocs,
+  onEditInfo,
   onDelete,
 }: MyDocsCardProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (menuRef.current && !menuRef.current.contains(target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    window.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      window.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
     <CardContainer>
+      <MenuContainer ref={menuRef}>
+        <MenuTrigger type="button" onClick={() => setMenuOpen((prev) => !prev)}>
+          ⋯
+        </MenuTrigger>
+        {menuOpen ? (
+          <MenuPanel>
+            <MenuItem
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onEditInfo();
+              }}
+            >
+              정보 수정
+            </MenuItem>
+            <MenuDivider />
+            <MenuItem
+              type="button"
+              danger
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete();
+              }}
+            >
+              삭제
+            </MenuItem>
+          </MenuPanel>
+        ) : null}
+      </MenuContainer>
       <CardHeader>
         <TypeIndicator>
           <Dot type={type} />
@@ -51,11 +100,8 @@ export function MyDocsCard({
           <ActionButton type="button" onClick={onExplore}>
             둘러보기
           </ActionButton>
-          <ActionButton type="button" onClick={onEdit} primary>
-            정보 수정
-          </ActionButton>
-          <ActionButton type="button" onClick={onDelete} danger>
-            삭제
+          <ActionButton type="button" onClick={onEditDocs} primary>
+            수정하기
           </ActionButton>
         </ButtonGroup>
       </CardFooter>
@@ -64,6 +110,7 @@ export function MyDocsCard({
 }
 
 const CardContainer = styled.div`
+  position: relative;
   background: white;
   border: 1px solid ${({ theme }) => theme.colors.grey[200]};
   border-radius: 8px;
@@ -77,6 +124,72 @@ const CardContainer = styled.div`
     transform: translateY(-4px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
   }
+`;
+
+const MenuContainer = styled.div`
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 30;
+`;
+
+const MenuTrigger = styled.button`
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: ${({ theme }) => theme.colors.grey[500]};
+  ${({ theme }) => applyTypography(theme, "Headline_2")};
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.grey[100]};
+    color: ${({ theme }) => theme.colors.grey[700]};
+  }
+`;
+
+const MenuPanel = styled.div`
+  position: absolute;
+  top: 30px;
+  right: 0;
+  width: 140px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const MenuItem = styled.button<{ danger?: boolean }>`
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: ${({ theme, danger }) => (danger ? theme.colors.bssmRed : theme.colors.grey[700])};
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-weight: 500;
+  text-align: left;
+  padding: 0 10px;
+  cursor: pointer;
+
+  &:hover {
+    background: ${({ danger }) => (danger ? "#FEF2F2" : "#F3F4F6")};
+  }
+`;
+
+const MenuDivider = styled.hr`
+  margin: 4px 0;
+  border: 0;
+  height: 1px;
+  background: #e5e7eb;
 `;
 
 const CardHeader = styled.div`

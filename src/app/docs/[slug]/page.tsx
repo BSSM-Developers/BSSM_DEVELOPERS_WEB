@@ -4,11 +4,13 @@ import { useParams, useRouter } from "next/navigation";
 import { useDocsSidebarQuery } from "@/app/docs/queries";
 import { useEffect } from "react";
 import { SidebarBlock } from "@/app/docs/api";
+import { useDocsStore } from "@/store/docsStore";
 
 export default function DocsProjectPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params?.slug as string;
+  const setSelected = useDocsStore((state) => state.setSelected);
 
   const { data: sidebarData, isLoading: isSidebarLoading, error: sidebarError } = useDocsSidebarQuery(slug || "");
 
@@ -29,10 +31,11 @@ export default function DocsProjectPage() {
 
       const firstId = findFirstPage(sidebarData.data.blocks);
       if (firstId) {
+        setSelected(firstId);
         router.replace(`/docs/${slug}/page/${firstId}`);
       }
     }
-  }, [sidebarData, slug, router]);
+  }, [sidebarData, setSelected, slug, router]);
 
   if (isSidebarLoading) {
     return (

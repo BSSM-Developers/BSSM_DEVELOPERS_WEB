@@ -120,3 +120,54 @@ export function useDeleteDocsMutation() {
     },
   });
 }
+
+export function useToggleAutoApprovalMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ docsId, autoApproval }: { docsId: string | number; autoApproval: boolean }) =>
+      docsApi.toggleAutoApproval(docsId, autoApproval),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docsKeys.all });
+    },
+  });
+}
+
+export function useReplaceDocsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ docsId, data }: { docsId: string | number; data: Parameters<typeof docsApi.replace>[1] }) =>
+      docsApi.replace(docsId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docsKeys.all });
+    },
+  });
+}
+
+export function useUpdateDocsPageMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      docsId,
+      mappedId,
+      docsBlocks,
+    }: {
+      docsId: string | number;
+      mappedId: string | number;
+      docsBlocks: unknown[];
+    }) => docsApi.updatePage(docsId, mappedId, docsBlocks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docsKeys.all });
+    },
+  });
+}
+
+export function useUpdateDocsSidebarMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ docsId, sideBarBlocks }: { docsId: string | number; sideBarBlocks: unknown[] }) =>
+      docsApi.updateSidebar(docsId, sideBarBlocks),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: docsKeys.all });
+    },
+  });
+}

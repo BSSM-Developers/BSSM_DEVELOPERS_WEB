@@ -9,10 +9,11 @@ interface ApiBlockProps {
   apiData: ApiDoc;
   domain?: string;
   editable?: boolean;
+  disableVerification?: boolean;
   onChange?: (updated: ApiDoc) => void;
 }
 
-export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlockProps) {
+export function ApiBlock({ apiData, domain, editable = false, disableVerification = false, onChange }: ApiBlockProps) {
   const handleHeaderChange = (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => {
     onChange?.({
       ...apiData,
@@ -42,6 +43,7 @@ export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlo
         sampleCode={apiData.sampleCode}
         responseCode={apiData.responseCode}
         editable={editable}
+        disableVerification={disableVerification}
         onHeaderChange={handleHeaderChange}
         onHeaderParamsChange={(params) => onChange?.({ ...apiData, headerParams: params })}
         onCookieParamsChange={(params) => onChange?.({ ...apiData, cookieParams: params })}

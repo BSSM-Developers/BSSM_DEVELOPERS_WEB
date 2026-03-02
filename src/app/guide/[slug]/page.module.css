@@ -1,0 +1,26 @@
+.page {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0;
+  padding: 0 36px 84px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-left: 40px;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 0 4px 64px;
+  }
+
+  .content {
+    padding-left: 16px;
+  }
+}

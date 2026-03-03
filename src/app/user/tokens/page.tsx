@@ -5,7 +5,7 @@ import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useRouter } from "next/navigation";
 import { useMemo, useCallback, useEffect, useState } from "react";
-import { tokenApi, type ApiTokenListItem } from "./api";
+import { tokenApi, type ApiTokenListItem, type ApiTokenState } from "./api";
 import { apiUseReasonApi, type ApiUseReasonMineItem } from "@/app/apis/useReasonApi";
 
 export default function TokenListPage() {
@@ -63,7 +63,10 @@ export default function TokenListPage() {
     return tokens.map((token) => (
       <TokenItem key={token.apiTokenId}>
         <TokenInfoSection>
-          <TokenName>{token.apiTokenName}</TokenName>
+          <TokenHeader>
+            <TokenName>{token.apiTokenName}</TokenName>
+            <TokenStateBadge state={token.state ?? "NORMAL"}>{token.state ?? "NORMAL"}</TokenStateBadge>
+          </TokenHeader>
           <TokenId>{token.apiTokenClientId}</TokenId>
         </TokenInfoSection>
         <ManageButton onClick={() => handleManageToken(String(token.apiTokenId))}>관리하기</ManageButton>
@@ -193,6 +196,12 @@ const TokenInfoSection = styled.div`
   gap: 2px;
 `;
 
+const TokenHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
 const TokenName = styled.h3`
   ${({ theme }) => applyTypography(theme, "Headline_2")};
   font-size: 20px;
@@ -203,6 +212,32 @@ const TokenId = styled.span`
   ${({ theme }) => applyTypography(theme, "Body_3")};
   font-size: 13px;
   color: ${({ theme }) => theme.colors.grey[400]};
+`;
+
+const TokenStateBadge = styled.span<{ state: ApiTokenState }>`
+  padding: 3px 10px;
+  border-radius: 999px;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-size: 11px;
+  font-weight: 700;
+  background: ${({ state }) => {
+    if (state === "BLOCKED") {
+      return "#FEE2E2";
+    }
+    if (state === "WARNING") {
+      return "#FEF3C7";
+    }
+    return "#DCFCE7";
+  }};
+  color: ${({ state }) => {
+    if (state === "BLOCKED") {
+      return "#B91C1C";
+    }
+    if (state === "WARNING") {
+      return "#B45309";
+    }
+    return "#166534";
+  }};
 `;
 
 const ManageButton = styled.button`

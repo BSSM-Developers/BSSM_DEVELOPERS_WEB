@@ -6,7 +6,7 @@ import styled from "@emotion/styled";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
-import { tokenApi, type ApiTokenDetail } from "../api";
+import { tokenApi, type ApiTokenDetail, type ApiTokenState } from "../api";
 
 const parseTokenId = (value: string | string[] | undefined): number | null => {
   if (!value) {
@@ -157,6 +157,12 @@ export default function TokenDetailPage() {
               복사
             </TinyButton>
           </TokenRow>
+          <TokenRow>
+            <Label>상태</Label>
+            <TokenStateBadge state={tokenDetail?.state ?? "NORMAL"}>
+              {tokenDetail?.state ?? "NORMAL"}
+            </TokenStateBadge>
+          </TokenRow>
           <SecretKeyNotice>
             시크릿 키는 토큰 생성 직후에만 확인할 수 있습니다. 분실 시 시크릿 키 재발급 버튼으로 새 키를 발급받아 다시 보관해주세요.
           </SecretKeyNotice>
@@ -270,6 +276,34 @@ const TokenValue = styled.span`
     color: ${({ theme }) => theme.colors.grey[600]};
     flex: 1;
     font-family: monospace;
+`;
+
+const TokenStateBadge = styled.span<{ state: ApiTokenState }>`
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 999px;
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    font-size: 12px;
+    font-weight: 700;
+    background: ${({ state }) => {
+      if (state === "BLOCKED") {
+        return "#FEE2E2";
+      }
+      if (state === "WARNING") {
+        return "#FEF3C7";
+      }
+      return "#DCFCE7";
+    }};
+    color: ${({ state }) => {
+      if (state === "BLOCKED") {
+        return "#B91C1C";
+      }
+      if (state === "WARNING") {
+        return "#B45309";
+      }
+      return "#166534";
+    }};
 `;
 
 const SecretValue = styled.span`

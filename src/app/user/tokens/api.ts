@@ -5,10 +5,13 @@ interface ApiResponse<T> {
   data: T;
 }
 
+export type ApiTokenState = "NORMAL" | "WARNING" | "BLOCKED";
+
 export interface ApiTokenListItem {
   apiTokenId: number;
   apiTokenName: string;
   apiTokenClientId: string;
+  state?: ApiTokenState;
 }
 
 export interface ApiTokenListData {
@@ -30,6 +33,7 @@ export interface ApiTokenDetail {
   apiTokenName: string;
   apiTokenClientId: string;
   secretKey: string;
+  state?: ApiTokenState;
   domains: string[];
   registeredApis: RegisteredApiSummary[];
 }

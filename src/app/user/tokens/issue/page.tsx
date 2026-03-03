@@ -65,14 +65,27 @@ const checkPop = keyframes`
   }
 `;
 
+type IssueStep = "NAME" | "DOMAIN" | "SUCCESS";
+
+const parseDomains = (value: string): string[] => {
+  const parts = value
+    .split(/[\n,]/)
+    .map((domain) => domain.trim())
+    .filter((domain) => domain.length > 0);
+
+  return Array.from(new Set(parts));
+};
+
 export default function TokenIssuePage() {
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
-  const [step, setStep] = useState<"INPUT" | "SUCCESS">("INPUT");
+  const [step, setStep] = useState<IssueStep>("NAME");
   const [name, setName] = useState("");
+  const [domainInput, setDomainInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [issuedToken, setIssuedToken] = useState<ApiTokenWithSecret | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
+  const domains = parseDomains(domainInput);
 
   const handleIssue = useCallback(async () => {
     if (!name.trim() || isSubmitting) {
@@ -82,7 +95,7 @@ export default function TokenIssuePage() {
     try {
       setErrorMessage("");
       setIsSubmitting(true);
-      const createdToken = await tokenApi.create(name.trim());
+      const createdToken = await tokenApi.create(name.trim(), domains);
       setIssuedToken(createdToken);
       setStep("SUCCESS");
     } catch (error) {
@@ -91,7 +104,7 @@ export default function TokenIssuePage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [isSubmitting, name]);
+  }, [domains, isSubmitting, name]);
 
   const handleComplete = useCallback(() => {
     if (!issuedToken) {
@@ -152,18 +165,51 @@ export default function TokenIssuePage() {
   return (
     <Container center>
       <FlexColumn center animated>
-        <InputTitle>신규 발급 받을 토큰 이름을 입력해주세요</InputTitle>
-        <StyledInput
-          placeholder="토큰 이름을 입력해주세요"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void handleIssue()}
-          autoFocus
-        />
+        {step === "NAME" ? (
+          <>
+            <InputTitle>신규 발급 받을 토큰 이름을 입력해주세요</InputTitle>
+            <StyledInput
+              placeholder="토큰 이름을 입력해주세요"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && name.trim() && setStep("DOMAIN")}
+              autoFocus
+            />
+            <IssueButton onClick={() => setStep("DOMAIN")} disabled={!name.trim() || isSubmitting}>
+              다음
+            </IssueButton>
+          </>
+        ) : (
+          <>
+            <InputTitle>도메인을 입력해주세요 (선택)</InputTitle>
+            <DomainDescription>쉼표(,) 또는 줄바꿈으로 여러 도메인을 입력할 수 있습니다.</DomainDescription>
+            <DomainTextarea
+              placeholder={"예: bssm-dev.com, app.bssm-dev.com"}
+              value={domainInput}
+              onChange={(e) => setDomainInput(e.target.value)}
+              autoFocus
+            />
+            {domains.length > 0 ? (
+              <DomainList>
+                {domains.map((domain) => (
+                  <DomainChip key={domain}>{domain}</DomainChip>
+                ))}
+              </DomainList>
+            ) : null}
+            <ButtonRow>
+              <SkipButton onClick={() => void handleIssue()} disabled={isSubmitting}>
+                {isSubmitting ? "발급 중..." : "건너뛰기"}
+              </SkipButton>
+              <IssueButton onClick={() => void handleIssue()} disabled={isSubmitting}>
+                {isSubmitting ? "발급 중..." : "발급받기"}
+              </IssueButton>
+            </ButtonRow>
+            <BackButton onClick={() => setStep("NAME")} disabled={isSubmitting}>
+              이전
+            </BackButton>
+          </>
+        )}
         {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
-        <IssueButton onClick={() => void handleIssue()} disabled={!name.trim() || isSubmitting}>
-          {isSubmitting ? "발급 중..." : "발급받기"}
-        </IssueButton>
       </FlexColumn>
     </Container>
   );
@@ -204,7 +250,7 @@ const StyledInput = styled.input`
   border-radius: 4px;
   background-color: white;
   ${({ theme }) => applyTypography(theme, "Body_4")};
-  margin-bottom: 120px;
+  margin-bottom: 40px;
   outline: none;
   color: ${({ theme }) => theme.colors.grey[900]};
 
@@ -215,6 +261,58 @@ const StyledInput = styled.input`
   &:focus {
     border-color: ${({ theme }) => theme.colors.bssmDarkBlue};
   }
+`;
+
+const DomainTextarea = styled.textarea`
+  width: 100%;
+  min-height: 140px;
+  padding: 16px 24px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[100]};
+  border-radius: 4px;
+  background-color: white;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  margin-bottom: 16px;
+  outline: none;
+  color: ${({ theme }) => theme.colors.grey[900]};
+  resize: vertical;
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.grey[400]};
+  }
+
+  &:focus {
+    border-color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  }
+`;
+
+const DomainDescription = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  margin-bottom: 16px;
+`;
+
+const DomainList = styled.div`
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+`;
+
+const DomainChip = styled.span`
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: ${({ theme }) => theme.colors.grey[100]};
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-size: 13px;
+`;
+
+const ButtonRow = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 `;
 
 const IssueButton = styled.button`
@@ -236,6 +334,26 @@ const IssueButton = styled.button`
 
   &:hover:not(:disabled) {
     opacity: 0.9;
+  }
+`;
+
+const SkipButton = styled(IssueButton)`
+  background: white;
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+`;
+
+const BackButton = styled.button`
+  margin-top: 14px;
+  background: transparent;
+  border: none;
+  color: ${({ theme }) => theme.colors.grey[500]};
+  cursor: pointer;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 

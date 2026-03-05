@@ -87,10 +87,10 @@ export function TopNav() {
         <StyledLink href="/docs/register">
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
         </StyledLink>
-        <StyledLink href="/guide">
+        <StyledLink href="/guide/bsdev-usage">
           <NavLink active={isActive("/guide")}>가이드</NavLink>
         </StyledLink>
-        <StyledLink href="/announcements">
+        <StyledLink href="/announcements/release-0-1-10">
           <NavLink active={isActive("/announcements")}>공지사항</NavLink>
         </StyledLink>
       </Nav>

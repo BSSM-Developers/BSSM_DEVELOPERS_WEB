@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "@emotion/styled";
 import { usePathname, useSearchParams } from "next/navigation";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
+import { ROUTE_TRANSITION_START_EVENT } from "@/components/common/routeTransitionSignal";
 
 const MIN_VISIBLE_MS = 320;
-const FAILSAFE_HIDE_MS = 12000;
+const FAILSAFE_HIDE_MS = 45000;
 
 function isNavigableAnchor(anchor: HTMLAnchorElement): boolean {
   if (anchor.target && anchor.target !== "_self") return false;
@@ -88,13 +89,19 @@ export function RouteTransitionLoader() {
       startLoading();
     };
 
+    const handleCustomStart = () => {
+      startLoading();
+    };
+
     window.addEventListener("click", handleClickCapture, true);
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener(ROUTE_TRANSITION_START_EVENT, handleCustomStart);
 
     return () => {
       clearFailsafe();
       window.removeEventListener("click", handleClickCapture, true);
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener(ROUTE_TRANSITION_START_EVENT, handleCustomStart);
     };
   }, [clearFailsafe, startLoading]);
 

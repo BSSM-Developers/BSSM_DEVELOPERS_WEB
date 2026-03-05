@@ -16,10 +16,11 @@ export const docsKeys = {
     [...docsKeys.all, "page", id, mappedId] as const,
 };
 
-export function useDocsListQuery() {
+export function useDocsListQuery(enabled: boolean = true) {
   return useQuery({
     queryKey: docsKeys.list(),
     queryFn: () => docsApi.getList(),
+    enabled,
   });
 }
 

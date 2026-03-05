@@ -1,7 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { DocsSidebar } from "./DocsSidebar";
+import { DocsSidebar, type SidebarModuleOption } from "./DocsSidebar";
 import { useState } from "react";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
@@ -69,6 +69,9 @@ export function DocsLayout({
   onSidebarChange,
   projectName,
   editable = false,
+  sidebarModuleOptions,
+  onRequestAddApi,
+  disableApiRename = false,
 }: {
   children: React.ReactNode;
   sidebarItems?: SidebarNode[];
@@ -76,6 +79,9 @@ export function DocsLayout({
   onSidebarChange?: (items: SidebarNode[]) => void;
   projectName?: string;
   editable?: boolean;
+  sidebarModuleOptions?: SidebarModuleOption[];
+  onRequestAddApi?: (intent: { mode: "sibling" | "child"; targetId: string | null }) => void;
+  disableApiRename?: boolean;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -98,7 +104,16 @@ export function DocsLayout({
                 </ToggleButton>
               </div>
             </SidebarHeader>
-            {!sidebarCollapsed && <DocsSidebar items={items} editable={editable} onChange={onSidebarChange} />}
+            {!sidebarCollapsed && (
+              <DocsSidebar
+                items={items}
+                editable={editable}
+                onChange={onSidebarChange}
+                moduleOptions={sidebarModuleOptions}
+                onRequestAddApi={onRequestAddApi}
+                disableApiRename={disableApiRename}
+              />
+            )}
           </Sidebar>
         )}
         <Content>
@@ -175,5 +190,3 @@ const ProjectName = styled.span`
   overflow: hidden;
   text-overflow: ellipsis;
 `;
-
-

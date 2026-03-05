@@ -10,7 +10,7 @@ import { useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
 import type { DocsItem } from "@/app/docs/api";
 
 const toApiType = (value?: string): ApiItem["type"] => {
-  if (value === "CUSTOM") {
+  if (value === "CUSTOM" || value === "CUSTOMIZE") {
     return "CUSTOM";
   }
   return "ORIGINAL";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCreateOriginalDocsMutation } from "@/app/docs/queries";
+import { useCreateCustomDocsMutation, useCreateOriginalDocsMutation } from "@/app/docs/queries";
 import { DocsBlock } from "@/types/docs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { FormData } from "./useDocsForm";
@@ -76,6 +76,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const createOriginalMutation = useCreateOriginalDocsMutation();
+  const createCustomMutation = useCreateCustomDocsMutation();
   const user = useUserStore((state) => state.user);
 
   const handleSubmit = async (
@@ -146,8 +147,36 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
     }
   };
 
+  const handleSubmitCustom = async (formData: FormData): Promise<void> => {
+    try {
+      setLoading(true);
+      await createCustomMutation.mutateAsync({
+        title: formData.title,
+        description: formData.description,
+        writer_id: user?.id,
+      });
+
+      await confirm({
+        title: "생성 완료",
+        message: "커스텀 문서가 생성되었습니다.",
+        hideCancel: true,
+      });
+      router.push("/user");
+    } catch (error) {
+      console.error(error);
+      await confirm({
+        title: "생성 실패",
+        message: "커스텀 문서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        hideCancel: true,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
-    handleSubmit
+    handleSubmit,
+    handleSubmitCustom,
   };
 };

@@ -21,9 +21,16 @@ interface SidebarItemProps {
   editable: boolean;
   mutators: Mutators;
   renderChildren?: boolean;
+  disableApiRename?: boolean;
 }
 
-export function SidebarItem({ node, editable, mutators, renderChildren = true }: SidebarItemProps) {
+export function SidebarItem({
+  node,
+  editable,
+  mutators,
+  renderChildren = true,
+  disableApiRename = false,
+}: SidebarItemProps) {
   const [open, setOpen] = useState(true);
   const [renaming, setRenaming] = useState(false);
   const [label, setLabel] = useState(node.label);
@@ -32,6 +39,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   const selectedId = useDocsStore((state) => state.selected);
   const setSelected = useDocsStore((state) => state.setSelected);
   const isFolder = node.module === "collapse" || node.module === "main" || node.module === "main_title";
+  const canRename = editable && !(disableApiRename && node.module === "api");
 
   const router = useRouter();
   const pathname = usePathname();
@@ -88,7 +96,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
   };
 
   const commitRename = () => {
-    if (!editable) return;
+    if (!canRename) return;
     if (label.trim() && label !== node.label) mutators.rename(node.id, label.trim());
     setRenaming(false);
   };
@@ -121,7 +129,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
         active={isActive}
         onClick={handleClick}
         onContextMenu={handleContextMenu}
-        onDoubleClick={() => { if (editable) setRenaming(true); }}
+        onDoubleClick={() => { if (canRename) setRenaming(true); }}
       >
         {editable && (
           <DeleteButton
@@ -163,6 +171,7 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
               editable={editable}
               mutators={mutators}
               renderChildren={renderChildren}
+              disableApiRename={disableApiRename}
             />
           ))}
         </SubMenu>
@@ -172,9 +181,11 @@ export function SidebarItem({ node, editable, mutators, renderChildren = true }:
         <>
           <ContextMenuBackdrop onClick={closeContextMenu} />
           <ContextMenu style={{ top: contextMenu.y, left: contextMenu.x }}>
-            <ContextMenuItem onClick={() => { setRenaming(true); closeContextMenu(); }}>
-              이름 변경
-            </ContextMenuItem>
+            {canRename ? (
+              <ContextMenuItem onClick={() => { setRenaming(true); closeContextMenu(); }}>
+                이름 변경
+              </ContextMenuItem>
+            ) : null}
             <ContextMenuItem onClick={duplicateItem}>
               복제
             </ContextMenuItem>

@@ -13,7 +13,7 @@ import { MyDocsCard } from "./components/MyDocsCard";
 import { MyDocsEditModal, type MyDocsEditFormValue } from "./components/MyDocsEditModal";
 
 const normalizeDocType = (value?: string): "ORIGINAL" | "CUSTOM" => {
-  if (value === "CUSTOM") {
+  if (value === "CUSTOM" || value === "CUSTOMIZE") {
     return "CUSTOM";
   }
   return "ORIGINAL";
@@ -118,7 +118,20 @@ export default function MyDocsPage() {
       if (!docsId) {
         return;
       }
-      router.push(`/docs/${docsId}/edit`);
+      const normalizedType = normalizeDocType(doc.type);
+      const title = encodeURIComponent(doc.title || "");
+      router.push(`/docs/${docsId}/edit?type=${normalizedType}&title=${title}`);
+    },
+    [router]
+  );
+
+  const handleOpenUsageManagement = useCallback(
+    (doc: DocsItem) => {
+      const docsId = getDocsId(doc);
+      if (!docsId) {
+        return;
+      }
+      router.push(`/user/api-management?docsId=${encodeURIComponent(docsId)}`);
     },
     [router]
   );
@@ -266,13 +279,14 @@ export default function MyDocsPage() {
                     type={normalizeDocType(doc.type)}
                     autoApproval={doc.autoApproval ?? doc.auto_approval ?? null}
                     repositoryUrl={doc.repositoryUrl || doc.repository_url || ""}
-                    onExplore={() => handleExplore(doc)}
-                    onEditDocs={() => handleOpenDocsEditor(doc)}
-                    onEditInfo={() => handleOpenEdit(doc)}
-                    onDelete={() => void handleDelete(doc)}
-                  />
-                );
-              })}
+                  onExplore={() => handleExplore(doc)}
+                  onEditDocs={() => handleOpenDocsEditor(doc)}
+                  onEditInfo={() => handleOpenEdit(doc)}
+                  onDelete={() => void handleDelete(doc)}
+                  onManageUsage={normalizeDocType(doc.type) === "ORIGINAL" ? () => handleOpenUsageManagement(doc) : undefined}
+                />
+              );
+            })}
             </Grid>
           </Section>
         ) : !isLoading && !activeError ? (

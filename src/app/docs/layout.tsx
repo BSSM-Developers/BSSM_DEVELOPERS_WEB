@@ -66,15 +66,16 @@ const applyMethodMapToNodes = (
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const params = useParams();
   const slug = params?.slug as string;
-  const { data: docsListData } = useDocsListQuery();
-  const { data: sidebarData } = useDocsSidebarQuery(slug || "");
-
-  const [sidebarItems, setSidebarItems] = useState<SidebarNode[]>([]);
-  const pathname = usePathname();
   const isRegisterPage = pathname === "/docs/register";
   const isEditPage = pathname?.includes("/edit");
+  const shouldFetchLayoutData = !isRegisterPage && !isEditPage;
+  const { data: docsListData } = useDocsListQuery(shouldFetchLayoutData);
+  const { data: sidebarData } = useDocsSidebarQuery(shouldFetchLayoutData ? slug || "" : "");
+
+  const [sidebarItems, setSidebarItems] = useState<SidebarNode[]>([]);
 
   const mapSidebarBlocks = useCallback((blocks: SidebarBlock[]): SidebarNode[] => {
     return blocks.map(block => ({
@@ -91,6 +92,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [slug]);
 
   useEffect(() => {
+    if (!shouldFetchLayoutData) {
+      return;
+    }
     if (slug && sidebarData?.data?.blocks) {
       setSidebarItems(mapSidebarBlocks(sidebarData.data.blocks));
       return;
@@ -112,9 +116,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         childrenItems: items
       }]);
     }
-  }, [docsListData, sidebarData, slug, mapSidebarBlocks]);
+  }, [docsListData, mapSidebarBlocks, shouldFetchLayoutData, sidebarData, slug]);
 
   useEffect(() => {
+    if (!shouldFetchLayoutData) {
+      return;
+    }
     const enrichApiMethods = async () => {
       if (!slug || !sidebarData?.data?.blocks) {
         return;
@@ -152,7 +159,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     };
 
     void enrichApiMethods();
-  }, [sidebarData, slug]);
+  }, [shouldFetchLayoutData, sidebarData, slug]);
 
   const sidebarTitle = sidebarData?.data?.blocks?.[0]?.module === "main_title"
     ? sidebarData.data.blocks[0].label

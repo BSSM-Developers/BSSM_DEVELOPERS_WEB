@@ -14,6 +14,7 @@ interface MyDocsCardProps {
   onEditDocs: () => void;
   onEditInfo: () => void;
   onDelete: () => void;
+  onManageUsage?: () => void;
 }
 
 export function MyDocsCard({
@@ -26,6 +27,7 @@ export function MyDocsCard({
   onEditDocs,
   onEditInfo,
   onDelete,
+  onManageUsage,
 }: MyDocsCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -103,6 +105,11 @@ export function MyDocsCard({
           <ActionButton type="button" onClick={onEditDocs} primary>
             수정하기
           </ActionButton>
+          {type === "ORIGINAL" && onManageUsage ? (
+            <ActionButton type="button" onClick={onManageUsage}>
+              신청 관리
+            </ActionButton>
+          ) : null}
         </ButtonGroup>
       </CardFooter>
     </CardContainer>

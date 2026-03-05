@@ -6,6 +6,7 @@ import styled from "@emotion/styled";
 import { useUserQuery } from "../queries";
 import { FloatingInput } from "@/components/ui/FloatingInput";
 import { useEffect, useState } from "react";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 
 export default function ProfilePage() {
   const { data: user, isLoading } = useUserQuery();
@@ -26,7 +27,7 @@ export default function ProfilePage() {
         <Subtitle>나의 정보를 확인하거나 수정할 수 있어요</Subtitle>
 
         {shouldShowLoading ? (
-          <LoadingText>불러오는 중...</LoadingText>
+          <BsdevLoader label="사용자 정보를 불러오는 중입니다..." size={56} minHeight="160px" />
         ) : user ? (
           <ProfileForm>
             <FloatingInput
@@ -73,11 +74,6 @@ const Title = styled.h2`
   ${({ theme }) => applyTypography(theme, "Headline_1")};
   color: ${({ theme }) => theme.colors.grey[900]};
   margin-bottom: 12px;
-`;
-
-const LoadingText = styled.p`
-  ${({ theme }) => applyTypography(theme, "Body_2")};
-  color: ${({ theme }) => theme.colors.grey[500]};
 `;
 
 const ErrorText = styled.p`

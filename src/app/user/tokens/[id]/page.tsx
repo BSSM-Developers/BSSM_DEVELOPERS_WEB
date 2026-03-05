@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { tokenApi, type ApiTokenDetail, type ApiTokenState } from "../api";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 
 const parseTokenId = (value: string | string[] | undefined): number | null => {
   if (!value) {
@@ -143,7 +144,7 @@ export default function TokenDetailPage() {
           </HeaderActions>
         </HeaderRow>
 
-        {isLoading ? <StatusText>토큰 정보를 불러오는 중입니다.</StatusText> : null}
+        {isLoading ? <BsdevLoader label="토큰 정보를 불러오는 중입니다..." size={52} minHeight="140px" /> : null}
         {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
 
         <Section>
@@ -385,12 +386,6 @@ const EndpointValue = styled.span`
 const ActionGroup = styled.div`
     display: flex;
     gap: 8px;
-`;
-
-const StatusText = styled.p`
-    ${({ theme }) => applyTypography(theme, "Body_4")};
-    color: ${({ theme }) => theme.colors.grey[500]};
-    margin-bottom: 16px;
 `;
 
 const ErrorText = styled.p`

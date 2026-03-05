@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { TopNav } from "@/components/layout/TopNav";
+import { RouteTransitionLoader } from "@/components/common/RouteTransitionLoader";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <RootProvider>
           <TopNav />
+          <RouteTransitionLoader />
           {children}
         </RootProvider>
       </body>

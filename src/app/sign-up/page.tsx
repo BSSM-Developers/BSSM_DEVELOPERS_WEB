@@ -6,6 +6,7 @@ import { useMyProfileQuery, useUpdatePurposeMutation } from "@/app/sign-up/queri
 import { FloatingInput } from "@/components/ui/FloatingInput";
 import { useConfirm } from "@/hooks/useConfirm";
 import { getStateLabel, resolveSignUpRequestId } from "./model";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import {
   CelebrateCard,
   CelebrateDescription,
@@ -94,7 +95,7 @@ export default function SignUpPage() {
   if (isLoading) {
     return (
       <Container>
-        로딩 중...
+        <BsdevLoader label="신청 정보를 불러오는 중입니다..." fullScreen />
         {ConfirmDialog}
       </Container>
     );

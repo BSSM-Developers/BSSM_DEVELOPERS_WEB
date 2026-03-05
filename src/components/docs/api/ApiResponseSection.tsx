@@ -31,9 +31,6 @@ export function ApiResponseSection({
   return (
     <ResponseSection>
       <SectionTitle>{title}</SectionTitle>
-
-      {/* Removed traditional manual status/message edit blocks to enforce UI cleanup */}
-
       <ApiParamsSection
         title="Response Body"
         params={responseParams}

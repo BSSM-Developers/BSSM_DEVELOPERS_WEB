@@ -62,7 +62,7 @@ const Container = styled.div`
   border-bottom: 0.5px solid rgba(115, 124, 151, 0.3);
   background: white;
   width: 100%;
-  min-width: 1200px; /* 필요시 아주 작은 화면에서 깨지지 않도록 설정 */
+  min-width: 1200px;
 `;
 
 const Nav = styled.nav`

@@ -3,7 +3,7 @@ export interface ApiItem {
   title: string;
   description: string;
   tags: string[];
-  logo?: string; // URL 또는 컴포넌트 플레이스홀더
+  logo?: string;
   isHot?: boolean;
   type: "INSERT" | "UPDATE" | "DELETE" | "BSM" | "RE:MEDY" | "CUSTOM" | "ORIGINAL";
   author?: string;

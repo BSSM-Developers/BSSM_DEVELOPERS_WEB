@@ -8,7 +8,7 @@ import { LandingFeatureSection } from "./components/LandingFeatureSection";
 const landingFeatures = [
   {
     id: "feature-1",
-    title: "쉬운 문서 작성으로 문서를 작성해보세요",
+    titleLines: ["쉬운 문서 작성으로", "문서를 작성해보세요"],
     descriptionLines: [
       "BSSM Developers만의 블록형 문서 에디터를 활용하면",
       "보다 쉽게 문서를 완성할 수 있어요",
@@ -20,7 +20,7 @@ const landingFeatures = [
   },
   {
     id: "feature-2",
-    title: "깔끔한 API 문서 작성 UI가 준비 되어있어요",
+    titleLines: ["깔끔한 API 문서 작성", "UI가 준비 되어있어요"],
     descriptionLines: [
       "API 문서를 작성할 때 불편하지 않도록",
       "최대한 편안한 UI를 제공할 수 있도록 노력했어요",
@@ -32,7 +32,7 @@ const landingFeatures = [
   },
   {
     id: "feature-3",
-    title: "토큰으로 사용중인 API를 관리해요",
+    titleLines: ["토큰으로 사용중인 API를", "관리해요"],
     descriptionLines: [
       "BSSM Developers는 토큰을 발급 받아 원하는 API의",
       "사용 권한을 토큰에 부여 받아서 사용할 수 있어요",
@@ -277,7 +277,7 @@ export default function Home() {
           }}
         >
           <LandingFeatureSection
-            title={feature.title}
+            titleLines={feature.titleLines}
             descriptionLines={feature.descriptionLines}
             buttonLabel={feature.buttonLabel}
             href={feature.href}
@@ -312,7 +312,7 @@ const SnapSection = styled.section`
 const HeroSection = styled.div<{ active: boolean }>`
   width: min(1120px, calc(100% - 72px));
   margin: 0 auto;
-  padding-top: 46px;
+  padding-top: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -323,7 +323,7 @@ const HeroSection = styled.div<{ active: boolean }>`
 
   @media (max-width: 900px) {
     width: calc(100% - 40px);
-    padding-top: 22px;
+    padding-top: 0;
   }
 `;
 
@@ -381,4 +381,3 @@ const PrimaryLink = styled(Link)`
 const HeroButton = styled(PrimaryLink)`
   margin-top: 36px;
 `;
-

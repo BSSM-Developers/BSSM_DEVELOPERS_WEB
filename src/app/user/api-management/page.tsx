@@ -25,6 +25,8 @@ interface ManagedUsageItem extends ApiUsageByApiItem {
   sourceApiLabel: string;
 }
 
+type DocsPageCacheValue = Awaited<ReturnType<typeof docsApi.getPage>> | null;
+
 const isNotFoundError = (message: string): boolean => {
   return message.includes("404") || message.includes("API를 찾을 수 없습니다");
 };
@@ -68,48 +70,82 @@ const collectApiTargets = (docs: DocsItem, blocks: SidebarBlock[]): OwnedApiTarg
   );
 };
 
-const extractApiCandidatesFromDocsPage = async (target: OwnedApiTarget): Promise<string[]> => {
-  const candidates: string[] = [];
+const getCachedPageResponse = async (
+  target: OwnedApiTarget,
+  pageCache: Map<string, Promise<DocsPageCacheValue>>
+): Promise<DocsPageCacheValue> => {
+  const pageKey = `${target.docsId}:${target.pageMappedId}`;
+  const cached = pageCache.get(pageKey);
+  if (cached) {
+    return cached;
+  }
 
-  try {
-    const pageResponse = await docsApi.getPage(target.docsId, target.pageMappedId);
-    const apiBlock = pageResponse.data.docsBlocks.find((block) => {
+  const request = docsApi
+    .getPage(target.docsId, target.pageMappedId)
+    .then((response) => response)
+    .catch(() => null);
+
+  pageCache.set(pageKey, request);
+  return request;
+};
+
+const extractApiCandidatesFromDocsPage = async (
+  target: OwnedApiTarget,
+  pageCache: Map<string, Promise<DocsPageCacheValue>>,
+  candidateCache: Map<string, string[]>
+): Promise<string[]> => {
+  const cacheKey = `${target.docsId}:${target.pageMappedId}:${target.mappedId}`;
+  const cachedCandidates = candidateCache.get(cacheKey);
+  if (cachedCandidates) {
+    return cachedCandidates;
+  }
+
+  const candidates: string[] = [];
+  const pageResponse = await getCachedPageResponse(target, pageCache);
+
+  if (!pageResponse) {
+    candidateCache.set(cacheKey, candidates);
+    return candidates;
+  }
+
+  const apiBlock =
+    pageResponse.data.docsBlocks.find((block) => {
       if (block.module !== "api") {
         return false;
       }
       const candidate = block as { mappedId?: unknown };
-      if (typeof candidate.mappedId === "string" && candidate.mappedId === target.mappedId) {
-        return true;
-      }
-      return false;
+      return typeof candidate.mappedId === "string" && candidate.mappedId === target.mappedId;
     }) ?? pageResponse.data.docsBlocks.find((block) => block.module === "api");
-    if (apiBlock?.content) {
-      const parsed = JSON.parse(apiBlock.content) as { id?: unknown };
-      if (typeof parsed.id === "string") {
-        const normalized = parsed.id.trim();
-        if (normalized.length > 0) {
-          candidates.push(normalized);
-        }
+
+  if (apiBlock?.content) {
+    const parsed = JSON.parse(apiBlock.content) as { id?: unknown };
+    if (typeof parsed.id === "string") {
+      const normalized = parsed.id.trim();
+      if (normalized.length > 0) {
+        candidates.push(normalized);
       }
     }
-
-    const pageId = String(pageResponse.data.id ?? "").trim();
-    if (pageId.length > 0) {
-      candidates.push(pageId);
-    }
-  } catch {
-    return [];
   }
 
+  const pageId = String(pageResponse.data.id ?? "").trim();
+  if (pageId.length > 0) {
+    candidates.push(pageId);
+  }
+
+  candidateCache.set(cacheKey, candidates);
   return candidates;
 };
 
-async function getUsageForTarget(target: OwnedApiTarget): Promise<ManagedUsageItem[]> {
+async function getUsageForTarget(
+  target: OwnedApiTarget,
+  pageCache: Map<string, Promise<DocsPageCacheValue>>,
+  candidateCache: Map<string, string[]>
+): Promise<ManagedUsageItem[]> {
   const candidates = [
     target.apiBlockId,
     target.mappedId,
     target.docsId,
-    ...(await extractApiCandidatesFromDocsPage(target)),
+    ...(await extractApiCandidatesFromDocsPage(target, pageCache, candidateCache)),
   ].filter((value, index, array): value is string => {
     return Boolean(value) && array.indexOf(value) === index;
   });
@@ -163,23 +199,30 @@ export default function MyApiManagementPage() {
         ? originalDocs.filter((docs) => String(docs.docsId ?? "") === effectiveDocsId)
         : originalDocs;
 
-      const allTargets: OwnedApiTarget[] = [];
+      const sidebarResults = await Promise.all(
+        filteredDocs.map(async (docs) => {
+          const docsId = String(docs.docsId ?? "");
+          if (!docsId) {
+            return [] as OwnedApiTarget[];
+          }
+          try {
+            const sidebarResponse = await docsApi.getSidebar(docsId);
+            return collectApiTargets(docs, sidebarResponse.data.blocks ?? []);
+          } catch {
+            return [] as OwnedApiTarget[];
+          }
+        })
+      );
 
-      for (const docs of filteredDocs) {
-        const docsId = String(docs.docsId ?? "");
-        if (!docsId) {
-          continue;
-        }
-        try {
-          const sidebarResponse = await docsApi.getSidebar(docsId);
-          const targets = collectApiTargets(docs, sidebarResponse.data.blocks ?? []);
-          allTargets.push(...targets);
-        } catch {
-        }
-      }
+      const allTargets = sidebarResults.flat();
+      const pageCache = new Map<string, Promise<DocsPageCacheValue>>();
+      const candidateCache = new Map<string, string[]>();
 
-      const usageResults = await Promise.all(allTargets.map((target) => getUsageForTarget(target)));
-      const merged = usageResults.flat();
+      const usageResults = await Promise.allSettled(
+        allTargets.map((target) => getUsageForTarget(target, pageCache, candidateCache))
+      );
+
+      const merged = usageResults.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
       const dedup = new Map<string, ManagedUsageItem>();
 
       for (const item of merged) {
@@ -187,6 +230,11 @@ export default function MyApiManagementPage() {
         if (!dedup.has(key)) {
           dedup.set(key, item);
         }
+      }
+
+      const firstRejected = usageResults.find((result) => result.status === "rejected");
+      if (firstRejected && dedup.size === 0) {
+        throw firstRejected.reason;
       }
 
       setItems(Array.from(dedup.values()));

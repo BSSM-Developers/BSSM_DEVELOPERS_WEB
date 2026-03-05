@@ -2,12 +2,30 @@
 
 import styled from "@emotion/styled";
 import { useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
 import { ApiUseApplyModal } from "@/components/apis/ApiUseApplyModal";
 import { type ApiItem } from "./mockData";
-import { useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
-import type { DocsItem } from "@/app/docs/api";
+import { docsKeys, useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
+import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
+
+const findFirstPageMappedId = (blocks: SidebarBlock[]): string | null => {
+  for (const block of blocks) {
+    const mappedId = String(block.mappedId ?? block.id ?? "").trim();
+    if ((block.module === "api" || block.module === "default") && mappedId) {
+      return mappedId;
+    }
+    if (block.childrenItems?.length) {
+      const childMatched = findFirstPageMappedId(block.childrenItems);
+      if (childMatched) {
+        return childMatched;
+      }
+    }
+  }
+  return null;
+};
 
 const toApiType = (value?: string): ApiItem["type"] => {
   if (value === "CUSTOM" || value === "CUSTOMIZE") {
@@ -26,6 +44,8 @@ const toApiItem = (item: DocsItem): ApiItem => ({
 });
 
 export default function ApiExplorePage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
@@ -101,11 +121,38 @@ export default function ApiExplorePage() {
     setIsApplyOpen(true);
   }, []);
 
+  const handlePrefetch = useCallback(
+    async (item: ApiItem) => {
+      const docsId = String(item.id ?? "").trim();
+      if (!docsId) {
+        return;
+      }
+
+      try {
+        router.prefetch(`/docs/${docsId}`);
+        const sidebar = await queryClient.fetchQuery({
+          queryKey: docsKeys.sidebar(docsId),
+          queryFn: () => docsApi.getSidebar(docsId),
+          staleTime: 60 * 1000,
+        });
+
+        const firstPageMappedId = findFirstPageMappedId(sidebar.data.blocks ?? []);
+        if (!firstPageMappedId) {
+          return;
+        }
+        router.prefetch(`/docs/${docsId}/page/${firstPageMappedId}`);
+      } catch {
+        return;
+      }
+    },
+    [queryClient, router]
+  );
+
   const closeApplyModal = useCallback(() => {
     setIsApplyOpen(false);
   }, []);
 
-  if (isLoading || isPopularLoading) {
+  if (isLoading) {
     return (
       <PageContainer>
         <ContentWrapper>
@@ -144,6 +191,7 @@ export default function ApiExplorePage() {
               description={`${filterType} API 목록입니다`}
               items={filteredList}
               onUse={handleUseClick}
+              onPrefetch={handlePrefetch}
             />
           ) : (
             <EmptyState>검색 결과가 없습니다.</EmptyState>
@@ -151,13 +199,14 @@ export default function ApiExplorePage() {
         ) : (
           <>
             {displayPopular.length > 0 ? (
-              <ApiSection
-                title="인기 API"
-                description="최근 인기있는 API를 확인해보세요"
-                items={displayPopular}
-                onUse={handleUseClick}
-              />
-            ) : null}
+            <ApiSection
+              title="인기 API"
+              description="최근 인기있는 API를 확인해보세요"
+              items={displayPopular}
+              onUse={handleUseClick}
+              onPrefetch={handlePrefetch}
+            />
+            ) : isPopularLoading ? <EmptyState>인기 API를 불러오는 중입니다...</EmptyState> : null}
 
             {displayOriginal.length > 0 ? (
               <ApiSection
@@ -165,6 +214,7 @@ export default function ApiExplorePage() {
                 description="BSSM Developers에 등록된 최신 API를 확인해보세요"
                 items={displayOriginal}
                 onUse={handleUseClick}
+                onPrefetch={handlePrefetch}
               />
             ) : null}
 
@@ -174,6 +224,7 @@ export default function ApiExplorePage() {
                 description="BSSM Developers에서 사용자가 커스텀한 최신 API를 확인해보세요"
                 items={displayCustom}
                 onUse={handleUseClick}
+                onPrefetch={handlePrefetch}
               />
             ) : null}
 

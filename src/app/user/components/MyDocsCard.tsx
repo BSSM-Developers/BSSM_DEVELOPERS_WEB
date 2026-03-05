@@ -15,6 +15,7 @@ interface MyDocsCardProps {
   onEditInfo: () => void;
   onDelete: () => void;
   onManageUsage?: () => void;
+  onPrefetch?: () => void;
 }
 
 export function MyDocsCard({
@@ -28,6 +29,7 @@ export function MyDocsCard({
   onEditInfo,
   onDelete,
   onManageUsage,
+  onPrefetch,
 }: MyDocsCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -47,7 +49,10 @@ export function MyDocsCard({
   }, []);
 
   return (
-    <CardContainer>
+    <CardContainer
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
+    >
       <MenuContainer ref={menuRef}>
         <MenuTrigger type="button" onClick={() => setMenuOpen((prev) => !prev)}>
           ⋯

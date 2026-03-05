@@ -14,9 +14,10 @@ interface ApiCardProps {
   logo?: string;
   onExplore?: () => void;
   onUse?: () => void;
+  onPrefetch?: () => void;
 }
 
-export function ApiCard({ id, title, description, tags, type, onExplore, onUse }: ApiCardProps) {
+export function ApiCard({ id, title, description, tags, type, onExplore, onUse, onPrefetch }: ApiCardProps) {
   const router = useRouter();
 
   const handleExplore = () => {
@@ -36,7 +37,7 @@ export function ApiCard({ id, title, description, tags, type, onExplore, onUse }
   const dotType = type || tags[0];
 
   return (
-    <CardContainer>
+    <CardContainer onMouseEnter={onPrefetch} onFocus={onPrefetch}>
       <CardHeader>
         <TypeIndicator>
           <Dot type={dotType} />

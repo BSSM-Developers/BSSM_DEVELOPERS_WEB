@@ -10,9 +10,10 @@ interface ApiSectionProps {
   items: ApiItem[];
   columns?: number;
   onUse?: (item: ApiItem) => void;
+  onPrefetch?: (item: ApiItem) => void;
 }
 
-export function ApiSection({ title, description, items, columns = 4, onUse }: ApiSectionProps) {
+export function ApiSection({ title, description, items, columns = 4, onUse, onPrefetch }: ApiSectionProps) {
   return (
     <SectionContainer>
       <Header>
@@ -30,6 +31,7 @@ export function ApiSection({ title, description, items, columns = 4, onUse }: Ap
             logo={item.logo}
             type={item.type}
             onUse={onUse ? () => onUse(item) : undefined}
+            onPrefetch={onPrefetch ? () => onPrefetch(item) : undefined}
           />
         ))}
       </Grid>

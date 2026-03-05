@@ -1,6 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
+import { keyframes } from "@emotion/react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { LandingFeatureSection } from "./components/LandingFeatureSection";
@@ -102,39 +103,39 @@ export default function Home() {
                 fill="#737C97"
               />
               <g filter="url(#filter0_f_122_708)">
-                <rect x="59" y="112" width="22" height="22" fill="#737C97" />
+                <rect className="sq1" x="59" y="112" width="22" height="22" fill="#737C97" />
                 <rect x="60.5" y="113.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter1_f_122_708)">
-                <rect x="59" y="94" width="22" height="22" fill="#737C97" />
+                <rect className="sq2" x="59" y="94" width="22" height="22" fill="#737C97" />
                 <rect x="60.5" y="95.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter2_f_122_708)">
-                <rect x="59" y="76" width="22" height="22" fill="#737C97" />
+                <rect className="sq3" x="59" y="76" width="22" height="22" fill="#737C97" />
                 <rect x="60.5" y="77.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter3_f_122_708)">
-                <rect x="40" y="76" width="22" height="22" fill="#737C97" />
+                <rect className="sq4" x="40" y="76" width="22" height="22" fill="#737C97" />
                 <rect x="41.5" y="77.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter4_f_122_708)">
-                <rect x="59" y="58" width="22" height="22" fill="#737C97" />
+                <rect className="sq5" x="59" y="58" width="22" height="22" fill="#737C97" />
                 <rect x="60.5" y="59.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter5_f_122_708)">
-                <rect x="78" y="39" width="22" height="22" fill="#737C97" />
+                <rect className="sq6" x="78" y="39" width="22" height="22" fill="#737C97" />
                 <rect x="79.5" y="40.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter6_f_122_708)">
-                <rect x="97" y="20" width="22" height="22" fill="#737C97" />
+                <rect className="sq7" x="97" y="20" width="22" height="22" fill="#737C97" />
                 <rect x="98.5" y="21.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter7_f_122_708)">
-                <rect x="116" y="1" width="22" height="22" fill="#737C97" />
+                <rect className="sq8" x="116" y="1" width="22" height="22" fill="#737C97" />
                 <rect x="117.5" y="2.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <g filter="url(#filter8_f_122_708)">
-                <rect x="116" y="39" width="22" height="22" fill="#737C97" />
+                <rect className="sq9" x="116" y="39" width="22" height="22" fill="#737C97" />
                 <rect x="117.5" y="40.5" width="19" height="19" stroke="white" strokeWidth="3" />
               </g>
               <defs>
@@ -327,17 +328,113 @@ const HeroSection = styled.div<{ active: boolean }>`
   }
 `;
 
+const heroEnter = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const iconGlow = keyframes`
+  0% {
+    filter: drop-shadow(0 0 0 rgba(22, 51, 92, 0.04));
+  }
+  50% {
+    filter: drop-shadow(0 8px 22px rgba(22, 51, 92, 0.18));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgba(22, 51, 92, 0.04));
+  }
+`;
+
+const loaderBlink = keyframes`
+  0% {
+    opacity: 0.26;
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.26;
+  }
+`;
+
 const HeroIcon = styled.div`
   width: 92px;
   height: 92px;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  animation: ${heroEnter} 0.62s cubic-bezier(0.2, 0.72, 0.2, 1) forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1;
+    animation: none;
+  }
 `;
 
 const HeroSymbol = styled.svg`
   width: 92px;
   height: 92px;
+  animation: ${iconGlow} 3.2s ease-in-out 0.62s infinite;
+
+  .sq1 {
+    animation: ${loaderBlink} 3.2s linear 0.62s infinite;
+  }
+
+  .sq2 {
+    animation: ${loaderBlink} 3.2s linear 0.74s infinite;
+  }
+
+  .sq3 {
+    animation: ${loaderBlink} 3.2s linear 0.86s infinite;
+  }
+
+  .sq4 {
+    animation: ${loaderBlink} 3.2s linear 0.98s infinite;
+  }
+
+  .sq5 {
+    animation: ${loaderBlink} 3.2s linear 1.1s infinite;
+  }
+
+  .sq6 {
+    animation: ${loaderBlink} 3.2s linear 1.22s infinite;
+  }
+
+  .sq7 {
+    animation: ${loaderBlink} 3.2s linear 1.34s infinite;
+  }
+
+  .sq8 {
+    animation: ${loaderBlink} 3.2s linear 1.46s infinite;
+  }
+
+  .sq9 {
+    animation: ${loaderBlink} 3.2s linear 1.58s infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+
+    .sq1,
+    .sq2,
+    .sq3,
+    .sq4,
+    .sq5,
+    .sq6,
+    .sq7,
+    .sq8,
+    .sq9 {
+      animation: none;
+      opacity: 1;
+    }
+  }
 `;
 
 const HeroTitle = styled.h1`
@@ -348,6 +445,13 @@ const HeroTitle = styled.h1`
   font-weight: 700;
   line-height: 1.24;
   letter-spacing: -0.02em;
+  opacity: 0;
+  animation: ${heroEnter} 0.62s cubic-bezier(0.2, 0.72, 0.2, 1) 0.12s forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1;
+    animation: none;
+  }
 `;
 
 const HeroDescription = styled.p`
@@ -356,6 +460,13 @@ const HeroDescription = styled.p`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: clamp(14px, 1.6vw, 20px);
   line-height: 1.48;
+  opacity: 0;
+  animation: ${heroEnter} 0.62s cubic-bezier(0.2, 0.72, 0.2, 1) 0.22s forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1;
+    animation: none;
+  }
 `;
 
 const PrimaryLink = styled(Link)`
@@ -380,4 +491,11 @@ const PrimaryLink = styled(Link)`
 
 const HeroButton = styled(PrimaryLink)`
   margin-top: 36px;
+  opacity: 0;
+  animation: ${heroEnter} 0.62s cubic-bezier(0.2, 0.72, 0.2, 1) 0.3s forwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1;
+    animation: none;
+  }
 `;

@@ -87,6 +87,9 @@ export function SidebarItem({
     }
 
     if (node.path) {
+      if (matchesPath(node.path)) {
+        return;
+      }
       startRouteTransitionLoading();
       router.push(node.path);
       return;

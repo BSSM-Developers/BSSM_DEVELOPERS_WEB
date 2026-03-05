@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Step } from "./types";
+import { DocsRegisterType, Step } from "./types";
 
 export interface FormData {
+  docsType: DocsRegisterType;
   title: string;
   description: string;
   domain: string;
@@ -12,6 +13,7 @@ export interface FormData {
 export const useDocsForm = () => {
   const [step, setStep] = useState<Step>('INPUT');
   const [formData, setFormData] = useState<FormData>({
+    docsType: "ORIGINAL",
     title: '',
     description: '',
     domain: '',
@@ -25,7 +27,10 @@ export const useDocsForm = () => {
 
   const handleNext = () => {
     if (step === 'INPUT') {
-      if (!formData.title || !formData.domain || !formData.repository_url) {
+      if (!formData.title || !formData.description) {
+        return;
+      }
+      if (formData.docsType === "ORIGINAL" && (!formData.domain || !formData.repository_url)) {
         return;
       }
       setStep('EDITOR');

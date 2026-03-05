@@ -53,7 +53,7 @@ export const apiUseReasonApi = {
     if (cursor !== undefined) {
       params.cursor = String(cursor);
     }
-    return fetchClinet.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>(`/api/usage/by-api/${apiId}`, { params });
+    return fetchClinet.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>(`/api/use-reason/by-api/${apiId}`, { params });
   },
   getAll: async (state?: ApiUseStateFilter, cursor?: number, size: number = 20) => {
     const params: Record<string, string> = { size: String(size) };
@@ -65,10 +65,10 @@ export const apiUseReasonApi = {
     }
     return fetchClinet.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>("/api/use-reason", { params });
   },
-  approve: async (apiTokenId: number, apiUseReasonId: number) => {
+  approve: async (apiTokenId: string | number, apiUseReasonId: string | number) => {
     return fetchClinet.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/approve`, {});
   },
-  reject: async (apiTokenId: number, apiUseReasonId: number) => {
+  reject: async (apiTokenId: string | number, apiUseReasonId: string | number) => {
     return fetchClinet.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/reject`, {});
   },
 };

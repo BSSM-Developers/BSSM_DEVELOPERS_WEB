@@ -51,6 +51,30 @@ export const InputGroup = styled.div`
   flex-direction: column;
 `;
 
+export const TypeSelector = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+`;
+
+export const TypeButton = styled.button<{ selected?: boolean }>`
+  height: 46px;
+  border-radius: 10px;
+  border: 1px solid ${({ selected, theme }) => selected ? theme.colors.bssmDarkBlue : "#E5E7EB"};
+  background: ${({ selected }) => selected ? "rgba(22, 51, 92, 0.06)" : "#FFFFFF"};
+  color: ${({ selected, theme }) => selected ? theme.colors.bssmDarkBlue : "#374151"};
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.bssmDarkBlue};
+    color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  }
+`;
+
 export const CheckboxWrapper = styled.div`
   display: flex;
   align-items: center;

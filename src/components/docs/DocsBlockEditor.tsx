@@ -637,6 +637,10 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
           </MenuButton>
           {showContextMenu ? (
             <ContextMenu>
+              <ContextMenuItem onClick={() => { onAddBlock(index); setShowContextMenu(false); }}>
+                <Plus size={14} />
+                아래 블록 추가
+              </ContextMenuItem>
               <ContextMenuItem onClick={() => { onDuplicateBlock(index); setShowContextMenu(false); }}>
                 <Copy size={14} />
                 복제
@@ -648,9 +652,6 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
             </ContextMenu>
           ) : null}
         </HandleGroup>
-        <PlusButton onClick={() => onAddBlock(index)}>
-          <Plus size={16} />
-        </PlusButton>
       </Gutter>
 
       <ContentArea onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
@@ -677,7 +678,7 @@ const Gutter = styled.div`
   top: 4px;
   display: flex;
   align-items: center;
-  gap: 0px;
+  gap: 2px;
   opacity: 0;
   transition: opacity 0.2s;
   z-index: 100;
@@ -726,21 +727,6 @@ const MenuButton = styled.button<{ isActive: boolean }>`
   }
 `;
 
-const PlusButton = styled.div`
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ACB3BA;
-  cursor: pointer;
-  border-radius: 4px;
-  &:hover {
-    background: #F2F4F6;
-    color: #191F28;
-  }
-`;
-
 const ContentArea = styled.div`
   flex: 1;
   width: 100%;
@@ -755,7 +741,7 @@ const ContextMenu = styled.div`
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   padding: 4px;
-  width: 120px;
+  width: 144px;
   margin-top: 4px;
   z-index: 1000;
 `;

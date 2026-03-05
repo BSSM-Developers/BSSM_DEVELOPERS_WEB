@@ -5,9 +5,17 @@ import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useUserQuery } from "../queries";
 import { FloatingInput } from "@/components/ui/FloatingInput";
+import { useEffect, useState } from "react";
 
 export default function ProfilePage() {
   const { data: user, isLoading } = useUserQuery();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  const shouldShowLoading = !isMounted || isLoading;
 
   return (
     <Container>
@@ -17,7 +25,7 @@ export default function ProfilePage() {
         <Title>사용자 정보</Title>
         <Subtitle>나의 정보를 확인하거나 수정할 수 있어요</Subtitle>
 
-        {isLoading ? (
+        {shouldShowLoading ? (
           <LoadingText>불러오는 중...</LoadingText>
         ) : user ? (
           <ProfileForm>

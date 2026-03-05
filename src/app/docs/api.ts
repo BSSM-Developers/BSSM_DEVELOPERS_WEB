@@ -57,6 +57,8 @@ export interface DocsPageResponse {
     docsId: string;
     endpoint: string;
     docsBlocks: DocsBlock[];
+    sourceDocsId?: string;
+    sourceMappedId?: string;
   };
 }
 
@@ -65,7 +67,7 @@ export interface DocsDetailResponse {
   data: DocsItem;
 }
 
-interface CreateOriginalData {
+export interface CreateOriginalData {
   title: string;
   description: string;
   domain: string;
@@ -86,12 +88,9 @@ interface CreateOriginalData {
   }[];
 }
 
-interface CreateCustomData {
+export interface CreateCustomData {
   title: string;
   description: string;
-  domain: string;
-  repository_url: string;
-  auto_approval: boolean;
   writer_id?: number;
 }
 
@@ -128,7 +127,9 @@ export interface ReplaceDocsData {
   docs_pages: {
     id: string;
     endpoint?: string;
-    blocks: DocsPageBlockRequest[];
+    blocks?: DocsPageBlockRequest[];
+    sourceDocsId?: string;
+    sourceMappedId?: string;
   }[];
 }
 
@@ -185,8 +186,16 @@ export const docsApi = {
     params.size = String(size);
     return fetchClinet.get<DocsListResponse>("/docs/my/popular", { params });
   },
-  getSidebar: async (docsId: string) => {
-    return fetchClinet.get<SidebarResponse>(`/docs/${docsId}/sidebar`, { skipAuth: true });
+  getSidebar: async (docsId: string, usePublic: boolean = true) => {
+    if (usePublic) {
+      return fetchClinet.get<SidebarResponse>(`/docs/${docsId}/sidebar`, {
+        skipAuth: true,
+        omitCredentials: true,
+      });
+    }
+    return fetchClinet.get<SidebarResponse>(`/docs/${docsId}/sidebar`, {
+      suppressLogout: true,
+    });
   },
   getDetail: async (docsId: string) => {
     return fetchClinet.get<DocsDetailResponse>(`/docs/${docsId}`, { skipAuth: true });
@@ -209,7 +218,16 @@ export const docsApi = {
     });
   },
   getPage: async (docsId: string | number, mappedId: string) => {
-    return fetchClinet.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, { skipAuth: true });
+    return fetchClinet.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, {
+      suppressLogout: true,
+    });
+  },
+  getPublicPage: async (docsId: string | number, mappedId: string) => {
+    return fetchClinet.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, {
+      skipAuth: true,
+      suppressLogout: true,
+      omitCredentials: true,
+    });
   },
   updatePage: async (docsId: string | number, mappedId: string | number, docsBlocks: unknown[]) => {
     return fetchClinet.put<void>(`/docs/${docsId}/page/${mappedId}`, { docsBlocks });

@@ -13,7 +13,13 @@ import { createMutators, type Mutators } from "@/components/layout/sidebarUtils"
 import { useConfirm } from "@/hooks/useConfirm";
 import { findNodeById } from "@/components/layout/treeUtils";
 
-const MODULE_OPTIONS = [
+export interface SidebarModuleOption {
+  label: string;
+  module: "default" | "collapse" | "main_title" | "api";
+  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE";
+}
+
+const DEFAULT_MODULE_OPTIONS: SidebarModuleOption[] = [
   { label: "기본", module: "default" },
   { label: "메인", module: "main_title" },
   { label: "그룹", module: "collapse" },
@@ -29,6 +35,9 @@ type DocsSidebarProps = {
   items?: SidebarNode[];
   editable?: boolean;
   onChange?: (next: SidebarNode[]) => void;
+  moduleOptions?: SidebarModuleOption[];
+  onRequestAddApi?: (intent: { mode: "sibling" | "child"; targetId: string | null }) => void;
+  disableApiRename?: boolean;
 };
 
 type Node = SidebarNode & { id: string };
@@ -148,13 +157,15 @@ const SortableNode = ({
   editable,
   mutators,
   overIntent,
-  depth = 0
+  depth = 0,
+  disableApiRename = false,
 }: {
   node: Node;
   editable: boolean;
   mutators: Mutators;
   overIntent?: { id: string; mode: "sibling" | "child" } | null;
   depth?: number;
+  disableApiRename?: boolean;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
 
@@ -179,14 +190,28 @@ const SortableNode = ({
         isChildTarget={isChildTarget}
         isSiblingTarget={isSiblingTarget}
       >
-        <SidebarItem node={node} editable={editable} mutators={mutators} renderChildren={false} />
+        <SidebarItem
+          node={node}
+          editable={editable}
+          mutators={mutators}
+          renderChildren={false}
+          disableApiRename={disableApiRename}
+        />
         {isChildTarget && <ChildDropIndicator />}
         {isSiblingTarget && <SiblingDropIndicator />}
       </DropTargetWrapper>
       {node.childrenItems?.length ? (
         <SortableContext items={(node.childrenItems as Node[]).map(c => c.id)} strategy={verticalListSortingStrategy}>
           {(node.childrenItems as Node[]).map(child => (
-            <SortableNode key={child.id} node={child} editable={editable} mutators={mutators} overIntent={overIntent} depth={depth + 1} />
+            <SortableNode
+              key={child.id}
+              node={child}
+              editable={editable}
+              mutators={mutators}
+              overIntent={overIntent}
+              depth={depth + 1}
+              disableApiRename={disableApiRename}
+            />
           ))}
         </SortableContext>
       ) : null}
@@ -196,7 +221,11 @@ const SortableNode = ({
 
 export function DocsSidebar({
   items = [],
-  editable = false, onChange
+  editable = false,
+  onChange,
+  moduleOptions = DEFAULT_MODULE_OPTIONS,
+  onRequestAddApi,
+  disableApiRename = false,
 }: DocsSidebarProps) {
   const { confirm, ConfirmDialog } = useConfirm();
   const propItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
@@ -268,7 +297,13 @@ export function DocsSidebar({
     }
   }, [editable, handleKeyDown]);
 
-  const onPickModule = (opt: { label: string; module: "default" | "collapse" | "main_title" | "api"; method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE" }) => {
+  const onPickModule = (opt: SidebarModuleOption) => {
+    if (opt.module === "api" && onRequestAddApi) {
+      onRequestAddApi({ mode: picker.mode, targetId: picker.targetId });
+      closePicker();
+      return;
+    }
+
     const node: SidebarNode = { id: crypto.randomUUID(), label: opt.label, module: opt.module, childrenItems: [] };
     if (opt.method) node.method = opt.method;
     if (picker.mode === "child" && picker.targetId) {
@@ -286,7 +321,14 @@ export function DocsSidebar({
         <Nav>
           <SortableContext items={effectiveItems.map((n: Node) => n.id)}>
             {effectiveItems.map((node: Node) => (
-              <SortableNode key={node.id} node={node} editable={editable} mutators={mutators} overIntent={overIntent} />
+              <SortableNode
+                key={node.id}
+                node={node}
+                editable={editable}
+                mutators={mutators}
+                overIntent={overIntent}
+                disableApiRename={disableApiRename}
+              />
             ))}
           </SortableContext>
           {editable && (
@@ -308,6 +350,7 @@ export function DocsSidebar({
                 editable={false}
                 mutators={mutators}
                 renderChildren={false}
+                disableApiRename={disableApiRename}
               />
             </div>
           ) : null}
@@ -322,7 +365,7 @@ export function DocsSidebar({
             onClick={closePicker}
           />
           <Picker anchor={picker.anchor} onMouseDown={(e) => e.stopPropagation()}>
-            {MODULE_OPTIONS.map((opt) => (
+            {moduleOptions.map((opt) => (
               <PickerItem
                 key={opt.label}
                 onClick={() => onPickModule(opt)}

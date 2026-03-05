@@ -7,12 +7,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
 import { apiUseReasonApi, type ApiUsageByApiItem } from "@/app/apis/useReasonApi";
+import { useSearchParams } from "next/navigation";
 
 interface OwnedApiTarget {
   docsId: string;
   docsTitle: string;
   apiBlockId: string;
-  mappedId?: string;
+  mappedId: string;
+  pageMappedId: string;
   apiLabel: string;
 }
 
@@ -23,6 +25,8 @@ interface ManagedUsageItem extends ApiUsageByApiItem {
   sourceApiLabel: string;
 }
 
+type DocsPageCacheValue = Awaited<ReturnType<typeof docsApi.getPage>> | null;
+
 const isNotFoundError = (message: string): boolean => {
   return message.includes("404") || message.includes("API를 찾을 수 없습니다");
 };
@@ -30,38 +34,123 @@ const isNotFoundError = (message: string): boolean => {
 const collectApiTargets = (docs: DocsItem, blocks: SidebarBlock[]): OwnedApiTarget[] => {
   const targets: OwnedApiTarget[] = [];
 
-  const traverse = (items: SidebarBlock[]) => {
+  const traverse = (items: SidebarBlock[], currentPageMappedId?: string) => {
     for (const block of items) {
+      const mappedId = String(block.mappedId ?? block.id ?? "").trim();
+
       if (block.module === "api") {
+        const pageMappedId = currentPageMappedId || mappedId;
+        if (!pageMappedId || !mappedId) {
+          continue;
+        }
         targets.push({
           docsId: String(docs.docsId ?? ""),
           docsTitle: docs.title || "Untitled",
           apiBlockId: String(block.id ?? ""),
-          mappedId: block.mappedId,
+          mappedId,
+          pageMappedId,
           apiLabel: block.label || "이름 없는 API",
         });
       }
 
       if (block.childrenItems?.length) {
-        traverse(block.childrenItems);
+        const nextPageMappedId = block.module === "collapse" ? mappedId : currentPageMappedId;
+        traverse(block.childrenItems, nextPageMappedId);
       }
     }
   };
 
   traverse(blocks);
-  return targets.filter((target) => Boolean(target.docsId) && Boolean(target.apiBlockId));
+  return targets.filter(
+    (target) =>
+      Boolean(target.docsId) &&
+      Boolean(target.apiBlockId) &&
+      Boolean(target.mappedId) &&
+      Boolean(target.pageMappedId)
+  );
 };
 
-async function getUsageForTarget(target: OwnedApiTarget): Promise<ManagedUsageItem[]> {
-  const triedIds = new Set<string>();
+const getCachedPageResponse = async (
+  target: OwnedApiTarget,
+  pageCache: Map<string, Promise<DocsPageCacheValue>>
+): Promise<DocsPageCacheValue> => {
+  const pageKey = `${target.docsId}:${target.pageMappedId}`;
+  const cached = pageCache.get(pageKey);
+  if (cached) {
+    return cached;
+  }
 
-  const tryFetch = async (apiId: string): Promise<ManagedUsageItem[] | null> => {
-    if (!apiId || triedIds.has(apiId)) {
-      return null;
+  const request = docsApi
+    .getPage(target.docsId, target.pageMappedId)
+    .then((response) => response)
+    .catch(() => null);
+
+  pageCache.set(pageKey, request);
+  return request;
+};
+
+const extractApiCandidatesFromDocsPage = async (
+  target: OwnedApiTarget,
+  pageCache: Map<string, Promise<DocsPageCacheValue>>,
+  candidateCache: Map<string, string[]>
+): Promise<string[]> => {
+  const cacheKey = `${target.docsId}:${target.pageMappedId}:${target.mappedId}`;
+  const cachedCandidates = candidateCache.get(cacheKey);
+  if (cachedCandidates) {
+    return cachedCandidates;
+  }
+
+  const candidates: string[] = [];
+  const pageResponse = await getCachedPageResponse(target, pageCache);
+
+  if (!pageResponse) {
+    candidateCache.set(cacheKey, candidates);
+    return candidates;
+  }
+
+  const apiBlock =
+    pageResponse.data.docsBlocks.find((block) => {
+      if (block.module !== "api") {
+        return false;
+      }
+      const candidate = block as { mappedId?: unknown };
+      return typeof candidate.mappedId === "string" && candidate.mappedId === target.mappedId;
+    }) ?? pageResponse.data.docsBlocks.find((block) => block.module === "api");
+
+  if (apiBlock?.content) {
+    const parsed = JSON.parse(apiBlock.content) as { id?: unknown };
+    if (typeof parsed.id === "string") {
+      const normalized = parsed.id.trim();
+      if (normalized.length > 0) {
+        candidates.push(normalized);
+      }
     }
+  }
 
-    triedIds.add(apiId);
+  const pageId = String(pageResponse.data.id ?? "").trim();
+  if (pageId.length > 0) {
+    candidates.push(pageId);
+  }
 
+  candidateCache.set(cacheKey, candidates);
+  return candidates;
+};
+
+async function getUsageForTarget(
+  target: OwnedApiTarget,
+  pageCache: Map<string, Promise<DocsPageCacheValue>>,
+  candidateCache: Map<string, string[]>
+): Promise<ManagedUsageItem[]> {
+  const candidates = [
+    target.apiBlockId,
+    target.mappedId,
+    target.docsId,
+    ...(await extractApiCandidatesFromDocsPage(target, pageCache, candidateCache)),
+  ].filter((value, index, array): value is string => {
+    return Boolean(value) && array.indexOf(value) === index;
+  });
+
+  for (const apiId of candidates) {
     try {
       const response = await apiUseReasonApi.getUsageByApi(apiId, undefined, 50);
       const values = response.data.values ?? [];
@@ -75,32 +164,9 @@ async function getUsageForTarget(target: OwnedApiTarget): Promise<ManagedUsageIt
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (isNotFoundError(message)) {
-        return null;
+        continue;
       }
       throw error;
-    }
-  };
-
-  const byBlockId = await tryFetch(target.apiBlockId);
-  if (byBlockId) {
-    return byBlockId;
-  }
-
-  if (target.mappedId) {
-    const byMappedId = await tryFetch(target.mappedId);
-    if (byMappedId) {
-      return byMappedId;
-    }
-
-    try {
-      const page = await docsApi.getPage(target.docsId, target.mappedId);
-      const pageId = page.data.id;
-      const byPageId = await tryFetch(pageId);
-      if (byPageId) {
-        return byPageId;
-      }
-    } catch {
-      return [];
     }
   }
 
@@ -108,8 +174,12 @@ async function getUsageForTarget(target: OwnedApiTarget): Promise<ManagedUsageIt
 }
 
 export default function MyApiManagementPage() {
+  const searchParams = useSearchParams();
+  const selectedDocsIdFromQuery = searchParams.get("docsId")?.trim() || "";
   const { confirm, ConfirmDialog } = useConfirm();
   const [items, setItems] = useState<ManagedUsageItem[]>([]);
+  const [ownedOriginalDocs, setOwnedOriginalDocs] = useState<DocsItem[]>([]);
+  const [selectedDocsId, setSelectedDocsId] = useState(selectedDocsIdFromQuery);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [processingKey, setProcessingKey] = useState<string | null>(null);
@@ -121,24 +191,38 @@ export default function MyApiManagementPage() {
 
       const docsListResponse = await docsApi.getMyList({ size: 50 });
       const docsValues = docsListResponse.data.values ?? [];
+      const originalDocs = docsValues.filter((docs) => docs.type === "ORIGINAL");
+      setOwnedOriginalDocs(originalDocs);
 
-      const allTargets: OwnedApiTarget[] = [];
+      const effectiveDocsId = selectedDocsIdFromQuery || selectedDocsId;
+      const filteredDocs = effectiveDocsId
+        ? originalDocs.filter((docs) => String(docs.docsId ?? "") === effectiveDocsId)
+        : originalDocs;
 
-      for (const docs of docsValues) {
-        const docsId = String(docs.docsId ?? "");
-        if (!docsId) {
-          continue;
-        }
-        try {
-          const sidebarResponse = await docsApi.getSidebar(docsId);
-          const targets = collectApiTargets(docs, sidebarResponse.data.blocks ?? []);
-          allTargets.push(...targets);
-        } catch {
-        }
-      }
+      const sidebarResults = await Promise.all(
+        filteredDocs.map(async (docs) => {
+          const docsId = String(docs.docsId ?? "");
+          if (!docsId) {
+            return [] as OwnedApiTarget[];
+          }
+          try {
+            const sidebarResponse = await docsApi.getSidebar(docsId);
+            return collectApiTargets(docs, sidebarResponse.data.blocks ?? []);
+          } catch {
+            return [] as OwnedApiTarget[];
+          }
+        })
+      );
 
-      const usageResults = await Promise.all(allTargets.map((target) => getUsageForTarget(target)));
-      const merged = usageResults.flat();
+      const allTargets = sidebarResults.flat();
+      const pageCache = new Map<string, Promise<DocsPageCacheValue>>();
+      const candidateCache = new Map<string, string[]>();
+
+      const usageResults = await Promise.allSettled(
+        allTargets.map((target) => getUsageForTarget(target, pageCache, candidateCache))
+      );
+
+      const merged = usageResults.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
       const dedup = new Map<string, ManagedUsageItem>();
 
       for (const item of merged) {
@@ -146,6 +230,11 @@ export default function MyApiManagementPage() {
         if (!dedup.has(key)) {
           dedup.set(key, item);
         }
+      }
+
+      const firstRejected = usageResults.find((result) => result.status === "rejected");
+      if (firstRejected && dedup.size === 0) {
+        throw firstRejected.reason;
       }
 
       setItems(Array.from(dedup.values()));
@@ -156,17 +245,23 @@ export default function MyApiManagementPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedDocsId, selectedDocsIdFromQuery]);
 
   useEffect(() => {
     void loadItems();
   }, [loadItems]);
 
-  const handleDecision = useCallback(async (item: ManagedUsageItem, action: "approve" | "reject") => {
-    const tokenId = Number(item.apiTokenId);
-    const reasonId = Number(item.apiUseReasonId);
+  useEffect(() => {
+    if (selectedDocsIdFromQuery) {
+      setSelectedDocsId(selectedDocsIdFromQuery);
+    }
+  }, [selectedDocsIdFromQuery]);
 
-    if (!Number.isFinite(tokenId) || !Number.isFinite(reasonId)) {
+  const handleDecision = useCallback(async (item: ManagedUsageItem, action: "approve" | "reject") => {
+    const apiTargetId = String(item.apiTokenId ?? item.queryApiId ?? item.apiId ?? "").trim();
+    const reasonId = String(item.apiUseReasonId ?? "").trim();
+
+    if (!apiTargetId || !reasonId) {
       await confirm({
         title: "처리 실패",
         message: "요청 식별자 정보가 올바르지 않습니다.",
@@ -192,9 +287,9 @@ export default function MyApiManagementPage() {
     try {
       setProcessingKey(processing);
       if (action === "approve") {
-        await apiUseReasonApi.approve(tokenId, reasonId);
+        await apiUseReasonApi.approve(apiTargetId, reasonId);
       } else {
-        await apiUseReasonApi.reject(tokenId, reasonId);
+        await apiUseReasonApi.reject(apiTargetId, reasonId);
       }
 
       await confirm({
@@ -230,12 +325,28 @@ export default function MyApiManagementPage() {
         <HeaderRow>
           <TitleSection>
             <Title>내 API 관리</Title>
-            <Subtitle>요청된 API 사용 신청을 확인하고 승인/거절할 수 있어요</Subtitle>
+            <Subtitle>내 ORIGINAL API 문서의 사용 신청을 확인하고 승인/거절할 수 있어요</Subtitle>
           </TitleSection>
           <RefreshButton type="button" onClick={() => void loadItems()} disabled={isLoading}>
             새로고침
           </RefreshButton>
         </HeaderRow>
+        <FilterRow>
+          <FilterLabel>문서 선택</FilterLabel>
+          <DocsSelect
+            value={selectedDocsId}
+            onChange={(event) => {
+              setSelectedDocsId(event.target.value);
+            }}
+          >
+            <option value="">전체 ORIGINAL 문서</option>
+            {ownedOriginalDocs.map((docs) => (
+              <option key={String(docs.docsId ?? "")} value={String(docs.docsId ?? "")}>
+                {docs.title}
+              </option>
+            ))}
+          </DocsSelect>
+        </FilterRow>
 
         {isLoading ? <StatusText>사용 신청 목록을 불러오는 중입니다.</StatusText> : null}
         {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
@@ -353,6 +464,31 @@ const RefreshButton = styled.button`
     opacity: 0.6;
     cursor: not-allowed;
   }
+`;
+
+const FilterRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+`;
+
+const FilterLabel = styled.span`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[600]};
+  font-weight: 700;
+`;
+
+const DocsSelect = styled.select`
+  height: 40px;
+  min-width: 260px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  background: #ffffff;
+  color: ${({ theme }) => theme.colors.grey[800]};
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-weight: 600;
+  padding: 0 12px;
 `;
 
 const RequestList = styled.div`

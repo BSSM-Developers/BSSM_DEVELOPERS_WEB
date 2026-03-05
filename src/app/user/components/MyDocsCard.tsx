@@ -14,6 +14,8 @@ interface MyDocsCardProps {
   onEditDocs: () => void;
   onEditInfo: () => void;
   onDelete: () => void;
+  onManageUsage?: () => void;
+  onPrefetch?: () => void;
 }
 
 export function MyDocsCard({
@@ -26,6 +28,8 @@ export function MyDocsCard({
   onEditDocs,
   onEditInfo,
   onDelete,
+  onManageUsage,
+  onPrefetch,
 }: MyDocsCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -45,7 +49,10 @@ export function MyDocsCard({
   }, []);
 
   return (
-    <CardContainer>
+    <CardContainer
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
+    >
       <MenuContainer ref={menuRef}>
         <MenuTrigger type="button" onClick={() => setMenuOpen((prev) => !prev)}>
           ⋯
@@ -103,6 +110,11 @@ export function MyDocsCard({
           <ActionButton type="button" onClick={onEditDocs} primary>
             수정하기
           </ActionButton>
+          {type === "ORIGINAL" && onManageUsage ? (
+            <ActionButton type="button" onClick={onManageUsage}>
+              신청 관리
+            </ActionButton>
+          ) : null}
         </ButtonGroup>
       </CardFooter>
     </CardContainer>

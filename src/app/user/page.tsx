@@ -13,7 +13,7 @@ import { MyDocsCard } from "./components/MyDocsCard";
 import { MyDocsEditModal, type MyDocsEditFormValue } from "./components/MyDocsEditModal";
 
 const normalizeDocType = (value?: string): "ORIGINAL" | "CUSTOM" => {
-  if (value === "CUSTOM") {
+  if (value === "CUSTOM" || value === "CUSTOMIZE") {
     return "CUSTOM";
   }
   return "ORIGINAL";
@@ -118,7 +118,37 @@ export default function MyDocsPage() {
       if (!docsId) {
         return;
       }
-      router.push(`/docs/${docsId}/edit`);
+      const normalizedType = normalizeDocType(doc.type);
+      const title = encodeURIComponent(doc.title || "");
+      router.push(`/docs/${docsId}/edit?type=${normalizedType}&title=${title}`);
+    },
+    [router]
+  );
+
+  const handleOpenUsageManagement = useCallback(
+    (doc: DocsItem) => {
+      const docsId = getDocsId(doc);
+      if (!docsId) {
+        return;
+      }
+      router.push(`/user/api-management?docsId=${encodeURIComponent(docsId)}`);
+    },
+    [router]
+  );
+
+  const handlePrefetchDocRoutes = useCallback(
+    (doc: DocsItem) => {
+      const docsId = getDocsId(doc);
+      if (!docsId) {
+        return;
+      }
+      router.prefetch(`/docs/${docsId}`);
+      const normalizedType = normalizeDocType(doc.type);
+      const title = encodeURIComponent(doc.title || "");
+      router.prefetch(`/docs/${docsId}/edit?type=${normalizedType}&title=${title}`);
+      if (normalizedType === "ORIGINAL") {
+        router.prefetch(`/user/api-management?docsId=${encodeURIComponent(docsId)}`);
+      }
     },
     [router]
   );
@@ -270,6 +300,8 @@ export default function MyDocsPage() {
                     onEditDocs={() => handleOpenDocsEditor(doc)}
                     onEditInfo={() => handleOpenEdit(doc)}
                     onDelete={() => void handleDelete(doc)}
+                    onManageUsage={normalizeDocType(doc.type) === "ORIGINAL" ? () => handleOpenUsageManagement(doc) : undefined}
+                    onPrefetch={() => handlePrefetchDocRoutes(doc)}
                   />
                 );
               })}

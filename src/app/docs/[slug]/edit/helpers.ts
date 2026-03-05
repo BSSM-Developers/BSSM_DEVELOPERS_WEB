@@ -19,6 +19,7 @@ export interface EditableDocsPageBlock {
 export interface PageTarget {
   id: string;
   mappedId: string;
+  pageMappedId: string;
   label: string;
   module?: SidebarNode["module"];
   method?: HttpMethod;
@@ -36,6 +37,11 @@ export interface InitialSnapshot {
   meta: MetaFormValue;
   sidebarSignature: string;
   pageSignatureByMappedId: Record<string, string>;
+}
+
+export interface SourcePageRef {
+  sourceDocsId: string;
+  sourceMappedId: string;
 }
 
 const parseApiDataFromContent = (content?: string): ApiDoc | null => {
@@ -205,12 +211,15 @@ export const toEditableSidebarBlocks = (blocks: SidebarBlock[]): DocsSideBarBloc
 export const collectPageTargets = (blocks: DocsSideBarBlockRequest[]): PageTarget[] => {
   const targets: PageTarget[] = [];
 
-  const walk = (items: DocsSideBarBlockRequest[]) => {
+  const walk = (items: DocsSideBarBlockRequest[], currentPageMappedId?: string) => {
     for (const item of items) {
       if (item.module === "default" || item.module === "api") {
+        const pageMappedId =
+          item.module === "api" ? currentPageMappedId || item.id : item.id;
         targets.push({
           id: item.id,
           mappedId: item.id,
+          pageMappedId,
           label: item.label,
           module: item.module,
           method: item.method,
@@ -218,7 +227,8 @@ export const collectPageTargets = (blocks: DocsSideBarBlockRequest[]): PageTarge
       }
 
       if (item.childrenItems && item.childrenItems.length > 0) {
-        walk(item.childrenItems);
+        const nextPageMappedId = item.module === "collapse" ? item.id : currentPageMappedId;
+        walk(item.childrenItems, nextPageMappedId);
       }
     }
   };
@@ -343,6 +353,16 @@ export const buildPageSignature = (blocks: DocsBlock[]): string => {
   return JSON.stringify(toDocsPageBlockRequests(blocks));
 };
 
+export const buildPageSignatureWithSource = (blocks: DocsBlock[], sourceRef?: SourcePageRef): string => {
+  if (sourceRef) {
+    return JSON.stringify({
+      sourceDocsId: sourceRef.sourceDocsId,
+      sourceMappedId: sourceRef.sourceMappedId,
+    });
+  }
+  return buildPageSignature(blocks);
+};
+
 export const sidebarBlocksToNodes = (blocks: SidebarBlock[]): SidebarNode[] => {
   return blocks.map((block) => ({
     id: block.mappedId || block.id,
@@ -373,19 +393,23 @@ export const buildSidebarSignature = (nodes: SidebarNode[]): string => {
 export const collectPageTargetsFromSidebar = (nodes: SidebarNode[]): PageTarget[] => {
   const targets: PageTarget[] = [];
 
-  const walk = (items: SidebarNode[]) => {
+  const walk = (items: SidebarNode[], currentPageMappedId?: string) => {
     for (const item of items) {
       if (item.module === "default" || item.module === "api") {
+        const pageMappedId =
+          item.module === "api" ? currentPageMappedId || item.id : item.id;
         targets.push({
           id: item.id,
           mappedId: item.id,
+          pageMappedId,
           label: item.label,
           module: item.module,
           method: item.method,
         });
       }
       if (item.childrenItems && item.childrenItems.length > 0) {
-        walk(item.childrenItems);
+        const nextPageMappedId = item.module === "collapse" ? item.id : currentPageMappedId;
+        walk(item.childrenItems, nextPageMappedId);
       }
     }
   };

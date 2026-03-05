@@ -1,6 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { docsApi } from "./api";
 
+const DEFAULT_STALE_TIME = 60 * 1000;
+const DEFAULT_GC_TIME = 10 * 60 * 1000;
+
 export const docsKeys = {
   all: ["docs"] as const,
   list: () => [...docsKeys.all, "list"] as const,
@@ -16,10 +19,14 @@ export const docsKeys = {
     [...docsKeys.all, "page", id, mappedId] as const,
 };
 
-export function useDocsListQuery() {
+export function useDocsListQuery(enabled: boolean = true) {
   return useQuery({
     queryKey: docsKeys.list(),
     queryFn: () => docsApi.getList(),
+    enabled,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -31,6 +38,9 @@ export function useDocsMyListQuery(
     queryKey: docsKeys.myList(params.type, params.cursor, params.size),
     queryFn: () => docsApi.getMyList(params),
     enabled,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -42,6 +52,9 @@ export function useDocsPopularListQuery(
     queryKey: docsKeys.popularList(params.type, params.cursor, params.size, params.tokenCount),
     queryFn: () => docsApi.getPopularList(params),
     enabled,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -53,6 +66,9 @@ export function useDocsMyPopularListQuery(
     queryKey: docsKeys.myPopularList(params.type, params.cursor, params.size, params.tokenCount),
     queryFn: () => docsApi.getMyPopularList(params),
     enabled,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -61,6 +77,9 @@ export function useDocsDetailQuery(id: string) {
     queryKey: docsKeys.detail(id),
     queryFn: () => docsApi.getDetail(id),
     enabled: !!id,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -69,6 +88,9 @@ export function useDocsSidebarQuery(id: string) {
     queryKey: docsKeys.sidebar(id),
     queryFn: () => docsApi.getSidebar(id),
     enabled: !!id,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -77,6 +99,9 @@ export function useDocsPageQuery(id: string, mappedId: string) {
     queryKey: docsKeys.page(id, mappedId),
     queryFn: () => docsApi.getPage(id, mappedId),
     enabled: !!id && !!mappedId,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
+    refetchOnWindowFocus: false,
   });
 }
 

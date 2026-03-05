@@ -44,10 +44,18 @@ export default function DocsRegisterPage() {
     restoreEditorState
   } = useDocsEditor(step, formData.title);
 
-  const { loading, handleSubmit: submitDocs } = useDocsSubmit(confirm);
+  const { loading, handleSubmit: submitDocs, handleSubmitCustom } = useDocsSubmit(confirm);
 
   const handleNextStep = async () => {
     if (step === 'INPUT') {
+      if (formData.docsType === "CUSTOM") {
+        if (!formData.title.trim() || !formData.description.trim()) {
+          return;
+        }
+        localStorage.removeItem('docs-register-draft');
+        await handleSubmitCustom(formData);
+        return;
+      }
       handleFormNext();
     } else if (step === 'EDITOR') {
       saveCurrentBlock();
@@ -143,7 +151,14 @@ export default function DocsRegisterPage() {
       try {
         const draft = JSON.parse(draftStr);
         setStep(draft.step);
-        setFullFormData(draft.formData);
+        setFullFormData({
+          docsType: draft.formData?.docsType === "CUSTOM" ? "CUSTOM" : "ORIGINAL",
+          title: draft.formData?.title ?? "",
+          description: draft.formData?.description ?? "",
+          domain: draft.formData?.domain ?? "",
+          repository_url: draft.formData?.repository_url ?? "",
+          auto_approval: Boolean(draft.formData?.auto_approval),
+        });
         restoreEditorState(draft.docsBlocks, draft.sidebarItems, draft.contentMap);
         if (draft.selectedId) {
           useDocsStore.setState({ selected: draft.selectedId });

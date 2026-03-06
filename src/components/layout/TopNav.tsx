@@ -22,8 +22,24 @@ export function TopNav() {
 
   useEffect(() => {
     setIsClient(true);
-    tokenManager.initializeRefreshCycle();
+    void tokenManager.initializeRefreshCycle();
   }, []);
+
+  useEffect(() => {
+    if (!isClient) {
+      return;
+    }
+
+    const handleTokenChanged = () => {
+      setIsLoggedIn(!!tokenManager.getAccessToken());
+    };
+
+    handleTokenChanged();
+    window.addEventListener("auth-token-changed", handleTokenChanged);
+    return () => {
+      window.removeEventListener("auth-token-changed", handleTokenChanged);
+    };
+  }, [isClient]);
 
   useEffect(() => {
     if (!isClient) return;

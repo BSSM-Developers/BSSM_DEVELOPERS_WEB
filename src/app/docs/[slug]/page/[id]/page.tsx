@@ -2,14 +2,19 @@
 
 import styled from "@emotion/styled";
 import { useParams } from "next/navigation";
+import dynamic from "next/dynamic";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
-import { ApiUseApplyModal } from "@/components/apis/ApiUseApplyModal";
 import { useDocsPageQuery, useDocsSidebarQuery } from "@/app/docs/queries";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 import { SidebarBlock } from "@/app/docs/api";
 import { useCallback, useEffect, useState } from "react";
 import { useDocsStore } from "@/store/docsStore";
+
+const ApiUseApplyModal = dynamic(
+  () => import("@/components/apis/ApiUseApplyModal").then((module) => module.ApiUseApplyModal),
+  { ssr: false }
+);
 
 export default function DocsPageDetail() {
   const params = useParams();
@@ -91,13 +96,15 @@ export default function DocsPageDetail() {
         사용 신청
       </ApplyButton>
 
-      <ApiUseApplyModal
-        isOpen={isApplyOpen}
-        docsId={slug || null}
-        docsTitle={projectTitle}
-        defaultMappedId={id}
-        onClose={closeApplyModal}
-      />
+      {isApplyOpen ? (
+        <ApiUseApplyModal
+          isOpen={isApplyOpen}
+          docsId={slug || null}
+          docsTitle={projectTitle}
+          defaultMappedId={id}
+          onClose={closeApplyModal}
+        />
+      ) : null}
     </>
   );
 }

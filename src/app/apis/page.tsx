@@ -3,13 +3,18 @@
 import styled from "@emotion/styled";
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
-import { ApiUseApplyModal } from "@/components/apis/ApiUseApplyModal";
 import { type ApiItem } from "./mockData";
 import { docsKeys, useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
+
+const ApiUseApplyModal = dynamic(
+  () => import("@/components/apis/ApiUseApplyModal").then((module) => module.ApiUseApplyModal),
+  { ssr: false }
+);
 
 const findFirstPageMappedId = (blocks: SidebarBlock[]): string | null => {
   for (const block of blocks) {
@@ -236,12 +241,14 @@ export default function ApiExplorePage() {
 
       </ContentWrapper>
 
-      <ApiUseApplyModal
-        isOpen={isApplyOpen}
-        docsId={selectedApi?.id ?? null}
-        docsTitle={selectedApi?.title}
-        onClose={closeApplyModal}
-      />
+      {isApplyOpen ? (
+        <ApiUseApplyModal
+          isOpen={isApplyOpen}
+          docsId={selectedApi?.id ?? null}
+          docsTitle={selectedApi?.title}
+          onClose={closeApplyModal}
+        />
+      ) : null}
     </PageContainer>
   );
 }

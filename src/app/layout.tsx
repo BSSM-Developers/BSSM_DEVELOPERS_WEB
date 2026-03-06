@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { RootProvider } from "@/providers/RootProvider";
 
@@ -26,7 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning>
         <RootProvider>
           <TopNav />
-          <RouteTransitionLoader />
+          <Suspense fallback={null}>
+            <RouteTransitionLoader />
+          </Suspense>
           {children}
         </RootProvider>
       </body>

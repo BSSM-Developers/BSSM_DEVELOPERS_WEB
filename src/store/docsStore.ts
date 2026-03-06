@@ -33,6 +33,12 @@ export const useDocsStore = create<DocsStoreState>()(
     }),
     {
       name: "docs-storage",
+      version: 1,
+      partialize: (state) => ({
+        selected: state.selected,
+        docsData: state.docsData,
+        apiData: state.apiData,
+      }),
     }
   )
 );

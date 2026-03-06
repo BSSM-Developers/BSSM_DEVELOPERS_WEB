@@ -6,6 +6,7 @@ import { docsApi, type SidebarBlock } from "@/app/docs/api";
 import { apiUseReasonApi } from "@/app/apis/useReasonApi";
 import { tokenApi, type ApiTokenListItem } from "@/app/user/tokens/api";
 import { useConfirm } from "@/hooks/useConfirm";
+import { useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -59,22 +60,51 @@ export function ApiUseApplyModal({
   onSuccess,
 }: ApiUseApplyModalProps) {
   const { confirm, ConfirmDialog } = useConfirm();
-  const [tokens, setTokens] = useState<ApiTokenListItem[]>([]);
-  const [apiTargets, setApiTargets] = useState<ApiUseTarget[]>([]);
   const [selectedTokenId, setSelectedTokenId] = useState("");
   const [selectedApiId, setSelectedApiId] = useState("");
   const [apiUseReason, setApiUseReason] = useState("");
-  const [tokenError, setTokenError] = useState("");
-  const [apiTargetError, setApiTargetError] = useState("");
   const [submitError, setSubmitError] = useState("");
-  const [isTokensLoading, setIsTokensLoading] = useState(false);
-  const [isTargetsLoading, setIsTargetsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTokenMenuOpen, setIsTokenMenuOpen] = useState(false);
   const [isApiMenuOpen, setIsApiMenuOpen] = useState(false);
 
   const tokenMenuRef = useRef<HTMLDivElement>(null);
   const apiMenuRef = useRef<HTMLDivElement>(null);
+
+  const tokensQuery = useQuery({
+    queryKey: ["api-use-apply-modal", "tokens"],
+    queryFn: async () => {
+      const response = await tokenApi.getList(undefined, 50);
+      return response.values;
+    },
+    enabled: isOpen,
+    staleTime: 60 * 1000,
+  });
+
+  const apiTargetsQuery = useQuery({
+    queryKey: ["api-use-apply-modal", "targets", docsId],
+    queryFn: async () => {
+      if (!docsId) {
+        return [];
+      }
+      const response = await docsApi.getSidebar(docsId);
+      return collectApiTargets(response.data.blocks || []);
+    },
+    enabled: isOpen && !!docsId,
+    staleTime: 60 * 1000,
+  });
+
+  const tokens: ApiTokenListItem[] = useMemo(() => tokensQuery.data ?? [], [tokensQuery.data]);
+  const apiTargets: ApiUseTarget[] = useMemo(() => apiTargetsQuery.data ?? [], [apiTargetsQuery.data]);
+  const isTokensLoading = tokensQuery.isLoading;
+  const isTargetsLoading = apiTargetsQuery.isLoading;
+  const tokenError = tokensQuery.error instanceof Error ? tokensQuery.error.message : "";
+  const apiTargetError =
+    apiTargetsQuery.error instanceof Error
+      ? apiTargetsQuery.error.message
+      : !isTargetsLoading && isOpen && Boolean(docsId) && apiTargets.length === 0
+        ? "신청 가능한 API 항목이 없습니다."
+        : "";
 
   const selectedToken = useMemo(
     () => tokens.find((token) => String(token.apiTokenId) === selectedTokenId) ?? null,
@@ -96,57 +126,7 @@ export function ApiUseApplyModal({
     setSelectedApiId("");
     setApiUseReason("");
     setSubmitError("");
-    setTokenError("");
-    setApiTargetError("");
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const loadTokens = async () => {
-      try {
-        setIsTokensLoading(true);
-        const response = await tokenApi.getList(undefined, 50);
-        setTokens(response.values);
-      } catch (error) {
-        setTokenError(error instanceof Error ? error.message : "토큰 목록을 불러오지 못했습니다.");
-      } finally {
-        setIsTokensLoading(false);
-      }
-    };
-
-    void loadTokens();
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen || !docsId) {
-      setApiTargets([]);
-      return;
-    }
-
-    const loadApiTargets = async () => {
-      try {
-        setIsTargetsLoading(true);
-        const response = await docsApi.getSidebar(docsId);
-        const targets = collectApiTargets(response.data.blocks || []);
-        setApiTargets(targets);
-        if (targets.length === 0) {
-          setApiTargetError("신청 가능한 API 항목이 없습니다.");
-        } else {
-          setApiTargetError("");
-        }
-      } catch (error) {
-        setApiTargets([]);
-        setApiTargetError(error instanceof Error ? error.message : "API 목록을 불러오지 못했습니다.");
-      } finally {
-        setIsTargetsLoading(false);
-      }
-    };
-
-    void loadApiTargets();
-  }, [docsId, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {

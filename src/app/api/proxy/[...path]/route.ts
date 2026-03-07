@@ -35,9 +35,12 @@ const extractCookieValue = (request: NextRequest, key: string): string | null =>
   if (rawCookieHeader) {
     const rawPairs = parseCookieHeader(rawCookieHeader);
     const matched = rawPairs.filter((item) => item.name === key);
-    const latest = matched.at(-1)?.value;
-    if (latest) {
-      return latest;
+    if (matched.length > 0) {
+      const nonEmpty = matched.find((item) => item.value.length > 0);
+      const selected = nonEmpty ?? matched[0];
+      if (selected?.value) {
+        return selected.value;
+      }
     }
   }
 
@@ -52,6 +55,7 @@ const extractCookieValue = (request: NextRequest, key: string): string | null =>
 const buildForwardHeaders = (request: NextRequest, path: string): Headers => {
   const headers = new Headers();
   const isRefreshPath = path === "auth/refresh" || path.startsWith("auth/refresh/");
+  const isSignUpPath = path === "signup" || path === "signup/me" || path.startsWith("signup/");
 
   for (const key of FORWARD_HEADER_KEYS) {
     const value = request.headers.get(key);
@@ -65,6 +69,14 @@ const buildForwardHeaders = (request: NextRequest, path: string): Headers => {
     const refreshToken = extractCookieValue(request, "refresh_token");
     if (refreshToken) {
       headers.set("cookie", `refresh_token=${refreshToken}`);
+    }
+    return headers;
+  }
+
+  if (isSignUpPath) {
+    const signupToken = extractCookieValue(request, "signup_token");
+    if (signupToken) {
+      headers.set("cookie", `signup_token=${signupToken}`);
     }
     return headers;
   }
@@ -86,6 +98,18 @@ const buildForwardHeaders = (request: NextRequest, path: string): Headers => {
 
 const normalizeSetCookie = (cookie: string): string => {
   return cookie.replace(/;\s*Domain=[^;]*/gi, "");
+};
+
+const rewriteSignupCookiePath = (cookie: string): string => {
+  if (!cookie.toLowerCase().startsWith("signup_token=")) {
+    return cookie;
+  }
+
+  if (/;\s*Path=/i.test(cookie)) {
+    return cookie.replace(/;\s*Path=[^;]*/i, "; Path=/api/proxy/signup");
+  }
+
+  return `${cookie}; Path=/api/proxy/signup`;
 };
 
 const splitSetCookieHeader = (headerValue: string): string[] => {
@@ -175,7 +199,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 async function handleProxy(request: NextRequest, params: { path: string[] }) {
   const path = params.path.join("/");
   const isRefreshPath = path === "auth/refresh" || path.startsWith("auth/refresh/");
-  const isSignUpPath = path === "signup" || path === "signup/me" || path.startsWith("signup/");
   const query = request.nextUrl.search;
   const normalizedBaseUrl = BACKEND_URL.endsWith("/") ? BACKEND_URL.slice(0, -1) : BACKEND_URL;
   const targetUrl = `${normalizedBaseUrl}/${path}${query}`;
@@ -202,14 +225,16 @@ async function handleProxy(request: NextRequest, params: { path: string[] }) {
     const setCookies = extractSetCookies(backendResponse.headers);
 
     for (const cookie of setCookies) {
-      responseHeaders.append("set-cookie", normalizeSetCookie(cookie));
+      const normalizedCookie = normalizeSetCookie(cookie);
+      if (isRefreshPath && normalizedCookie.toLowerCase().startsWith("signup_token=")) {
+        continue;
+      }
+      const finalCookie = rewriteSignupCookiePath(normalizedCookie);
+      responseHeaders.append("set-cookie", finalCookie);
     }
 
-    if (isRefreshPath || !isSignUpPath) {
-      responseHeaders.append(
-        "set-cookie",
-        "signup_token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None"
-      );
+    if (isRefreshPath) {
+      responseHeaders.append("set-cookie", "signup_token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None");
     }
 
     return new NextResponse(backendResponse.body, {

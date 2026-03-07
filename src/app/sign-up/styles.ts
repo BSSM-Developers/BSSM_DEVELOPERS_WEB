@@ -130,15 +130,16 @@ export const Form = styled.form`
 `;
 
 export const SubmitButton = styled.button`
-  height: 48px;
-  padding: 0 26px;
-  width: fit-content;
+  width: 200px;
+  height: 56px;
+  padding: 0;
+  align-self: center;
   background-color: ${({ theme }) => theme.colors.bssmDarkBlue};
   color: white;
   border: none;
-  border-radius: 10px;
-  ${({ theme }) => applyTypography(theme, "Body_2")};
-  font-weight: 700;
+  border-radius: 4px;
+  ${({ theme }) => applyTypography(theme, "Headline_2")};
+  font-size: 20px;
   cursor: pointer;
   transition: filter 0.2s;
 
@@ -150,6 +151,115 @@ export const SubmitButton = styled.button`
     opacity: 0.5;
     cursor: not-allowed;
   }
+`;
+
+export const FormCard = styled.section`
+  width: 100%;
+  max-width: 760px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  border-radius: 16px;
+  background: white;
+  padding: 28px 24px;
+`;
+
+export const SingleForm = styled.form`
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 96px;
+`;
+
+export const StatusCard = styled.section`
+  width: 100%;
+  max-width: 760px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  border-radius: 16px;
+  background: white;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+export const StatusItem = styled.div`
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  border-radius: 10px;
+  background: ${({ theme }) => theme.colors.grey[50]};
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+export const StatusItemLabel = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[600]};
+  margin: 0;
+`;
+
+export const StatusItemValue = styled.div`
+  ${({ theme }) => applyTypography(theme, "Body_2")};
+  color: ${({ theme }) => theme.colors.grey[900]};
+  margin: 0;
+  word-break: break-word;
+`;
+
+export const ActionButton = styled.button`
+  height: 44px;
+  padding: 0 18px;
+  width: fit-content;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  background: white;
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  ${({ theme }) => applyTypography(theme, "Body_3")};
+  font-weight: 700;
+  cursor: pointer;
+`;
+
+export const EmptyMessage = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_2")};
+  color: ${({ theme }) => theme.colors.grey[600]};
+  margin: 0;
+`;
+
+export const RetryButton = styled.button`
+  height: 44px;
+  padding: 0 18px;
+  width: fit-content;
+  border-radius: 10px;
+  border: none;
+  background: ${({ theme }) => theme.colors.bssmDarkBlue};
+  color: white;
+  ${({ theme }) => applyTypography(theme, "Body_3")};
+  font-weight: 700;
+  cursor: pointer;
+`;
+
+export const FormOnlyCenter = styled.div`
+  width: 100%;
+  min-height: calc(100vh - 69px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+`;
+
+export const FormOnlyWrap = styled.div`
+  width: 100%;
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 64px;
+  transform: translateY(-32px);
+`;
+
+export const FormOnlyHeading = styled.h1`
+  ${({ theme }) => applyTypography(theme, "Headline_1")};
+  color: ${({ theme }) => theme.colors.grey[900]};
+  text-align: center;
 `;
 
 const popIn = keyframes`

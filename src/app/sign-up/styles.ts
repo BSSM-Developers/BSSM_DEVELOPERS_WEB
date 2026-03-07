@@ -129,30 +129,6 @@ export const Form = styled.form`
   gap: 24px;
 `;
 
-export const SubmitButton = styled.button`
-  width: 200px;
-  height: 56px;
-  padding: 0;
-  align-self: center;
-  background-color: ${({ theme }) => theme.colors.bssmDarkBlue};
-  color: white;
-  border: none;
-  border-radius: 4px;
-  ${({ theme }) => applyTypography(theme, "Headline_2")};
-  font-size: 20px;
-  cursor: pointer;
-  transition: filter 0.2s;
-
-  &:hover:not(:disabled) {
-    filter: brightness(1.06);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
 export const FormCard = styled.section`
   width: 100%;
   max-width: 760px;
@@ -160,14 +136,6 @@ export const FormCard = styled.section`
   border-radius: 16px;
   background: white;
   padding: 28px 24px;
-`;
-
-export const SingleForm = styled.form`
-  width: 100%;
-  max-width: 1000px;
-  display: flex;
-  flex-direction: column;
-  gap: 96px;
 `;
 
 export const StatusCard = styled.section`
@@ -244,22 +212,6 @@ export const FormOnlyCenter = styled.div`
   align-items: center;
   justify-content: center;
   padding: 24px;
-`;
-
-export const FormOnlyWrap = styled.div`
-  width: 100%;
-  max-width: 1080px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 64px;
-  transform: translateY(-32px);
-`;
-
-export const FormOnlyHeading = styled.h1`
-  ${({ theme }) => applyTypography(theme, "Headline_1")};
-  color: ${({ theme }) => theme.colors.grey[900]};
-  text-align: center;
 `;
 
 const popIn = keyframes`

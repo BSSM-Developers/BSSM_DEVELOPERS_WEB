@@ -10,13 +10,17 @@ interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement>
 export const FloatingInput = ({ label, value, onChange, ...props }: FloatingInputProps) => {
   const [focused, setFocused] = useState(false);
   const inputValue = value?.toString() || "";
+  const showFloatingLabel = focused || inputValue.length > 0;
+  const inputPlaceholder = showFloatingLabel ? props.placeholder : undefined;
 
   return (
     <InputGroup>
-      <Label active={focused || !!inputValue}>{label}</Label>
+      <Label active={showFloatingLabel}>{label}</Label>
       <Input
+        {...props}
         value={inputValue}
         onChange={onChange}
+        placeholder={inputPlaceholder}
         onFocus={(e) => {
           setFocused(true);
           props.onFocus?.(e);
@@ -25,7 +29,6 @@ export const FloatingInput = ({ label, value, onChange, ...props }: FloatingInpu
           setFocused(false);
           props.onBlur?.(e);
         }}
-        {...props}
       />
     </InputGroup>
   );

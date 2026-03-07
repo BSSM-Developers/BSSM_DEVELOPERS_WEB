@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useMyProfileQuery, useUpdatePurposeMutation } from "@/app/sign-up/queries";
-import { FloatingInput } from "@/components/ui/FloatingInput";
+import { SingleInputActionForm } from "@/components/common/SingleInputActionForm";
 import { useConfirm } from "@/hooks/useConfirm";
 import { getStateLabel, resolveSignUpRequestId } from "./model";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
@@ -21,16 +21,12 @@ import {
   Description,
   HeaderSection,
   FormOnlyCenter,
-  FormOnlyHeading,
-  FormOnlyWrap,
   RetryButton,
-  SingleForm,
   StateBadge,
   StatusCard,
   StatusItem,
   StatusItemLabel,
   StatusItemValue,
-  SubmitButton,
   Title,
 } from "./styles";
 
@@ -95,8 +91,7 @@ export default function SignUpPage() {
     return () => clearTimeout(timer);
   }, [refetch, viewMode]);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async () => {
     if (!purpose.trim()) {
       await confirm({
         title: "입력 필요",
@@ -183,19 +178,16 @@ export default function SignUpPage() {
     return (
       <Container>
         <FormOnlyCenter>
-          <FormOnlyWrap>
-            <FormOnlyHeading>회원가입 신청 목적을 입력해주세요</FormOnlyHeading>
-            <SingleForm onSubmit={handleSubmit}>
-              <FloatingInput
-                label="신청 목적"
-                value={purpose}
-                onChange={(event) => setPurpose(event.target.value)}
-              />
-              <SubmitButton type="submit" disabled={updatePurposeMutation.isPending}>
-                {updatePurposeMutation.isPending ? "제출 중..." : "신청하기"}
-              </SubmitButton>
-            </SingleForm>
-          </FormOnlyWrap>
+          <SingleInputActionForm
+            title="회원가입 신청 목적을 입력해주세요"
+            label="신청 목적"
+            value={purpose}
+            onChange={setPurpose}
+            onSubmit={() => void handleSubmit()}
+            submitText="신청하기"
+            submittingText="제출 중..."
+            isSubmitting={updatePurposeMutation.isPending}
+          />
         </FormOnlyCenter>
         {ConfirmDialog}
       </Container>

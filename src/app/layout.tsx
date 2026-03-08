@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { RootProvider } from "@/providers/RootProvider";
 
@@ -17,11 +18,20 @@ export const metadata: Metadata = {
   description: "API 공유 플랫폼",
 };
 
+import { TopNav } from "@/components/layout/TopNav";
+import { RouteTransitionLoader } from "@/components/common/RouteTransitionLoader";
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
-        <RootProvider>{children}</RootProvider>
+    <html suppressHydrationWarning lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body suppressHydrationWarning>
+        <RootProvider>
+          <TopNav />
+          <Suspense fallback={null}>
+            <RouteTransitionLoader />
+          </Suspense>
+          {children}
+        </RootProvider>
       </body>
     </html>
   );

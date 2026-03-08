@@ -1,9 +1,9 @@
+@import url("https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css");
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
-
-@import url("https://spoqa.github.io/spoqa-han-sans/css/SpoqaHanSansNeo.css");
 
 @font-face {
   font-family: "Flight Sans Regular";

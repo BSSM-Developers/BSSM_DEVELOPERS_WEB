@@ -8,6 +8,7 @@ import { sidebarModules } from "./modules";
 import type { SidebarNode } from "./types";
 import { useDocsStore } from "@/store/docsStore";
 import { HttpMethodTag } from "@/components/ui/httpMethod/HttpMethodTag";
+import { startRouteTransitionLoading } from "@/components/common/routeTransitionSignal";
 
 interface Mutators {
   addSibling: (targetId: string, node: Omit<SidebarNode, "id">) => void;
@@ -86,6 +87,10 @@ export function SidebarItem({
     }
 
     if (node.path) {
+      if (matchesPath(node.path)) {
+        return;
+      }
+      startRouteTransitionLoading();
       router.push(node.path);
       return;
     }

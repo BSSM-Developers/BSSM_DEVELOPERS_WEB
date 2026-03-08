@@ -3,6 +3,7 @@
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useState, useCallback, useEffect, Suspense } from "react";
 import { tokenApi } from "../../api";
+import { SingleInputActionForm } from "@/components/common/SingleInputActionForm";
 import {
   getPlaceholderText,
   getSuccessText,
@@ -14,12 +15,9 @@ import {
   CheckCircle,
   CheckIcon,
   Container,
-  ErrorText,
   FlexColumn,
   MainTitle,
   PrimaryButton,
-  StatusText,
-  StyledInput,
 } from "./styles";
 
 function TokenEditContent() {
@@ -154,6 +152,7 @@ function TokenEditContent() {
   const titleText = getTitleText(step);
   const placeholderText = getPlaceholderText(step);
   const inputValue = step === "TOKEN_NAME" ? tokenName : step === "USAGE_NAME" ? usageName : endpoint;
+  const inputLabel = step === "TOKEN_NAME" ? "토큰 이름" : step === "USAGE_NAME" ? "API 이름" : "엔드포인트";
 
   const handleInputChange = (value: string) => {
     if (step === "TOKEN_NAME") {
@@ -195,23 +194,22 @@ function TokenEditContent() {
 
   return (
     <Container center>
-      <FlexColumn center animated>
-        <MainTitle>{titleText}</MainTitle>
-
-        <StyledInput
-          placeholder={placeholderText}
-          value={inputValue}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void handleNext()}
-          autoFocus
-        />
-
-        {isLoadingDetail ? <StatusText>토큰 정보를 불러오는 중입니다.</StatusText> : null}
-        {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
-        <PrimaryButton onClick={() => void handleNext()} disabled={isSubmitting || isLoadingDetail}>
-          {isSubmitting ? "수정 중..." : "수정하기"}
-        </PrimaryButton>
-      </FlexColumn>
+      <SingleInputActionForm
+        title={titleText}
+        label={inputLabel}
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder={placeholderText}
+        onSubmit={() => void handleNext()}
+        submitText="수정하기"
+        submittingText="수정 중..."
+        isSubmitting={isSubmitting}
+        isDisabled={isLoadingDetail}
+        statusText={isLoadingDetail ? "토큰 정보를 불러오는 중입니다." : undefined}
+        errorText={errorMessage || undefined}
+        maxWidth="800px"
+        animated
+      />
     </Container>
   );
 }

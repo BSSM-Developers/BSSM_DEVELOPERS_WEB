@@ -1,29 +1,28 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { signUpApi } from "./api";
 
-export const signUpKeys = {
-  all: ["signUp"] as const,
-  my: () => [...signUpKeys.all, "my"] as const,
+const SIGN_UP_KEYS = {
+  me: ["sign-up", "me"] as const,
 };
 
-export function useMyProfileQuery(enabled: boolean = true) {
+interface UpdatePurposeParams {
+  id: number;
+  purpose: string;
+}
+
+export function useMyProfileQuery() {
   return useQuery({
-    queryKey: signUpKeys.my(),
+    queryKey: SIGN_UP_KEYS.me,
     queryFn: () => signUpApi.getMy(),
-    enabled,
     retry: false,
+    staleTime: 0,
   });
 }
 
 export function useUpdatePurposeMutation() {
-  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, purpose }: { id: number; purpose: string }) =>
-      signUpApi.updatePurpose(id, purpose),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: signUpKeys.my() });
-    },
+    mutationFn: ({ id, purpose }: UpdatePurposeParams) => signUpApi.updatePurpose(id, purpose),
   });
 }

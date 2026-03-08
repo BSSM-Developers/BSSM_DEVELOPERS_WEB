@@ -1232,6 +1232,47 @@ export default function DocsEditPage() {
           return sourceCatalogPromise;
         };
 
+        const unresolvedSourceTargets = targets.filter(
+          (target) =>
+            target.module === "api" &&
+            !sourcePageMapRef.current[target.mappedId] &&
+            !sourcePageByPageIdMapRef.current[target.pageMappedId]
+        );
+
+        if (unresolvedSourceTargets.length > 0) {
+          const resolvedSourceEntries = await Promise.all(
+            unresolvedSourceTargets.map(async (target) => {
+              const recovered = await resolveSourceRefFromPage(slug, target.pageMappedId, target.mappedId);
+              if (!recovered) {
+                return null;
+              }
+              return { target, recovered };
+            })
+          );
+
+          const nextSourceMap = { ...sourcePageMapRef.current };
+          const nextSourceByPageIdMap = { ...sourcePageByPageIdMapRef.current };
+          const nextEndpointMap = { ...pageEndpointMapRef.current };
+
+          for (const entry of resolvedSourceEntries) {
+            if (!entry) {
+              continue;
+            }
+            nextSourceMap[entry.target.mappedId] = entry.recovered;
+            nextSourceByPageIdMap[entry.target.pageMappedId] = entry.recovered;
+            if (entry.recovered.endpoint) {
+              nextEndpointMap[entry.target.mappedId] = entry.recovered.endpoint;
+            }
+          }
+
+          sourcePageMapRef.current = nextSourceMap;
+          setSourcePageMap(nextSourceMap);
+          sourcePageByPageIdMapRef.current = nextSourceByPageIdMap;
+          setSourcePageByPageIdMap(nextSourceByPageIdMap);
+          pageEndpointMapRef.current = nextEndpointMap;
+          setPageEndpointMap(nextEndpointMap);
+        }
+
         const docsPagesByPageMappedId = new Map<string, {
           id: string;
           endpoint?: string;
@@ -1254,7 +1295,6 @@ export default function DocsEditPage() {
             let resolvedSourceRef =
               sourceRef ||
               sourcePageByPageIdMapRef.current[target.pageMappedId] ||
-              (await resolveSourceRefFromPage(slug, target.pageMappedId, target.mappedId)) ||
               getInitialSourceRef(target.mappedId);
             if (!resolvedSourceRef) {
               const candidates = collectSourceMappedIdCandidates(blocks, target.mappedId);

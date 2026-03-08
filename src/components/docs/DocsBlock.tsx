@@ -1,8 +1,7 @@
-/** @jsxImportSource @emotion/react */
 "use client";
 
 import styled from "@emotion/styled";
-import { useTheme } from "@emotion/react";
+import { SerializedStyles, useTheme } from "@emotion/react";
 import { docsModules, DocsModuleType } from "./modules";
 import { ReactNode } from "react";
 
@@ -13,7 +12,11 @@ interface DocsBlockProps {
 
 export function DocsBlock({ module, children }: DocsBlockProps) {
   const theme = useTheme();
-  return <Block css={docsModules[module](theme)}>{children}</Block>;
+  return <Block moduleStyle={docsModules[module](theme)}>{children}</Block>;
 }
 
-const Block = styled.div``;
+const Block = styled("div", {
+  shouldForwardProp: (prop) => prop !== "moduleStyle",
+})<{ moduleStyle: SerializedStyles }>`
+  ${({ moduleStyle }) => moduleStyle}
+`;

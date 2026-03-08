@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
+import dynamic from "next/dynamic";
 import { Container } from './styles';
 import { InputStep } from './components/InputStep';
-import { EditorStep } from './components/EditorStep';
 import { ConfirmStep } from './components/ConfirmStep';
 import { SuccessStep } from './components/SuccessStep';
 import { useDocsForm } from './hooks/useDocsForm';
@@ -13,6 +13,17 @@ import { useUserStore } from '@/store/userStore';
 import { useDocsStore } from '@/store/docsStore';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useRouter } from 'next/navigation';
+
+const DRAFT_STORAGE_KEY = "docs-register-draft";
+const DRAFT_VERSION = 1;
+
+const EditorStep = dynamic(
+  () => import("./components/EditorStep").then((module) => module.EditorStep),
+  {
+    ssr: false,
+    loading: () => <div style={{ minHeight: "100vh", background: "#FAFAFA" }} />,
+  }
+);
 
 export default function DocsRegisterPage() {
   const router = useRouter();
@@ -52,7 +63,7 @@ export default function DocsRegisterPage() {
         if (!formData.title.trim() || !formData.description.trim()) {
           return;
         }
-        localStorage.removeItem('docs-register-draft');
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
         await handleSubmitCustom(formData);
         return;
       }
@@ -146,26 +157,64 @@ export default function DocsRegisterPage() {
   };
 
   React.useEffect(() => {
-    const draftStr = localStorage.getItem('docs-register-draft');
+    const draftStr = localStorage.getItem(DRAFT_STORAGE_KEY);
     if (draftStr) {
       try {
-        const draft = JSON.parse(draftStr);
-        setStep(draft.step);
+        const draft = JSON.parse(draftStr) as Record<string, unknown>;
+
+        if (draft.version !== DRAFT_VERSION) {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+          setIsRestored(true);
+          return;
+        }
+
+        const draftStep = draft.step;
+        if (
+          draftStep === "INPUT" ||
+          draftStep === "EDITOR" ||
+          draftStep === "CONFIRM" ||
+          draftStep === "SUCCESS"
+        ) {
+          setStep(draftStep);
+        }
+
+        const draftFormData = (draft.formData ?? {}) as Partial<{
+          docsType: string;
+          title: string;
+          description: string;
+          domain: string;
+          repository_url: string;
+          auto_approval: boolean;
+        }>;
+
         setFullFormData({
-          docsType: draft.formData?.docsType === "CUSTOM" ? "CUSTOM" : "ORIGINAL",
-          title: draft.formData?.title ?? "",
-          description: draft.formData?.description ?? "",
-          domain: draft.formData?.domain ?? "",
-          repository_url: draft.formData?.repository_url ?? "",
-          auto_approval: Boolean(draft.formData?.auto_approval),
+          docsType: draftFormData.docsType === "CUSTOM" ? "CUSTOM" : "ORIGINAL",
+          title: draftFormData.title ?? "",
+          description: draftFormData.description ?? "",
+          domain: draftFormData.domain ?? "",
+          repository_url: draftFormData.repository_url ?? "",
+          auto_approval: Boolean(draftFormData.auto_approval),
         });
-        restoreEditorState(draft.docsBlocks, draft.sidebarItems, draft.contentMap);
-        if (draft.selectedId) {
+
+        const draftDocsBlocks = Array.isArray(draft.docsBlocks) ? draft.docsBlocks : [];
+        const draftSidebarItems = Array.isArray(draft.sidebarItems) ? draft.sidebarItems : [];
+        const draftContentMap =
+          draft.contentMap && typeof draft.contentMap === "object"
+            ? (draft.contentMap as Record<string, unknown>)
+            : {};
+
+        restoreEditorState(
+          draftDocsBlocks as typeof docsBlocks,
+          draftSidebarItems as typeof sidebarItems,
+          draftContentMap as typeof contentMap
+        );
+
+        if (typeof draft.selectedId === "string" && draft.selectedId) {
           useDocsStore.setState({ selected: draft.selectedId });
         }
       } catch (e) {
         console.error("Failed to restore draft", e);
-        localStorage.removeItem('docs-register-draft');
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
       }
     }
     setIsRestored(true);
@@ -173,7 +222,7 @@ export default function DocsRegisterPage() {
 
   React.useEffect(() => {
     if (step === 'SUCCESS') {
-      localStorage.removeItem('docs-register-draft');
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
     }
   }, [step]);
 
@@ -183,6 +232,7 @@ export default function DocsRegisterPage() {
     if (isRestored && step !== 'SUCCESS') {
       if (hasDraftContent) {
         const draft = {
+          version: DRAFT_VERSION,
           step,
           formData,
           docsBlocks,
@@ -190,9 +240,14 @@ export default function DocsRegisterPage() {
           contentMap,
           selectedId: useDocsStore.getState().selected
         };
-        localStorage.setItem('docs-register-draft', JSON.stringify(draft));
+        const timer = window.setTimeout(() => {
+          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        }, 300);
+        return () => {
+          window.clearTimeout(timer);
+        };
       } else {
-        localStorage.removeItem('docs-register-draft');
+        localStorage.removeItem(DRAFT_STORAGE_KEY);
       }
     }
   }, [isRestored, step, formData, docsBlocks, sidebarItems, contentMap, hasDraftContent]);
@@ -227,7 +282,7 @@ export default function DocsRegisterPage() {
           });
 
           if (go) {
-            localStorage.removeItem('docs-register-draft');
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
             router.push(url.pathname + url.search + url.hash);
           }
         }

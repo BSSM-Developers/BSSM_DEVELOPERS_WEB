@@ -9,7 +9,6 @@ type BlockWithId = DocsBlock & { id: string };
 
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
-// 사이드바 노드와 경로를 찾는 헬퍼 함수
 const findSidebarNodeWithPath = (items: SidebarNode[], id: string, path: string[] = []): { node: SidebarNode; path: string[] } | null => {
   for (const item of items) {
     if (item.id === id) return { node: item, path };
@@ -21,7 +20,6 @@ const findSidebarNodeWithPath = (items: SidebarNode[], id: string, path: string[
   return null;
 };
 
-// API 여부를 확인하기 위해 사이드바 아이템 필요
 const sidebarItems: SidebarNode[] = [
   {
     id: "perseus",
@@ -114,14 +112,12 @@ const sidebarItems: SidebarNode[] = [
 
 export default function DocsEditPage() {
   console.log("Sidebar Items:", sidebarItems);
-  // Trigger HMR update
   const selected = useDocsStore((s: DocsStoreState) => s.selected);
   const docsData = useDocsStore((s: DocsStoreState) => s.docsData);
   const apiData = useDocsStore((s: DocsStoreState) => s.apiData);
   const updateDocsData = useDocsStore((s: DocsStoreState) => s.updateDocsData);
   const updateApiData = useDocsStore((s: DocsStoreState) => s.updateApiData);
 
-  // 사이드바에서 선택된 노드 찾기
   const result = findSidebarNodeWithPath(sidebarItems, selected);
   const node = result?.node;
   const isApiDoc = node?.module === "api";
@@ -141,7 +137,7 @@ export default function DocsEditPage() {
   };
 
   const handleAddBlock = (index: number, newBlock?: DocsBlock) => {
-    if (isApiDoc) return; // Don't add blocks to API spec for now
+    if (isApiDoc) return;
 
     const copy = [...(docsData[selected] || [])];
     const blockId = Math.random().toString(36).substring(2, 11);
@@ -164,7 +160,6 @@ export default function DocsEditPage() {
 
     const copy = [...(docsData[selected] || [])];
     if (copy.length <= 1) {
-      // Reset the last block instead of deleting it
       copy[0] = { ...copy[0], module: "docs_1", content: "" };
       updateDocsData(selected, copy);
       return;

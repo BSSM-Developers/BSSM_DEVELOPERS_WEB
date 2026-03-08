@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { useMyProfileQuery, useUpdatePurposeMutation } from "@/app/sign-up/queries";
-import { FloatingInput } from "@/components/ui/FloatingInput";
+import { SingleInputActionForm } from "@/components/common/SingleInputActionForm";
 import { useConfirm } from "@/hooks/useConfirm";
 import { getStateLabel, resolveSignUpRequestId } from "./model";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import {
+  ActionButton,
   CelebrateCard,
   CelebrateDescription,
   CelebrateTitle,
@@ -15,42 +16,82 @@ import {
   CheckIcon,
   Container,
   Content,
+  EmptyMessage,
+  FormCard,
   Description,
-  FieldLabel,
-  FieldList,
-  FieldRow,
-  FieldValue,
-  Form,
-  FormPanel,
   HeaderSection,
-  InfoPanel,
-  PanelGrid,
-  PanelTitle,
+  FormOnlyCenter,
+  RetryButton,
   StateBadge,
-  SubmitButton,
+  StatusCard,
+  StatusItem,
+  StatusItemLabel,
+  StatusItemValue,
   Title,
 } from "./styles";
-import { useApprovedSignUpFlow } from "./useApprovedSignUpFlow";
+
+type SignUpViewMode = "form" | "status" | "success";
 
 export default function SignUpPage() {
-  const router = useRouter();
   const [purpose, setPurpose] = useState("");
-  const [showApprovedCelebration, setShowApprovedCelebration] = useState(false);
+  const [viewMode, setViewMode] = useState<SignUpViewMode>("form");
+  const [hasShownLoadError, setHasShownLoadError] = useState(false);
   const { confirm, ConfirmDialog } = useConfirm();
-  const { data: profileData, isLoading, isError, error } = useMyProfileQuery();
+  const { data: profileData, isLoading, isError, refetch } = useMyProfileQuery();
   const updatePurposeMutation = useUpdatePurposeMutation();
 
-  const status = profileData?.state || "NONE";
+  const status = profileData?.state ?? "NONE";
+  const hasPurpose = useMemo(() => (profileData?.purpose ?? "").trim().length > 0, [profileData?.purpose]);
 
-  useApprovedSignUpFlow({
-    profileData,
-    router,
-    setPurpose,
-    setShowApprovedCelebration,
-  });
+  useEffect(() => {
+    if (!profileData || viewMode === "success") {
+      return;
+    }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (hasPurpose) {
+      setPurpose(profileData.purpose ?? "");
+      setViewMode("status");
+      return;
+    }
+
+    setPurpose("");
+    setViewMode("form");
+  }, [profileData, hasPurpose, viewMode]);
+
+  useEffect(() => {
+    if (!isError || hasShownLoadError) {
+      return;
+    }
+
+    setHasShownLoadError(true);
+    void confirm({
+      title: "불러오기 실패",
+      message: "회원가입 신청 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+      confirmText: "확인",
+      hideCancel: true,
+    });
+  }, [confirm, hasShownLoadError, isError]);
+
+  useEffect(() => {
+    if (!isError && hasShownLoadError) {
+      setHasShownLoadError(false);
+    }
+  }, [hasShownLoadError, isError]);
+
+  useEffect(() => {
+    if (viewMode !== "success") {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setViewMode("status");
+      void refetch();
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [refetch, viewMode]);
+
+  const handleSubmit = async () => {
     if (!purpose.trim()) {
       await confirm({
         title: "입력 필요",
@@ -73,18 +114,14 @@ export default function SignUpPage() {
     }
 
     try {
-      await updatePurposeMutation.mutateAsync({ id: signupRequestId, purpose: purpose.trim() });
-      await confirm({
-        title: "신청 완료",
-        message: "신청이 제출되었습니다.",
-        confirmText: "확인",
-        hideCancel: true,
-      });
-    } catch (submitError) {
-      const message = submitError instanceof Error ? submitError.message : "신청 제출에 실패했습니다.";
+      const trimmedPurpose = purpose.trim();
+      await updatePurposeMutation.mutateAsync({ id: signupRequestId, purpose: trimmedPurpose });
+      setPurpose(trimmedPurpose);
+      setViewMode("success");
+    } catch {
       await confirm({
         title: "신청 실패",
-        message,
+        message: "신청 목적 제출에 실패했습니다. 다시 시도해주세요.",
         confirmText: "확인",
         hideCancel: true,
       });
@@ -94,24 +131,33 @@ export default function SignUpPage() {
   if (isLoading) {
     return (
       <Container>
-        로딩 중...
+        <BsdevLoader label="신청 정보를 불러오는 중입니다..." fullScreen />
         {ConfirmDialog}
       </Container>
     );
   }
 
   if (isError) {
-    const message = error instanceof Error ? error.message : "신청 정보를 불러오지 못했습니다.";
     return (
       <Container>
-        <Title>회원가입 신청</Title>
-        <Description>{message}</Description>
+        <Content>
+          <HeaderSection>
+            <Title>회원가입 신청</Title>
+            <Description>잠시 후 다시 시도해주세요.</Description>
+          </HeaderSection>
+          <FormCard>
+            <EmptyMessage>회원가입 신청 정보를 불러오지 못했습니다.</EmptyMessage>
+            <RetryButton type="button" onClick={() => void refetch()}>
+              다시 시도
+            </RetryButton>
+          </FormCard>
+        </Content>
         {ConfirmDialog}
       </Container>
     );
   }
 
-  if (status === "APPROVED" && showApprovedCelebration) {
+  if (viewMode === "success") {
     return (
       <CelebrationContainer>
         <CelebrateCard>
@@ -120,11 +166,31 @@ export default function SignUpPage() {
               <path d="M14 27 L23 36 L38 18" />
             </CheckIcon>
           </CheckCircle>
-          <CelebrateTitle>가입을 축하드립니다!</CelebrateTitle>
-          <CelebrateDescription>승인이 완료되었습니다. 잠시 후 이동합니다.</CelebrateDescription>
+          <CelebrateTitle>수정 완료</CelebrateTitle>
+          <CelebrateDescription>신청 목적이 저장되었습니다.</CelebrateDescription>
         </CelebrateCard>
         {ConfirmDialog}
       </CelebrationContainer>
+    );
+  }
+
+  if (viewMode === "form") {
+    return (
+      <Container>
+        <FormOnlyCenter>
+          <SingleInputActionForm
+            title="회원가입 신청 목적을 입력해주세요"
+            label="신청 목적"
+            value={purpose}
+            onChange={setPurpose}
+            onSubmit={() => void handleSubmit()}
+            submitText="신청하기"
+            submittingText="제출 중..."
+            isSubmitting={updatePurposeMutation.isPending}
+          />
+        </FormOnlyCenter>
+        {ConfirmDialog}
+      </Container>
     );
   }
 
@@ -132,47 +198,24 @@ export default function SignUpPage() {
     <Container>
       <Content>
         <HeaderSection>
-          <Title>회원가입 신청</Title>
-          <Description>회원가입 신청 정보를 확인하고 목적을 제출해주세요.</Description>
+          <Title>신청 현황</Title>
+          <Description>회원가입 신청 상태를 확인할 수 있습니다.</Description>
         </HeaderSection>
-
-        <PanelGrid>
-          <InfoPanel>
-            <PanelTitle>신청자 정보</PanelTitle>
-            <FieldList>
-              <FieldRow>
-                <FieldLabel>이름</FieldLabel>
-                <FieldValue>{profileData?.name || "-"}</FieldValue>
-              </FieldRow>
-              <FieldRow>
-                <FieldLabel>이메일</FieldLabel>
-                <FieldValue>{profileData?.email || "-"}</FieldValue>
-              </FieldRow>
-              <FieldRow>
-                <FieldLabel>프로필</FieldLabel>
-                <FieldValue>{profileData?.profile || "-"}</FieldValue>
-              </FieldRow>
-              <FieldRow>
-                <FieldLabel>신청 상태</FieldLabel>
-                <StateBadge state={status}>{getStateLabel(status)}</StateBadge>
-              </FieldRow>
-            </FieldList>
-          </InfoPanel>
-
-          <FormPanel>
-            <PanelTitle>신청 목적</PanelTitle>
-            <Form onSubmit={handleSubmit}>
-              <FloatingInput
-                label="신청 목적"
-                value={purpose}
-                onChange={(e) => setPurpose(e.target.value)}
-              />
-              <SubmitButton type="submit" disabled={updatePurposeMutation.isPending}>
-                {updatePurposeMutation.isPending ? "제출 중..." : "신청하기"}
-              </SubmitButton>
-            </Form>
-          </FormPanel>
-        </PanelGrid>
+        <StatusCard>
+          <StatusItem>
+            <StatusItemLabel>신청 상태</StatusItemLabel>
+            <StatusItemValue>
+              <StateBadge state={status}>{getStateLabel(status)}</StateBadge>
+            </StatusItemValue>
+          </StatusItem>
+          <StatusItem>
+            <StatusItemLabel>신청 목적</StatusItemLabel>
+            <StatusItemValue>{profileData?.purpose?.trim() || "-"}</StatusItemValue>
+          </StatusItem>
+          <ActionButton type="button" onClick={() => setViewMode("form")}>
+            신청 목적 수정
+          </ActionButton>
+        </StatusCard>
       </Content>
       {ConfirmDialog}
     </Container>

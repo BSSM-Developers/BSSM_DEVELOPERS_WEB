@@ -14,7 +14,6 @@ export interface DocsStoreState {
   updateApiData: (id: string, data: ApiDoc) => void;
 }
 
-// 초기 데이터 구성
 const initialDocsData: Record<string, BlockWithId[]> = {};
 
 
@@ -34,6 +33,12 @@ export const useDocsStore = create<DocsStoreState>()(
     }),
     {
       name: "docs-storage",
+      version: 1,
+      partialize: (state) => ({
+        selected: state.selected,
+        docsData: state.docsData,
+        apiData: state.apiData,
+      }),
     }
   )
 );

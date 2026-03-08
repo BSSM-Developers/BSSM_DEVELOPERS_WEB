@@ -40,7 +40,6 @@ export function CodeBlock({
   };
 
   const handleCopy = async () => {
-    // HTML 태그 제거 후 순수 텍스트만 추출
     const plainText = code.replace(/<[^>]*>/g, '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 
     try {

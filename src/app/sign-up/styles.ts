@@ -129,27 +129,89 @@ export const Form = styled.form`
   gap: 24px;
 `;
 
-export const SubmitButton = styled.button`
-  height: 48px;
-  padding: 0 26px;
-  width: fit-content;
-  background-color: ${({ theme }) => theme.colors.bssmDarkBlue};
-  color: white;
-  border: none;
+export const FormCard = styled.section`
+  width: 100%;
+  max-width: 760px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  border-radius: 16px;
+  background: white;
+  padding: 28px 24px;
+`;
+
+export const StatusCard = styled.section`
+  width: 100%;
+  max-width: 760px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  border-radius: 16px;
+  background: white;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+export const StatusItem = styled.div`
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
   border-radius: 10px;
+  background: ${({ theme }) => theme.colors.grey[50]};
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+`;
+
+export const StatusItemLabel = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[600]};
+  margin: 0;
+`;
+
+export const StatusItemValue = styled.div`
   ${({ theme }) => applyTypography(theme, "Body_2")};
+  color: ${({ theme }) => theme.colors.grey[900]};
+  margin: 0;
+  word-break: break-word;
+`;
+
+export const ActionButton = styled.button`
+  height: 44px;
+  padding: 0 18px;
+  width: fit-content;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  background: white;
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  ${({ theme }) => applyTypography(theme, "Body_3")};
   font-weight: 700;
   cursor: pointer;
-  transition: filter 0.2s;
+`;
 
-  &:hover:not(:disabled) {
-    filter: brightness(1.06);
-  }
+export const EmptyMessage = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_2")};
+  color: ${({ theme }) => theme.colors.grey[600]};
+  margin: 0;
+`;
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+export const RetryButton = styled.button`
+  height: 44px;
+  padding: 0 18px;
+  width: fit-content;
+  border-radius: 10px;
+  border: none;
+  background: ${({ theme }) => theme.colors.bssmDarkBlue};
+  color: white;
+  ${({ theme }) => applyTypography(theme, "Body_3")};
+  font-weight: 700;
+  cursor: pointer;
+`;
+
+export const FormOnlyCenter = styled.div`
+  width: 100%;
+  min-height: calc(100vh - 69px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
 `;
 
 const popIn = keyframes`

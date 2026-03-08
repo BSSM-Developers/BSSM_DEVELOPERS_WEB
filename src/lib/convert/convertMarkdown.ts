@@ -16,13 +16,11 @@ export function convertMarkdown(content: string): DocsBlock[] {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // 빈 줄은 무시 (이전 list flush만 유지)
     if (trimmed === "") {
       flushList();
       continue;
     }
 
-    // 제목 1
     if (/^#{1,2}\s/.test(trimmed)) {
       flushList();
       blocks.push({
@@ -32,7 +30,6 @@ export function convertMarkdown(content: string): DocsBlock[] {
       continue;
     }
 
-    // 제목 2
     if (/^#{3,4}\s/.test(trimmed)) {
       flushList();
       blocks.push({
@@ -42,7 +39,6 @@ export function convertMarkdown(content: string): DocsBlock[] {
       continue;
     }
 
-    // 목록
     if (/^[-*]\s+/.test(trimmed)) {
       currentList.push(trimmed.replace(/^[-*]\s+/, "").trim());
       continue;

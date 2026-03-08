@@ -22,8 +22,24 @@ export function TopNav() {
 
   useEffect(() => {
     setIsClient(true);
-    tokenManager.initializeRefreshCycle();
+    void tokenManager.initializeRefreshCycle();
   }, []);
+
+  useEffect(() => {
+    if (!isClient) {
+      return;
+    }
+
+    const handleTokenChanged = () => {
+      setIsLoggedIn(!!tokenManager.getAccessToken());
+    };
+
+    handleTokenChanged();
+    window.addEventListener("auth-token-changed", handleTokenChanged);
+    return () => {
+      window.removeEventListener("auth-token-changed", handleTokenChanged);
+    };
+  }, [isClient]);
 
   useEffect(() => {
     if (!isClient) return;
@@ -87,10 +103,10 @@ export function TopNav() {
         <StyledLink href="/docs/register">
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
         </StyledLink>
-        <StyledLink href="/guide">
+        <StyledLink href="/guide/bsdev-usage">
           <NavLink active={isActive("/guide")}>가이드</NavLink>
         </StyledLink>
-        <StyledLink href="/announcements">
+        <StyledLink href="/announcements/release-0-1-10">
           <NavLink active={isActive("/announcements")}>공지사항</NavLink>
         </StyledLink>
       </Nav>

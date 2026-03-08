@@ -16,21 +16,18 @@ export function convertMarkdown(content: string): DocsBlock[] {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // big_space
     if (trimmed === "::space") {
       flushList();
       blocks.push({ module: "big_space" });
       continue;
     }
 
-    // space
     if (trimmed === "") {
       flushList();
       blocks.push({ module: "space" });
       continue;
     }
 
-    // Headline 1
     if (/^#{1,2}\s/.test(trimmed)) {
       flushList();
       blocks.push({
@@ -40,7 +37,6 @@ export function convertMarkdown(content: string): DocsBlock[] {
       continue;
     }
 
-    // Headline 2
     if (/^#{3,4}\s/.test(trimmed)) {
       flushList();
       blocks.push({
@@ -50,7 +46,6 @@ export function convertMarkdown(content: string): DocsBlock[] {
       continue;
     }
 
-    // list
     if (/^[-*]\s+/.test(trimmed)) {
       currentList.push(trimmed.replace(/^[-*]\s+/, "").trim());
       continue;

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState, useCallback } from "react";
 import { tokenApi, type ApiTokenWithSecret } from "../api";
 import { useConfirm } from "@/hooks/useConfirm";
+import { SingleInputActionForm } from "@/components/common/SingleInputActionForm";
 
 const slideIn = keyframes`
   from {
@@ -163,22 +164,23 @@ export default function TokenIssuePage() {
   }
 
   return (
-    <Container center>
-      <FlexColumn center animated>
+      <Container center>
+        <FlexColumn center animated>
         {step === "NAME" ? (
-          <>
-            <InputTitle>신규 발급 받을 토큰 이름을 입력해주세요</InputTitle>
-            <StyledInput
-              placeholder="토큰 이름을 입력해주세요"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && name.trim() && setStep("DOMAIN")}
-              autoFocus
-            />
-            <IssueButton onClick={() => setStep("DOMAIN")} disabled={!name.trim() || isSubmitting}>
-              다음
-            </IssueButton>
-          </>
+          <SingleInputActionForm
+            title="신규 발급 받을 토큰 이름을 입력해주세요"
+            label="토큰 이름"
+            value={name}
+            onChange={setName}
+            placeholder="토큰 이름을 입력해주세요"
+            onSubmit={() => setStep("DOMAIN")}
+            submitText="다음"
+            isSubmitting={isSubmitting}
+            isDisabled={!name.trim()}
+            maxWidth="800px"
+            animated
+            errorText={errorMessage || undefined}
+          />
         ) : (
           <>
             <InputTitle>도메인을 입력해주세요 (선택)</InputTitle>
@@ -209,7 +211,7 @@ export default function TokenIssuePage() {
             </BackButton>
           </>
         )}
-        {errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
+        {step === "DOMAIN" && errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
       </FlexColumn>
     </Container>
   );
@@ -240,27 +242,6 @@ const InputTitle = styled.h2`
   color: ${({ theme }) => theme.colors.grey[900]};
   margin-bottom: 32px;
   text-align: center;
-`;
-
-const StyledInput = styled.input`
-  width: 100%;
-  height: 56px;
-  padding: 0 24px;
-  border: 1px solid ${({ theme }) => theme.colors.grey[100]};
-  border-radius: 4px;
-  background-color: white;
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  margin-bottom: 40px;
-  outline: none;
-  color: ${({ theme }) => theme.colors.grey[900]};
-
-  &::placeholder {
-    color: ${({ theme }) => theme.colors.grey[400]};
-  }
-
-  &:focus {
-    border-color: ${({ theme }) => theme.colors.bssmDarkBlue};
-  }
 `;
 
 const DomainTextarea = styled.textarea`

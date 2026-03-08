@@ -62,7 +62,6 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
     }
     const targetId = String(over.id);
 
-    // root drop zone handling
     if (targetId === 'root-drop-zone') {
       setOverIntent({ id: targetId, mode: "sibling" });
       return;
@@ -96,7 +95,6 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
 
     const targetId = String(over.id);
 
-    // root-drop-zone: push to very end of root level
     if (targetId === 'root-drop-zone') {
       const { tree: afterRemove, removed } = removeNodeWithReturn(effectiveItems, String(active.id));
       if (!removed) return;

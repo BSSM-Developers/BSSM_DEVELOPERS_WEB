@@ -1,4 +1,3 @@
-/* eslint-disable */
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface ApiRequestOptions extends RequestInit {
@@ -62,11 +61,9 @@ export const tokenManager = {
   getUserName: (): string | null => {
     if (typeof window === 'undefined') return null;
 
-    // 1. 캐시된 이름 확인
     const cachedName = localStorage.getItem('userName');
     if (cachedName) return cachedName;
 
-    // 2. 토큰에서 디코딩 (Fallback)
     const token = localStorage.getItem('accessToken');
     if (!token) return null;
 
@@ -79,14 +76,14 @@ export const tokenManager = {
 
       const payload = JSON.parse(jsonPayload);
       return payload.name || null;
-    } catch (e) {
+    } catch {
       return null;
     }
   }
 };
 
 export const api = {
-  request: async <T>(method: string, endpoint: string, body?: any, options: ApiRequestOptions = {}): Promise<T> => {
+  request: async <T>(method: string, endpoint: string, body?: unknown, options: ApiRequestOptions = {}): Promise<T> => {
     const url = new URL(`${BASE_URL}${endpoint}`);
 
     if (options.params) {
@@ -104,9 +101,6 @@ export const api = {
       const accessToken = tokenManager.getAccessToken();
       if (accessToken) {
         headers['Authorization'] = `Bearer ${accessToken}`;
-        console.log("API Request Header Auth:", `Bearer ${accessToken.substring(0, 10)}...`);
-      } else {
-        console.warn("API Request: No access token found in tokenManager");
       }
     }
 
@@ -114,16 +108,15 @@ export const api = {
       ...options,
       method,
       headers,
-      credentials: 'include', // 쿠키 전송을 위해 필수 (특히 /signup/me 엔드포인트)
+      credentials: 'include',
     };
 
-    if (body) {
+    if (body !== undefined) {
       fetchOptions.body = JSON.stringify(body);
     }
 
     const response = await fetch(url.toString(), fetchOptions);
 
-    // 401 토큰 만료 처리 (WEB_TEST와 동일하게 로그아웃 처리)
     if (response.status === 401 && !options.skipAuth) {
       if (!options.suppressLogout) {
         console.warn("Unauthorized access, clearing tokens and redirecting to login.");
@@ -140,7 +133,6 @@ export const api = {
       throw new Error(`API Error ${response.status}: ${response.statusText} - ${errorBody}`);
     }
 
-    // 204 No Content 처리
     if (response.status === 204) {
       return {} as unknown as T;
     }
@@ -153,36 +145,31 @@ export const api = {
     return api.request<T>('GET', endpoint, undefined, options);
   },
 
-  post: async <T>(endpoint: string, body: any, options: ApiRequestOptions = {}): Promise<T> => {
+  post: async <T>(endpoint: string, body: unknown, options: ApiRequestOptions = {}): Promise<T> => {
     return api.request<T>('POST', endpoint, body, options);
   },
 
-  patch: async <T>(endpoint: string, body: any, options: ApiRequestOptions = {}): Promise<T> => {
+  patch: async <T>(endpoint: string, body: unknown, options: ApiRequestOptions = {}): Promise<T> => {
     return api.request<T>('PATCH', endpoint, body, options);
   },
 
-  // 인증 관련
   auth: {
     loginWithGoogle: async (code: string, codeVerifier: string) => {
       const response = await api.post<{ message: string; data: { accessToken: string; refreshToken?: string } }>('/auth/google/token', { code, codeVerifier }, { skipAuth: true });
       return response.data;
     },
     logout: async () => {
-      // 백엔드 로그아웃 호출 (선택적)
       try {
         await api.post<void>('/auth/logout', {});
-      } catch (e) {
-        // 무시
+      } catch {
       }
       tokenManager.clearTokens();
     },
     refreshToken: async () => {
-      // 현재 백엔드 이슈로 사용 불가, WEB_TEST와 동일하게 미구현 상태로 둠
       throw new Error("Refresh token not supported yet");
     }
   },
 
-  // 회원가입 관련
   signUp: {
     getMy: async (options: ApiRequestOptions = {}) => {
       const response = await api.get<{
@@ -202,7 +189,6 @@ export const api = {
     updatePurpose: async (id: number, purpose: string) => {
       return api.patch<void>(`/signup/${id}/purpose`, { purpose });
     },
-    // 관리자 기능
     approve: async (id: number) => {
       return api.patch<void>(`/signup/${id}/approve`, {});
     },
@@ -232,16 +218,15 @@ export const api = {
     }
   },
 
-  // 문서 관련
   docs: {
     getList: async () => {
-      return api.get<any[]>('/docs');
+      return api.get<unknown[]>('/docs');
     },
     getSidebar: async (docsId: string) => {
-      return api.get<any>(`/docs/${docsId}/sidebar`);
+      return api.get<unknown>(`/docs/${docsId}/sidebar`);
     },
     getDetail: async (docsId: string) => {
-      return api.get<any>(`/docs/${docsId}`);
+      return api.get<unknown>(`/docs/${docsId}`);
     },
     createOriginal: async (data: {
       title: string;
@@ -284,12 +269,12 @@ export const api = {
       return api.patch<void>(`/docs/${docsId}/auto-approval`, { auto_approval: autoApproval });
     },
     getPage: async (docsId: number, mappedId: string) => {
-      return api.get<any>(`/docs/${docsId}/page/${mappedId}`);
+      return api.get<unknown>(`/docs/${docsId}/page/${mappedId}`);
     },
-    updatePage: async (docsId: number, mappedId: string, docsBlocks: any[]) => {
+    updatePage: async (docsId: number, mappedId: string, docsBlocks: unknown[]) => {
       return api.request<void>('PUT', `/docs/${docsId}/page/${mappedId}`, { docsBlocks });
     },
-    updateSidebar: async (docsId: number, sideBarBlocks: any[]) => {
+    updateSidebar: async (docsId: number, sideBarBlocks: unknown[]) => {
       return api.request<void>('PUT', `/docs/${docsId}/sidebar`, { sideBarBlocks });
     },
     replace: async (docsId: number, data: {
@@ -303,20 +288,19 @@ export const api = {
     }
   },
 
-  // API 토큰 관련
   apiToken: {
     create: async (name: string, domains: string[] = []) => {
-      return api.post<{ message: string; data: any }>('/api/token', { apiTokenName: name, domains });
+      return api.post<{ message: string; data: unknown }>('/api/token', { apiTokenName: name, domains });
     },
     getList: async (cursor?: number, size: number = 20) => {
       const params: Record<string, string> = { size: size.toString() };
       if (cursor) {
         params.cursor = cursor.toString();
       }
-      return api.get<{ message: string; data: { values: any[]; hasNext: boolean } }>('/api/token', { params });
+      return api.get<{ message: string; data: { values: unknown[]; hasNext: boolean } }>('/api/token', { params });
     },
     getDetail: async (apiTokenId: number) => {
-      return api.get<{ message: string; data: any }>(`/api/token/${apiTokenId}`);
+      return api.get<{ message: string; data: unknown }>(`/api/token/${apiTokenId}`);
     },
     registerApi: async (apiTokenId: number, apiId: string, apiUseReason: string) => {
       return api.post<void>(`/api/${apiTokenId}/use-reason`, { apiId, apiUseReason });
@@ -332,7 +316,6 @@ export const api = {
     }
   },
 
-  // 헬스체크
   healthCheck: async (endpoint: string, method: string) => {
     return api.post<{ message: string; data: { healthy: boolean } }>('/api/healthy', { endpoint, method });
   }

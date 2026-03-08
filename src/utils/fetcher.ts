@@ -16,6 +16,24 @@ interface RefreshResponse {
   };
 }
 
+interface ParsedRefreshTokens {
+  accessToken: string;
+  refreshToken?: string;
+}
+
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const AUTH_SESSION_HINT_KEY = "authSessionHint";
+const TOKEN_EVENT = "auth-token-changed";
+let accessTokenMemory: string | null = null;
+let refreshTokenMemory: string | null = null;
+
+const emitTokenChanged = () => {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(TOKEN_EVENT));
+  }
+};
+
 const decodeJwtExpMs = (token: string): number | null => {
   try {
     const payload = token.split(".")[1];
@@ -23,7 +41,9 @@ const decodeJwtExpMs = (token: string): number | null => {
       return null;
     }
     const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const decoded = JSON.parse(atob(normalized)) as { exp?: number };
+    const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+    const normalizedWithPadding = `${normalized}${padding}`;
+    const decoded = JSON.parse(atob(normalizedWithPadding)) as { exp?: number };
     if (!decoded.exp) {
       return null;
     }
@@ -36,71 +56,123 @@ const decodeJwtExpMs = (token: string): number | null => {
 export const tokenManager = {
   setTokens: (accessToken: string, refreshToken?: string) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("access_token", accessToken);
+      accessTokenMemory = accessToken;
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+      localStorage.setItem(AUTH_SESSION_HINT_KEY, "1");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("access-token");
+      localStorage.removeItem("accessToken");
+      sessionStorage.removeItem("access_token");
+      sessionStorage.removeItem("access-token");
       if (refreshToken) {
-        localStorage.setItem("refreshToken", refreshToken);
-        localStorage.setItem("refresh_token", refreshToken);
+        refreshTokenMemory = refreshToken;
+        sessionStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("refresh-token");
+        localStorage.removeItem("refreshToken");
+        sessionStorage.removeItem("refresh_token");
+        sessionStorage.removeItem("refresh-token");
       }
       scheduleAccessTokenRefresh(accessToken);
+      emitTokenChanged();
     }
   },
   getAccessToken: () => {
     if (typeof window !== "undefined") {
-      const keys = ["accessToken", "access_token", "access-token"];
-      for (const key of keys) {
-        const token = localStorage.getItem(key) || sessionStorage.getItem(key);
-        if (token) return token;
+      if (accessTokenMemory) {
+        return accessTokenMemory;
       }
-
-      try {
-        const userStorage = localStorage.getItem("user-storage");
-        if (userStorage) {
-          const parsed = JSON.parse(userStorage);
-          if (parsed.state?.user?.accessToken) return parsed.state.user.accessToken;
-          if (parsed.state?.user?.access_token) return parsed.state.user.access_token;
-        }
-      } catch {
+      const token = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+      if (token) {
+        accessTokenMemory = token;
+        return token;
       }
     }
     return null;
   },
   getRefreshToken: () => {
     if (typeof window !== "undefined") {
-      const keys = ["refreshToken", "refresh_token", "refresh-token"];
-      for (const key of keys) {
-        const token = localStorage.getItem(key) || sessionStorage.getItem(key);
-        if (token) return token;
+      if (refreshTokenMemory) {
+        return refreshTokenMemory;
+      }
+      const token = sessionStorage.getItem(REFRESH_TOKEN_KEY);
+      if (token) {
+        refreshTokenMemory = token;
+        return token;
       }
     }
     return null;
   },
   clearTokens: () => {
     if (typeof window !== "undefined") {
+      accessTokenMemory = null;
+      refreshTokenMemory = null;
       const keys = [
-        "accessToken", "access_token", "access-token",
-        "refreshToken", "refresh_token", "refresh-token",
-        "userName", "user_name"
+        ACCESS_TOKEN_KEY, "access_token", "access-token",
+        REFRESH_TOKEN_KEY, "refresh_token", "refresh-token",
+        "userName", "user_name", AUTH_SESSION_HINT_KEY
       ];
       keys.forEach(key => {
         localStorage.removeItem(key);
         sessionStorage.removeItem(key);
       });
       clearRefreshTimer();
+      emitTokenChanged();
     }
   },
-  initializeRefreshCycle: () => {
+  initializeRefreshCycle: async () => {
     if (typeof window === "undefined") {
       return;
     }
-    const accessToken = tokenManager.getAccessToken();
+    const legacyAccessToken =
+      localStorage.getItem("accessToken") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("access-token");
+
+    if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && legacyAccessToken) {
+      sessionStorage.setItem(ACCESS_TOKEN_KEY, legacyAccessToken);
+      accessTokenMemory = legacyAccessToken;
+    }
+
+    const legacyRefreshToken =
+      localStorage.getItem("refreshToken") ||
+      localStorage.getItem("refresh_token") ||
+      localStorage.getItem("refresh-token");
+
+    if (!sessionStorage.getItem(REFRESH_TOKEN_KEY) && legacyRefreshToken) {
+      sessionStorage.setItem(REFRESH_TOKEN_KEY, legacyRefreshToken);
+      refreshTokenMemory = legacyRefreshToken;
+    }
+
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("access-token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("refresh-token");
+
+    let accessToken = tokenManager.getAccessToken();
     if (accessToken) {
       scheduleAccessTokenRefresh(accessToken);
+      localStorage.setItem(AUTH_SESSION_HINT_KEY, "1");
+      emitTokenChanged();
+      return;
+    }
+
+    const hasAuthSessionHint = localStorage.getItem(AUTH_SESSION_HINT_KEY) === "1";
+    if (!hasAuthSessionHint) {
+      return;
+    }
+
+    accessToken = await ensureRefreshedAccessToken();
+    if (accessToken) {
+      scheduleAccessTokenRefresh(accessToken);
+      emitTokenChanged();
     }
   },
   getUserRole: (): string | null => {
     if (typeof window === "undefined") return null;
-    const token = localStorage.getItem("accessToken");
+    const token = tokenManager.getAccessToken();
     if (!token) return null;
 
     try {
@@ -133,7 +205,7 @@ export const tokenManager = {
     const cachedName = localStorage.getItem("userName");
     if (cachedName) return cachedName;
 
-    const token = localStorage.getItem("accessToken");
+    const token = tokenManager.getAccessToken();
     if (!token) return null;
 
     try {
@@ -171,6 +243,43 @@ const createApiUrl = (endpoint: string): URL => {
     fullUrl,
     typeof window !== "undefined" ? window.location.origin : "http://localhost:3000"
   );
+};
+
+const parseRefreshTokens = async (response: Response): Promise<ParsedRefreshTokens | null> => {
+  if (!response.ok) {
+    return null;
+  }
+
+  const refreshText = await response.text();
+  const refreshData: RefreshResponse = refreshText ? JSON.parse(refreshText) : {};
+  const accessToken =
+    refreshData.accessToken ||
+    refreshData.data?.accessToken ||
+    refreshData.data?.access_token ||
+    null;
+  const refreshToken =
+    refreshData.refreshToken ||
+    refreshData.data?.refreshToken ||
+    refreshData.data?.refresh_token;
+
+  if (!accessToken) {
+    return null;
+  }
+
+  return {
+    accessToken,
+    refreshToken: refreshToken || undefined,
+  };
+};
+
+const requestRefreshFromUrl = async (url: string): Promise<ParsedRefreshTokens | null> => {
+  const response = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  return parseRefreshTokens(response);
 };
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -221,47 +330,44 @@ const scheduleAccessTokenRefresh = (accessToken: string) => {
 
 const requestAccessTokenRefresh = async (): Promise<string | null> => {
   const refreshUrl = createApiUrl("/auth/refresh");
+  const refreshTokens = await requestRefreshFromUrl(refreshUrl.toString());
 
-  const refreshResponse = await fetch(refreshUrl.toString(), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include"
-  });
-
-  if (!refreshResponse.ok) {
+  if (!refreshTokens) {
     return null;
   }
 
-  const refreshText = await refreshResponse.text();
-  const refreshData: RefreshResponse = refreshText ? JSON.parse(refreshText) : {};
-  const newAccessToken =
-    refreshData.accessToken ||
-    refreshData.data?.accessToken ||
-    refreshData.data?.access_token ||
-    null;
-  const newRefreshToken =
-    refreshData.refreshToken ||
-    refreshData.data?.refreshToken ||
-    refreshData.data?.refresh_token;
-
-  if (!newAccessToken) {
-    return null;
-  }
-
-  tokenManager.setTokens(newAccessToken, newRefreshToken);
-  return newAccessToken;
+  tokenManager.setTokens(refreshTokens.accessToken, refreshTokens.refreshToken);
+  return refreshTokens.accessToken;
 };
 
 const ensureRefreshedAccessToken = async (): Promise<string | null> => {
   if (!refreshPromise) {
-    refreshPromise = requestAccessTokenRefresh().finally(() => {
+    refreshPromise = requestAccessTokenRefreshWithRetry(2).finally(() => {
       refreshPromise = null;
     });
   }
 
   return refreshPromise;
+};
+
+const requestAccessTokenRefreshWithRetry = async (retryCount: number): Promise<string | null> => {
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+    try {
+      const refreshed = await requestAccessTokenRefresh();
+      if (refreshed) {
+        return refreshed;
+      }
+    } catch {
+    }
+
+    if (attempt < retryCount) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 350 * (attempt + 1));
+      });
+    }
+  }
+
+  return null;
 };
 
 const request = async <T>(

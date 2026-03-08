@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useCallback, useEffect, useState } from "react";
 import { tokenApi, type ApiTokenListItem, type ApiTokenState } from "./api";
 import { apiUseReasonApi, type ApiUseReasonMineItem } from "@/app/apis/useReasonApi";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 
 export default function TokenListPage() {
   const router = useRouter();
@@ -87,14 +88,16 @@ export default function TokenListPage() {
           <IssueButton onClick={handleIssueToken}>신규 토큰 발급</IssueButton>
         </HeaderRow>
 
-        {isLoading ? <StatusText>토큰 목록을 불러오는 중입니다.</StatusText> : null}
+        {isLoading ? <BsdevLoader label="토큰 목록을 불러오는 중입니다..." size={52} minHeight="140px" /> : null}
         {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
         {!isLoading && !errorMessage ? <TokenList>{tokenListItems}</TokenList> : null}
 
         <UseReasonSection>
           <UseReasonTitle>내 API 사용 신청 내역</UseReasonTitle>
           <UseReasonSubtitle>내가 요청한 API 사용 신청 상태를 확인할 수 있어요</UseReasonSubtitle>
-          {isUseReasonsLoading ? <StatusText>사용 신청 내역을 불러오는 중입니다.</StatusText> : null}
+          {isUseReasonsLoading ? (
+            <BsdevLoader label="사용 신청 내역을 불러오는 중입니다..." size={52} minHeight="140px" />
+          ) : null}
           {useReasonsError ? <ErrorText>{useReasonsError}</ErrorText> : null}
           {!isUseReasonsLoading && !useReasonsError ? (
             myUseReasons.length > 0 ? (

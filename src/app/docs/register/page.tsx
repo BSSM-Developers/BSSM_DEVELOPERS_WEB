@@ -134,10 +134,6 @@ export default function DocsRegisterPage() {
               return;
             }
 
-            if (!api.isVerified) {
-              await confirm({ title: "검증 실패", message: `[${docName}] 실제 API 검증이 누락되었거나 실패했습니다. 검증을 다시 완벽하게 완료해주세요.`, hideCancel: true });
-              return;
-            }
           }
         }
       }

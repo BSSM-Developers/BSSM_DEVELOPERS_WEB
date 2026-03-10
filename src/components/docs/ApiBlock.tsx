@@ -9,7 +9,6 @@ interface ApiBlockProps {
   apiData: ApiDoc;
   domain?: string;
   editable?: boolean;
-  disableVerification?: boolean;
   onChange?: (updated: ApiDoc) => void;
 }
 
@@ -64,7 +63,7 @@ const syncPathParamsByEndpoint = (
   return nextPathParams;
 };
 
-export function ApiBlock({ apiData, domain, editable = false, disableVerification = false, onChange }: ApiBlockProps) {
+export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlockProps) {
   const handleHeaderChange = (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => {
     const shouldSyncPathParams = updated.endpoint !== apiData.endpoint;
     const nextPathParams = shouldSyncPathParams
@@ -100,7 +99,6 @@ export function ApiBlock({ apiData, domain, editable = false, disableVerificatio
         sampleCode={apiData.sampleCode}
         responseCode={apiData.responseCode}
         editable={editable}
-        disableVerification={disableVerification}
         onHeaderChange={handleHeaderChange}
         onHeaderParamsChange={(params) => onChange?.({ ...apiData, headerParams: params })}
         onCookieParamsChange={(params) => onChange?.({ ...apiData, cookieParams: params })}

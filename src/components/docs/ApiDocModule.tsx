@@ -39,7 +39,6 @@ type ApiDocModuleProps = {
   isVerified?: boolean;
   onTryClick?: () => void;
   editable?: boolean;
-  disableVerification?: boolean;
   onHeaderChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
   onHeaderParamsChange?: (params: ApiParam[]) => void;
   onCookieParamsChange?: (params: ApiParam[]) => void;
@@ -78,7 +77,6 @@ export function ApiDocModule({
   isVerified = false,
   onTryClick,
   editable = false,
-  disableVerification = false,
   onHeaderChange,
   onHeaderParamsChange,
   onCookieParamsChange,
@@ -227,7 +225,6 @@ export function ApiDocModule({
             endpoint={endpoint}
             onTryClick={editable ? undefined : handleTryIt}
             editable={editable}
-            disableVerification={disableVerification}
             missingPathParams={missingPathParams.map(p => `{${p}}`)}
             onChange={onHeaderChange}
           />

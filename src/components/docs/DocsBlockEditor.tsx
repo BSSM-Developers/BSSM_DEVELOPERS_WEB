@@ -21,7 +21,6 @@ interface DocsBlockEditorProps {
   onRemoveBlock?: (index: number) => void;
   onFocusMove?: (index: number, direction: "up" | "down") => void;
   domain?: string;
-  disableApiVerification?: boolean;
 }
 
 export const DocsBlockEditor = memo(function DocsBlockEditor({
@@ -32,8 +31,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   onDuplicateBlock,
   onRemoveBlock,
   onFocusMove,
-  domain,
-  disableApiVerification = false
+  domain
 }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
   const [imageValue, setImageValue] = useState(block.imageSrc ?? "");
@@ -250,7 +248,6 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
           apiData={block.apiData}
           domain={domain}
           editable={true}
-          disableVerification={disableApiVerification}
           onChange={(updatedApiData) => onChange(index, { ...block, apiData: updatedApiData })}
         />
       );

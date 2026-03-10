@@ -92,6 +92,7 @@ export function ApiRequestSection({
           params={bodyParams}
           editable={editable}
           paramLocation="body"
+          enableJsonInput={true}
           onParamsChange={onBodyParamsChange}
         />
       )}

@@ -436,7 +436,7 @@ export function DocsSidebar({
                     onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
-                    {opt.label}
+                    {opt.method ?? opt.label}
                   </PickerItem>
                 ))}
               </Picker>

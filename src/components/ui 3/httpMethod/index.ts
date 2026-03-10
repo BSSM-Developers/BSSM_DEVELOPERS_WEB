@@ -1,1 +1,0 @@
-export { HttpMethodTag, type HttpMethod } from "./HttpMethodTag";

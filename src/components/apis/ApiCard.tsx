@@ -48,7 +48,7 @@ export function ApiCard({ id, title, description, tags, type, onExplore, onUse, 
       </CardHeader>
       <CardFooter>
         <ButtonGroup>
-          <ActionButton type="button" onClick={handleExplore}>둘러보기</ActionButton>
+          <ActionButton type="button" onClick={handleExplore}>자세히 보기</ActionButton>
           <ActionButton type="button" primary onClick={handleUse} disabled={!onUse}>사용하기</ActionButton>
         </ButtonGroup>
       </CardFooter>

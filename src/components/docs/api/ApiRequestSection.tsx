@@ -88,7 +88,7 @@ export function ApiRequestSection({
 
       {hasBody && (
         <ApiParamsSection
-          title="Body Params"
+          title="Body"
           params={bodyParams}
           editable={editable}
           paramLocation="body"

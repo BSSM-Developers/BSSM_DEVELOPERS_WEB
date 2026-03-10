@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import { useQueryClient } from "@tanstack/react-query";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
+import { RequireLoginGate } from "@/components/auth/RequireLoginGate";
 import { type ApiItem } from "./mockData";
 import { docsKeys, useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
@@ -159,97 +160,101 @@ export default function ApiExplorePage() {
 
   if (isLoading) {
     return (
+      <RequireLoginGate>
+        <PageContainer>
+          <ContentWrapper>
+            <PageHeader>
+              <Title>API 둘러보기</Title>
+              <Subtitle>학생들이 공유한 API를 자유롭게 둘러볼 수 있습니다</Subtitle>
+            </PageHeader>
+            <EmptyState>데이터를 불러오는 중입니다...</EmptyState>
+          </ContentWrapper>
+        </PageContainer>
+      </RequireLoginGate>
+    );
+  }
+
+  return (
+    <RequireLoginGate>
       <PageContainer>
         <ContentWrapper>
           <PageHeader>
             <Title>API 둘러보기</Title>
             <Subtitle>학생들이 공유한 API를 자유롭게 둘러볼 수 있습니다</Subtitle>
           </PageHeader>
-          <EmptyState>데이터를 불러오는 중입니다...</EmptyState>
-        </ContentWrapper>
-      </PageContainer>
-    );
-  }
 
-  return (
-    <PageContainer>
-      <ContentWrapper>
-        <PageHeader>
-          <Title>API 둘러보기</Title>
-          <Subtitle>학생들이 공유한 API를 자유롭게 둘러볼 수 있습니다</Subtitle>
-        </PageHeader>
-
-        <SearchSection>
-          <SearchBar
-            onSearch={setSearchQuery}
-            onFilterChange={setFilterType}
-            onSortChange={setSortType}
-            activeFilter={filterType}
-            activeSort={sortType}
-          />
-        </SearchSection>
-
-        {isFilteredView ? (
-          filteredList.length > 0 ? (
-            <ApiSection
-              title={`${filterType} API`}
-              description={`${filterType} API 목록입니다`}
-              items={filteredList}
-              onUse={handleUseClick}
-              onPrefetch={handlePrefetch}
+          <SearchSection>
+            <SearchBar
+              onSearch={setSearchQuery}
+              onFilterChange={setFilterType}
+              onSortChange={setSortType}
+              activeFilter={filterType}
+              activeSort={sortType}
             />
-          ) : (
-            <EmptyState>검색 결과가 없습니다.</EmptyState>
-          )
-        ) : (
-          <>
-            {displayPopular.length > 0 ? (
-            <ApiSection
-              title="인기 API"
-              description="최근 인기있는 API를 확인해보세요"
-              items={displayPopular}
-              onUse={handleUseClick}
-              onPrefetch={handlePrefetch}
-            />
-            ) : isPopularLoading ? <EmptyState>인기 API를 불러오는 중입니다...</EmptyState> : null}
+          </SearchSection>
 
-            {displayOriginal.length > 0 ? (
+          {isFilteredView ? (
+            filteredList.length > 0 ? (
               <ApiSection
-                title="ORIGINAL API"
-                description="BSSM Developers에 등록된 최신 API를 확인해보세요"
-                items={displayOriginal}
+                title={`${filterType} API`}
+                description={`${filterType} API 목록입니다`}
+                items={filteredList}
                 onUse={handleUseClick}
                 onPrefetch={handlePrefetch}
               />
-            ) : null}
-
-            {displayCustom.length > 0 ? (
-              <ApiSection
-                title="CUSTOM API"
-                description="BSSM Developers에서 사용자가 커스텀한 최신 API를 확인해보세요"
-                items={displayCustom}
-                onUse={handleUseClick}
-                onPrefetch={handlePrefetch}
-              />
-            ) : null}
-
-            {displayPopular.length === 0 && displayOriginal.length === 0 && displayCustom.length === 0 ? (
+            ) : (
               <EmptyState>검색 결과가 없습니다.</EmptyState>
-            ) : null}
-          </>
-        )}
+            )
+          ) : (
+            <>
+              {displayPopular.length > 0 ? (
+              <ApiSection
+                title="인기 API"
+                description="최근 인기있는 API를 확인해보세요"
+                items={displayPopular}
+                onUse={handleUseClick}
+                onPrefetch={handlePrefetch}
+              />
+              ) : isPopularLoading ? <EmptyState>인기 API를 불러오는 중입니다...</EmptyState> : null}
 
-      </ContentWrapper>
+              {displayOriginal.length > 0 ? (
+                <ApiSection
+                  title="ORIGINAL API"
+                  description="BSSM Developers에 등록된 최신 API를 확인해보세요"
+                  items={displayOriginal}
+                  onUse={handleUseClick}
+                  onPrefetch={handlePrefetch}
+                />
+              ) : null}
 
-      {isApplyOpen ? (
-        <ApiUseApplyModal
-          isOpen={isApplyOpen}
-          docsId={selectedApi?.id ?? null}
-          docsTitle={selectedApi?.title}
-          onClose={closeApplyModal}
-        />
-      ) : null}
-    </PageContainer>
+              {displayCustom.length > 0 ? (
+                <ApiSection
+                  title="CUSTOM API"
+                  description="BSSM Developers에서 사용자가 커스텀한 최신 API를 확인해보세요"
+                  items={displayCustom}
+                  onUse={handleUseClick}
+                  onPrefetch={handlePrefetch}
+                />
+              ) : null}
+
+              {displayPopular.length === 0 && displayOriginal.length === 0 && displayCustom.length === 0 ? (
+                <EmptyState>검색 결과가 없습니다.</EmptyState>
+              ) : null}
+            </>
+          )}
+
+        </ContentWrapper>
+
+        {isApplyOpen ? (
+          <ApiUseApplyModal
+            isOpen={isApplyOpen}
+            docsId={selectedApi?.id ?? null}
+            docsTitle={selectedApi?.title}
+            onClose={closeApplyModal}
+          />
+        ) : null}
+      </PageContainer>
+    </RequireLoginGate>
   );
 }
 

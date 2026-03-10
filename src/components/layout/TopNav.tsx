@@ -5,17 +5,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { tokenManager } from "@/utils/fetcher";
 import { useUserQuery } from "@/app/user/queries";
 import { useLogoutMutation } from "@/app/login/queries";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const { data: userData, isError, error } = useUserQuery(isClient);
   const logoutMutation = useLogoutMutation();
@@ -77,6 +79,21 @@ export function TopNav() {
     }
   };
 
+  const handleProtectedMenuClick = async (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (tokenManager.getAccessToken()) {
+      return;
+    }
+
+    event.preventDefault();
+    await confirm({
+      title: "로그인이 필요합니다",
+      message: "로그인이 필요한 서비스입니다. 로그인 페이지로 이동합니다.",
+      confirmText: "확인",
+      hideCancel: true,
+    });
+    router.push("/login");
+  };
+
   const isActive = (path: string) => {
     if (path === "/apis" && pathname.startsWith("/apis")) return true;
     if (path === "/announcements" && pathname.startsWith("/announcements")) return true;
@@ -97,10 +114,10 @@ export function TopNav() {
           />
         </LogoWrapper>
 
-        <StyledLink href="/apis">
+        <StyledLink href="/apis" onClick={handleProtectedMenuClick}>
           <NavLink active={isActive("/apis")}>API 둘러보기</NavLink>
         </StyledLink>
-        <StyledLink href="/docs/register">
+        <StyledLink href="/docs/register" onClick={handleProtectedMenuClick}>
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
         </StyledLink>
         <StyledLink href="/guide/bsdev-usage">
@@ -127,6 +144,7 @@ export function TopNav() {
           </StyledLink>
         )
       )}
+      {ConfirmDialog}
     </Header>
   );
 }

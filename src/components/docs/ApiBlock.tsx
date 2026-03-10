@@ -13,14 +13,71 @@ interface ApiBlockProps {
   onChange?: (updated: ApiDoc) => void;
 }
 
+const extractEndpointPathParamNames = (endpoint: string): string[] => {
+  const names: string[] = [];
+  const dedup = new Set<string>();
+  const matches = endpoint.matchAll(/\{([^{}\/]+)\}/g);
+
+  for (const match of matches) {
+    const rawName = match[1];
+    const name = typeof rawName === "string" ? rawName.trim() : "";
+    if (!name || dedup.has(name)) {
+      continue;
+    }
+    dedup.add(name);
+    names.push(name);
+  }
+
+  return names;
+};
+
+const syncPathParamsByEndpoint = (
+  currentPathParams: ApiDoc["pathParams"],
+  endpoint: string
+): ApiDoc["pathParams"] => {
+  const namesFromEndpoint = extractEndpointPathParamNames(endpoint);
+
+  const current = currentPathParams ?? [];
+  const currentByName = new Map<string, NonNullable<ApiDoc["pathParams"]>[number]>();
+  for (const param of current) {
+    const normalizedName = param.name.trim();
+    if (!normalizedName || currentByName.has(normalizedName)) {
+      continue;
+    }
+    currentByName.set(normalizedName, param);
+  }
+
+  const nextPathParams: NonNullable<ApiDoc["pathParams"]> = namesFromEndpoint.map((name) => {
+    const existing = currentByName.get(name);
+    if (existing) {
+      return existing;
+    }
+    return {
+      name,
+      type: "string",
+      description: "",
+      required: true,
+      example: "",
+    };
+  });
+
+  return nextPathParams;
+};
+
 export function ApiBlock({ apiData, domain, editable = false, disableVerification = false, onChange }: ApiBlockProps) {
   const handleHeaderChange = (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => {
+    const shouldSyncPathParams = updated.endpoint !== apiData.endpoint;
+    const nextPathParams = shouldSyncPathParams
+      ? syncPathParamsByEndpoint(apiData.pathParams, updated.endpoint)
+      : apiData.pathParams;
+
     onChange?.({
       ...apiData,
       name: updated.title,
       description: updated.description,
       method: updated.method as ApiDoc['method'],
       endpoint: updated.endpoint,
+      pathParams: nextPathParams,
       isVerified: updated.isVerified !== undefined ? updated.isVerified : apiData.isVerified
     });
   };

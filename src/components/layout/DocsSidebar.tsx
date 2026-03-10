@@ -167,7 +167,10 @@ const SortableNode = ({
   depth?: number;
   disableApiRename?: boolean;
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: node.id,
+    disabled: !editable,
+  });
 
   const isDropTarget = overIntent?.id === node.id;
   const isChildTarget = isDropTarget && overIntent?.mode === "child";
@@ -183,9 +186,10 @@ const SortableNode = ({
     borderLeft: depth > 0 ? "2px solid #E5E7EB" : "none",
     marginTop: depth > 0 ? 4 : 0,
   };
+  const dndInteractionProps = editable ? { ...attributes, ...listeners } : undefined;
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-node-id={node.id}>
+    <div ref={setNodeRef} style={style} {...dndInteractionProps} data-node-id={node.id}>
       <DropTargetWrapper
         isChildTarget={isChildTarget}
         isSiblingTarget={isSiblingTarget}
@@ -260,6 +264,7 @@ export function DocsSidebar({
   }, [picker.open, closePicker]);
 
   const { sensors, onDragStart, onDragOver, onDragEnd, overIntent, activeId } = useSidebarDrag({
+    editable,
     effectiveItems,
     onChange: onChange || setLocalItems,
   });

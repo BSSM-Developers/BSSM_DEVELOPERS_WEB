@@ -16,19 +16,24 @@ export function RequireLoginGate({ children }: RequireLoginGateProps) {
   const hasPromptedRef = useRef(false);
 
   useEffect(() => {
-    const token = tokenManager.getAccessToken();
-    if (token) {
-      setIsAllowed(true);
-      return;
-    }
-
-    if (hasPromptedRef.current) {
-      return;
-    }
-    hasPromptedRef.current = true;
-
     let isMounted = true;
-    const moveToLogin = async () => {
+    const checkAccess = async () => {
+      await tokenManager.initializeRefreshCycle();
+      if (!isMounted) {
+        return;
+      }
+
+      const token = tokenManager.getAccessToken();
+      if (token) {
+        setIsAllowed(true);
+        return;
+      }
+
+      if (hasPromptedRef.current) {
+        return;
+      }
+      hasPromptedRef.current = true;
+
       await confirm({
         title: "로그인이 필요합니다",
         message: "로그인이 필요한 서비스입니다. 로그인 페이지로 이동합니다.",
@@ -41,7 +46,7 @@ export function RequireLoginGate({ children }: RequireLoginGateProps) {
       router.replace("/login");
     };
 
-    void moveToLogin();
+    void checkAccess();
     return () => {
       isMounted = false;
     };

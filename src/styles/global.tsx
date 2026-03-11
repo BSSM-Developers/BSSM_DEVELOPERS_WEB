@@ -13,6 +13,10 @@ const globalStyle = css`
     background: #fafafa;
     color: #111827;
   }
+
+  textarea {
+    resize: none !important;
+  }
 `;
 
 export const GlobalStyle = () => <Global styles={globalStyle} />;

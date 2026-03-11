@@ -161,7 +161,7 @@ export function SidebarItem({
           <>
             <Label>{node.label}</Label>
             {node.module === "api" && node.method && (
-              <HttpMethodTag method={node.method as "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE"} size="small" />
+              <HttpMethodTag method={node.method as "GET" | "POST" | "DELETE" | "PUT" | "PATCH"} size="small" />
             )}
           </>
         )}

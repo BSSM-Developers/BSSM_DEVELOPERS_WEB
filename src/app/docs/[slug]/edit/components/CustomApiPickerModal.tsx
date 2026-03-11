@@ -12,7 +12,7 @@ export interface CustomApiOption {
   pageMappedId: string;
   mappedId: string;
   label: string;
-  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE";
+  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
 }
 
 interface CustomApiPickerModalProps {

@@ -17,7 +17,7 @@ interface ApiHeaderProps {
   onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
 }
 
-const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"];
+const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
 export function ApiHeader({
   title,

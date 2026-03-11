@@ -5,7 +5,7 @@ export interface DocsBlock {
   mappedId: string;
   module: "main_title" | "default" | "collapse" | "api" | "docs_1" | "headline_1" | "headline_2" | "code" | "main";
   content: string;
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 }
 
 export interface SidebarBlock {
@@ -13,7 +13,7 @@ export interface SidebarBlock {
   mappedId?: string;
   label: string;
   module: "main_title" | "default" | "collapse" | "api";
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   childrenItems?: SidebarBlock[];
 }
 
@@ -105,7 +105,7 @@ export interface DocsSideBarBlockRequest {
   id: string;
   label: string;
   module: "main_title" | "default" | "collapse" | "api";
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   childrenItems?: DocsSideBarBlockRequest[];
 }
 

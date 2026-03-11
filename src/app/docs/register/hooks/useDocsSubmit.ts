@@ -11,7 +11,7 @@ interface SidebarBlock {
   mappedId?: string;
   label: string;
   module: "main_title" | "api" | "default" | "collapse";
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   childrenItems?: SidebarBlock[];
 }
 

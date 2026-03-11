@@ -16,7 +16,7 @@ import { findNodeById } from "@/components/layout/treeUtils";
 export interface SidebarModuleOption {
   label: string;
   module: "default" | "collapse" | "main_title" | "api";
-  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE";
+  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
 }
 
 const DEFAULT_MODULE_OPTIONS: SidebarModuleOption[] = [
@@ -27,7 +27,6 @@ const DEFAULT_MODULE_OPTIONS: SidebarModuleOption[] = [
   { label: "API(DELETE)", module: "api", method: "DELETE" as const },
   { label: "API(PUT)", module: "api", method: "PUT" as const },
   { label: "API(PATCH)", module: "api", method: "PATCH" as const },
-  { label: "API(UPDATE)", module: "api", method: "UPDATE" as const },
 ] as const;
 
 type DocsSidebarProps = {

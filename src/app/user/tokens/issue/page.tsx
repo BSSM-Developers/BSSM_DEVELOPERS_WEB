@@ -169,6 +169,7 @@ export default function TokenIssuePage() {
         {step === "NAME" ? (
           <SingleInputActionForm
             title="신규 발급 받을 토큰 이름을 입력해주세요"
+            subtitle="토큰 이름은 사용 목적과 대상을 구분하기 쉬운 형태로 작성해 주세요."
             label="토큰 이름"
             value={name}
             onChange={setName}

@@ -7,6 +7,7 @@ import { FloatingInput } from "@/components/ui/FloatingInput";
 
 interface SingleInputActionFormProps {
   title: string;
+  subtitle?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -25,6 +26,7 @@ interface SingleInputActionFormProps {
 
 export function SingleInputActionForm({
   title,
+  subtitle,
   label,
   value,
   onChange,
@@ -44,7 +46,10 @@ export function SingleInputActionForm({
 
   return (
     <Shell maxWidth={maxWidth} animated={animated}>
-      <Title>{title}</Title>
+      <HeaderBlock>
+        <Title>{title}</Title>
+        {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
+      </HeaderBlock>
       <Form
         onSubmit={(event) => {
           event.preventDefault();
@@ -86,7 +91,7 @@ const Shell = styled.section<{ maxWidth: string; animated: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 64px;
+  gap: 56px;
   transform: translateY(-32px);
   ${({ animated }) =>
     animated &&
@@ -95,10 +100,25 @@ const Shell = styled.section<{ maxWidth: string; animated: boolean }>`
     `};
 `;
 
+const HeaderBlock = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+`;
+
 const Title = styled.h1`
   ${({ theme }) => applyTypography(theme, "Headline_1")};
   color: ${({ theme }) => theme.colors.grey[900]};
   text-align: center;
+`;
+
+const Subtitle = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_3")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  text-align: center;
+  max-width: 760px;
 `;
 
 const Form = styled.form`

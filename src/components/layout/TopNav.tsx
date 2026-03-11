@@ -68,6 +68,17 @@ export function TopNav() {
   }, [isClient, pathname, userData, isError, error]);
 
   const handleLogout = async () => {
+    const shouldLogout = await confirm({
+      title: "로그아웃",
+      message: "로그아웃 하시겠습니까?",
+      confirmText: "로그아웃",
+      cancelText: "취소",
+    });
+
+    if (!shouldLogout) {
+      return;
+    }
+
     try {
       await logoutMutation.mutateAsync();
     } catch (e) {

@@ -142,9 +142,9 @@ export function TopNav() {
       {isClient && (
         isLoggedIn ? (
           <AccountActions>
-            <StyledLink href="/user/profile">
+            <StyledLink href="/user">
               <ActionButton as="span" active={pathname?.startsWith("/user")}>
-                프로필
+                마이페이지
               </ActionButton>
             </StyledLink>
             <ActionButton as="span" variant="ghost" onClick={handleLogout}>로그아웃</ActionButton>

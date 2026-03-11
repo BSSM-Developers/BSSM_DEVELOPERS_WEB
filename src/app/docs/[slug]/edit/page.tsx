@@ -396,7 +396,6 @@ export default function DocsEditPage() {
   const pageTargets = useMemo(() => collectPageTargetsFromSidebar(sidebarItems), [sidebarItems]);
   const customSidebarModuleOptions = useMemo<SidebarModuleOption[]>(
     () => [
-      { label: "기본", module: "default" },
       { label: "메인", module: "main_title" },
       { label: "그룹", module: "collapse" },
       { label: "API", module: "api" },

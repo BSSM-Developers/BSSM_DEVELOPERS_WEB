@@ -20,7 +20,6 @@ export interface SidebarModuleOption {
 }
 
 const DEFAULT_MODULE_OPTIONS: SidebarModuleOption[] = [
-  { label: "기본", module: "default" },
   { label: "메인", module: "main_title" },
   { label: "그룹", module: "collapse" },
   { label: "API(GET)", module: "api", method: "GET" as const },

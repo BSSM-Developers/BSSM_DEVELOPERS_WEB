@@ -1,9 +1,20 @@
 "use client";
 
 import { useRouter, useParams, useSearchParams } from "next/navigation";
-import { useState, useCallback, useEffect, Suspense } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  Suspense,
+  useRef,
+  type ChangeEvent,
+  type ClipboardEvent as ReactClipboardEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react";
 import { tokenApi } from "../../api";
 import { SingleInputActionForm } from "@/components/common/SingleInputActionForm";
+import styled from "@emotion/styled";
+import { applyTypography } from "@/lib/themeHelper";
 import {
   getPlaceholderText,
   getSubtitleText,
@@ -20,6 +31,49 @@ import {
   MainTitle,
   PrimaryButton,
 } from "./styles";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
+
+const parseOrigins = (value: string): string[] => {
+  return Array.from(
+    new Set(
+      value
+        .split(/[\n,]/)
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0)
+    )
+  );
+};
+
+const mergeOrigins = (current: string[], incoming: string[]): string[] => {
+  if (incoming.length === 0) {
+    return current;
+  }
+  const seen = new Set(current);
+  const merged = [...current];
+  incoming.forEach((origin) => {
+    if (!seen.has(origin)) {
+      seen.add(origin);
+      merged.push(origin);
+    }
+  });
+  return merged;
+};
+
+const splitOriginDraft = (value: string): { committed: string[]; remaining: string } => {
+  if (!/[\n,]/.test(value)) {
+    return { committed: [], remaining: value };
+  }
+  const endsWithDelimiter = /[\n,]\s*$/.test(value);
+  const parts = value
+    .split(/[\n,]/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (endsWithDelimiter) {
+    return { committed: parts, remaining: "" };
+  }
+  const remaining = parts.pop() ?? "";
+  return { committed: parts, remaining };
+};
 
 function TokenEditContent() {
   const router = useRouter();
@@ -33,9 +87,12 @@ function TokenEditContent() {
   const [tokenName, setTokenName] = useState("");
   const [usageName, setUsageName] = useState("");
   const [endpoint, setEndpoint] = useState("");
+  const [origins, setOrigins] = useState<string[]>([]);
+  const [originDraft, setOriginDraft] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const originInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (initialStep === "ENDPOINT") {
@@ -44,6 +101,10 @@ function TokenEditContent() {
     }
     if (initialStep === "USAGE_NAME") {
       setStep("USAGE_NAME");
+      return;
+    }
+    if (initialStep === "ORIGINS") {
+      setStep("ORIGINS");
       return;
     }
     setStep("TOKEN_NAME");
@@ -61,6 +122,8 @@ function TokenEditContent() {
         setIsLoadingDetail(true);
         const detail = await tokenApi.getDetail(tokenId);
         setTokenName(detail.apiTokenName);
+        setOrigins(detail.origins);
+        setOriginDraft("");
         const targetUsage = apiIdParam
           ? detail.registeredApis.find(
               (apiUsage) =>
@@ -108,6 +171,24 @@ function TokenEditContent() {
       return;
     }
 
+    if (step === "ORIGINS") {
+      try {
+        setErrorMessage("");
+        setIsSubmitting(true);
+        const originsToSubmit = mergeOrigins(origins, parseOrigins(originDraft));
+        setOrigins(originsToSubmit);
+        setOriginDraft("");
+        await tokenApi.updateOrigins(tokenId, originsToSubmit);
+        setStep("SUCCESS");
+      } catch (submitError) {
+        const message = submitError instanceof Error ? submitError.message : "허용 origin 수정에 실패했습니다.";
+        setErrorMessage(message);
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (!apiIdParam) {
       setErrorMessage("유효하지 않은 API ID입니다.");
       return;
@@ -148,7 +229,7 @@ function TokenEditContent() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [apiIdParam, endpoint, isSubmitting, step, tokenId, tokenName, usageName]);
+  }, [apiIdParam, endpoint, isSubmitting, originDraft, origins, step, tokenId, tokenName, usageName]);
 
   const titleText = getTitleText(step);
   const subtitleText = getSubtitleText(step);
@@ -170,6 +251,53 @@ function TokenEditContent() {
 
   const successText = getSuccessText(step);
 
+  const handleOriginInputChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const { committed, remaining } = splitOriginDraft(event.target.value);
+    if (committed.length > 0) {
+      setOrigins((prevOrigins) => mergeOrigins(prevOrigins, committed));
+    }
+    setOriginDraft(remaining);
+  }, []);
+
+  const commitOriginDraft = useCallback(() => {
+    const committed = parseOrigins(originDraft);
+    if (committed.length === 0) {
+      setOriginDraft((prevDraft) => prevDraft.trim());
+      return;
+    }
+    setOrigins((prevOrigins) => mergeOrigins(prevOrigins, committed));
+    setOriginDraft("");
+  }, [originDraft]);
+
+  const handleOriginInputKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "," || event.key === "Enter") {
+        event.preventDefault();
+        commitOriginDraft();
+        return;
+      }
+      if (event.key === "Backspace" && originDraft.length === 0) {
+        setOrigins((prevOrigins) => prevOrigins.slice(0, -1));
+      }
+    },
+    [commitOriginDraft, originDraft.length]
+  );
+
+  const handleOriginPaste = useCallback((event: ReactClipboardEvent<HTMLInputElement>) => {
+    const pastedText = event.clipboardData.getData("text");
+    const pastedOrigins = parseOrigins(pastedText);
+    if (pastedOrigins.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    setOrigins((prevOrigins) => mergeOrigins(prevOrigins, pastedOrigins));
+    setOriginDraft("");
+  }, []);
+
+  const handleOriginRemove = useCallback((targetOrigin: string) => {
+    setOrigins((prevOrigins) => prevOrigins.filter((origin) => origin !== targetOrigin));
+  }, []);
+
   const handleComplete = useCallback(() => {
     if (tokenId === null) {
       router.push("/user/tokens");
@@ -189,6 +317,49 @@ function TokenEditContent() {
             </CheckIcon>
           </CheckCircle>
           <PrimaryButton onClick={handleComplete}>완료</PrimaryButton>
+        </FlexColumn>
+      </Container>
+    );
+  }
+
+  if (step === "ORIGINS") {
+    return (
+      <Container center>
+        <FlexColumn center animated>
+          <MainTitle>{titleText}</MainTitle>
+          <OriginSubtitle>{subtitleText}</OriginSubtitle>
+          {isLoadingDetail ? <BsdevLoader label="토큰 정보를 불러오는 중입니다..." size={52} minHeight="140px" /> : null}
+          {!isLoadingDetail ? (
+            <>
+              <OriginInputContainer onClick={() => originInputRef.current?.focus()}>
+                {origins.map((origin) => (
+                  <OriginChip key={origin}>
+                    <OriginChipText>{origin}</OriginChipText>
+                    <OriginChipDeleteButton
+                      type="button"
+                      onClick={() => handleOriginRemove(origin)}
+                      aria-label={`${origin} 삭제`}
+                    >
+                      ×
+                    </OriginChipDeleteButton>
+                  </OriginChip>
+                ))}
+                <OriginInlineInput
+                  ref={originInputRef}
+                  value={originDraft}
+                  onChange={handleOriginInputChange}
+                  onKeyDown={handleOriginInputKeyDown}
+                  onPaste={handleOriginPaste}
+                  onBlur={commitOriginDraft}
+                  placeholder={origins.length === 0 ? placeholderText : "origin을 입력해 추가해 주세요"}
+                />
+              </OriginInputContainer>
+              {errorMessage ? <OriginError>{errorMessage}</OriginError> : null}
+              <PrimaryButton onClick={() => void handleNext()} disabled={isSubmitting}>
+                {isSubmitting ? "수정 중..." : "수정하기"}
+              </PrimaryButton>
+            </>
+          ) : null}
         </FlexColumn>
       </Container>
     );
@@ -219,8 +390,95 @@ function TokenEditContent() {
 
 export default function TokenEditPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<BsdevLoader fullScreen label="토큰 수정 페이지를 불러오는 중입니다..." />}>
       <TokenEditContent />
     </Suspense>
   );
 }
+
+const OriginSubtitle = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_3")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  text-align: center;
+  margin-bottom: 18px;
+`;
+
+const OriginInputContainer = styled.div`
+  color-scheme: light;
+  width: 100%;
+  min-height: 168px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  background: #ffffff;
+  padding: 14px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 10px 8px;
+  margin-bottom: 10px;
+  outline: none;
+  cursor: text;
+
+  &:focus-within {
+    border-color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  }
+`;
+
+const OriginInlineInput = styled.input`
+  flex: 1 0 300px;
+  min-width: 220px;
+  border: none;
+  background: transparent;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: #111827;
+  -webkit-text-fill-color: #111827;
+  caret-color: #111827;
+  outline: none;
+  padding: 8px 0;
+
+  &::placeholder {
+    color: ${({ theme }) => theme.colors.grey[400]};
+    -webkit-text-fill-color: ${({ theme }) => theme.colors.grey[400]};
+    opacity: 1;
+  }
+`;
+
+const OriginChip = styled.span`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  background: ${({ theme }) => theme.colors.grey[50]};
+`;
+
+const OriginChipText = styled.span`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+`;
+
+const OriginChipDeleteButton = styled.button`
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  }
+`;
+
+const OriginError = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: #d32f2f;
+  margin-bottom: 14px;
+`;

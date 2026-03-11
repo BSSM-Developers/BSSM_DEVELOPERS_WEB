@@ -6,6 +6,8 @@ import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { FormData } from "./useDocsForm";
 import { useUserStore } from "@/store/userStore";
 
+const DRAFT_STORAGE_KEY = "docs-register-draft";
+
 interface SidebarBlock {
   id: string;
   mappedId?: string;
@@ -127,6 +129,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
       };
 
       await createOriginalMutation.mutateAsync(payload);
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
 
       await confirm({
         title: "등록 완료",
@@ -155,6 +158,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
         description: formData.description,
         writer_id: user?.id,
       });
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
 
       await confirm({
         title: "생성 완료",

@@ -124,50 +124,61 @@ export const tokenManager = {
     if (typeof window === "undefined") {
       return;
     }
-    const legacyAccessToken =
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("access-token");
-
-    if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && legacyAccessToken) {
-      sessionStorage.setItem(ACCESS_TOKEN_KEY, legacyAccessToken);
-      accessTokenMemory = legacyAccessToken;
-    }
-
-    const legacyRefreshToken =
-      localStorage.getItem("refreshToken") ||
-      localStorage.getItem("refresh_token") ||
-      localStorage.getItem("refresh-token");
-
-    if (!sessionStorage.getItem(REFRESH_TOKEN_KEY) && legacyRefreshToken) {
-      sessionStorage.setItem(REFRESH_TOKEN_KEY, legacyRefreshToken);
-      refreshTokenMemory = legacyRefreshToken;
-    }
-
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("access-token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("refresh-token");
-
-    let accessToken = tokenManager.getAccessToken();
-    if (accessToken) {
-      scheduleAccessTokenRefresh(accessToken);
-      localStorage.setItem(AUTH_SESSION_HINT_KEY, "1");
-      emitTokenChanged();
+    if (initializePromise) {
+      await initializePromise;
       return;
     }
+    initializePromise = (async () => {
+      const legacyAccessToken =
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("access-token");
 
-    const hasAuthSessionHint = localStorage.getItem(AUTH_SESSION_HINT_KEY) === "1";
-    if (!hasAuthSessionHint) {
-      return;
-    }
+      if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && legacyAccessToken) {
+        sessionStorage.setItem(ACCESS_TOKEN_KEY, legacyAccessToken);
+        accessTokenMemory = legacyAccessToken;
+      }
 
-    accessToken = await ensureRefreshedAccessToken();
-    if (accessToken) {
-      scheduleAccessTokenRefresh(accessToken);
-      emitTokenChanged();
+      const legacyRefreshToken =
+        localStorage.getItem("refreshToken") ||
+        localStorage.getItem("refresh_token") ||
+        localStorage.getItem("refresh-token");
+
+      if (!sessionStorage.getItem(REFRESH_TOKEN_KEY) && legacyRefreshToken) {
+        sessionStorage.setItem(REFRESH_TOKEN_KEY, legacyRefreshToken);
+        refreshTokenMemory = legacyRefreshToken;
+      }
+
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("access-token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("refresh-token");
+
+      let accessToken = tokenManager.getAccessToken();
+      if (accessToken) {
+        scheduleAccessTokenRefresh(accessToken);
+        localStorage.setItem(AUTH_SESSION_HINT_KEY, "1");
+        emitTokenChanged();
+        return;
+      }
+
+      const hasAuthSessionHint = localStorage.getItem(AUTH_SESSION_HINT_KEY) === "1";
+      if (!hasAuthSessionHint) {
+        return;
+      }
+
+      accessToken = await ensureRefreshedAccessToken();
+      if (accessToken) {
+        scheduleAccessTokenRefresh(accessToken);
+        emitTokenChanged();
+      }
+    })();
+    try {
+      await initializePromise;
+    } finally {
+      initializePromise = null;
     }
   },
   getUserRole: (): string | null => {
@@ -285,6 +296,7 @@ const requestRefreshFromUrl = async (url: string): Promise<ParsedRefreshTokens |
 let refreshPromise: Promise<string | null> | null = null;
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let timerToken: string | null = null;
+let initializePromise: Promise<void> | null = null;
 
 const REFRESH_SKEW_MS = 60_000;
 const REFRESH_FALLBACK_MS = 9 * 60 * 1000;
@@ -342,32 +354,12 @@ const requestAccessTokenRefresh = async (): Promise<string | null> => {
 
 const ensureRefreshedAccessToken = async (): Promise<string | null> => {
   if (!refreshPromise) {
-    refreshPromise = requestAccessTokenRefreshWithRetry(2).finally(() => {
+    refreshPromise = requestAccessTokenRefresh().finally(() => {
       refreshPromise = null;
     });
   }
 
   return refreshPromise;
-};
-
-const requestAccessTokenRefreshWithRetry = async (retryCount: number): Promise<string | null> => {
-  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
-    try {
-      const refreshed = await requestAccessTokenRefresh();
-      if (refreshed) {
-        return refreshed;
-      }
-    } catch {
-    }
-
-    if (attempt < retryCount) {
-      await new Promise((resolve) => {
-        setTimeout(resolve, 350 * (attempt + 1));
-      });
-    }
-  }
-
-  return null;
 };
 
 const request = async <T>(

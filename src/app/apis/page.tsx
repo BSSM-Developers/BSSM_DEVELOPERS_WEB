@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SearchBar } from "@/components/apis/SearchBar";
 import { ApiSection } from "@/components/apis/ApiSection";
 import { RequireLoginGate } from "@/components/auth/RequireLoginGate";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { type ApiItem } from "./mockData";
 import { docsKeys, useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
@@ -150,7 +151,7 @@ export default function ApiExplorePage() {
               <Title>API 둘러보기</Title>
               <Subtitle>학생들이 공유한 API를 자유롭게 둘러볼 수 있습니다</Subtitle>
             </PageHeader>
-            <EmptyState>데이터를 불러오는 중입니다...</EmptyState>
+            <BsdevLoader label="데이터를 불러오는 중입니다..." size={56} minHeight="180px" />
           </ContentWrapper>
         </PageContainer>
       </RequireLoginGate>
@@ -196,7 +197,7 @@ export default function ApiExplorePage() {
                 items={displayPopular}
                 onPrefetch={handlePrefetch}
               />
-              ) : isPopularLoading ? <EmptyState>인기 API를 불러오는 중입니다...</EmptyState> : null}
+              ) : isPopularLoading ? <BsdevLoader label="인기 API를 불러오는 중입니다..." size={48} minHeight="140px" /> : null}
 
               {displayOriginal.length > 0 ? (
                 <ApiSection

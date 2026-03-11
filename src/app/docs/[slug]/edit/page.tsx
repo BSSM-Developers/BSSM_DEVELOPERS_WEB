@@ -18,6 +18,7 @@ import { DocsLayout } from "@/components/layout/DocsLayout";
 import { SidebarModuleOption } from "@/components/layout/DocsSidebar";
 import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useDocsStore } from "@/store/docsStore";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
@@ -100,12 +101,6 @@ const ReadonlyNotice = styled.div`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 14px;
   font-weight: 600;
-`;
-
-const LoadingBox = styled.div`
-  padding: 40px;
-  text-align: center;
-  color: #6b7280;
 `;
 
 const ErrorBox = styled.div`
@@ -1397,7 +1392,7 @@ export default function DocsEditPage() {
   ]);
 
   if (sidebarLoading) {
-    return <LoadingBox>문서 정보를 불러오는 중입니다.</LoadingBox>;
+    return <BsdevLoader label="문서 정보를 불러오는 중입니다." size={52} minHeight="160px" />;
   }
 
   if (sidebarError) {

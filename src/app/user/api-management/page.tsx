@@ -1,6 +1,7 @@
 "use client";
 
 import { DocsHeader } from "@/components/docs/DocsHeader";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -410,7 +411,7 @@ export default function MyApiManagementPage() {
           </DocsSelectContainer>
         </FilterRow>
 
-        {isLoading ? <StatusText>사용 신청 목록을 불러오는 중입니다.</StatusText> : null}
+        {isLoading ? <BsdevLoader label="사용 신청 목록을 불러오는 중입니다." size={52} minHeight="140px" /> : null}
         {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
 
         {!isLoading && !errorMessage ? (

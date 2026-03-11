@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DocsHeader } from "@/components/docs/DocsHeader";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useUserQuery } from "@/app/user/queries";
 import { apiUseReasonApi, type ApiUsageByApiItem } from "@/app/apis/useReasonApi";
@@ -125,7 +126,7 @@ export default function AdminApiUseReasonsPage() {
           ))}
         </FilterRow>
 
-        {isLoading ? <StatusText>목록을 불러오는 중입니다.</StatusText> : null}
+        {isLoading ? <BsdevLoader label="목록을 불러오는 중입니다." size={52} minHeight="140px" /> : null}
         {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
 
         {!isLoading && !errorMessage ? (

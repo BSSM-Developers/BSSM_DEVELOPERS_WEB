@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useDocsPageQuery, useDocsSidebarQuery } from "@/app/docs/queries";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 import { SidebarBlock } from "@/app/docs/api";
@@ -38,11 +39,7 @@ export default function DocsPageDetail() {
   }, [id, setSelected]);
 
   if (isPageLoading) {
-    return (
-      <LoadingBox>
-        Loading...
-      </LoadingBox>
-    );
+    return <BsdevLoader label="문서 페이지를 불러오는 중입니다..." size={52} minHeight="160px" />;
   }
 
   if (pageError) {
@@ -108,12 +105,6 @@ export default function DocsPageDetail() {
     </>
   );
 }
-
-const LoadingBox = styled.div`
-  padding: 40px;
-  text-align: center;
-  color: #6b7280;
-`;
 
 const ErrorBox = styled.div`
   padding: 40px;

@@ -24,7 +24,7 @@ export default function ProfilePage() {
 
       <ContentWrapper>
         <Title>사용자 정보</Title>
-        <Subtitle>나의 정보를 확인하거나 수정할 수 있어요</Subtitle>
+        <Subtitle>나의 정보를 확인할 수 있어요</Subtitle>
 
         {shouldShowLoading ? (
           <BsdevLoader label="사용자 정보를 불러오는 중입니다..." size={56} minHeight="160px" />
@@ -38,11 +38,6 @@ export default function ProfilePage() {
             <FloatingInput
               label="이메일"
               value={user.email}
-              readOnly
-            />
-            <FloatingInput
-              label="역할"
-              value={user.role}
               readOnly
             />
           </ProfileForm>

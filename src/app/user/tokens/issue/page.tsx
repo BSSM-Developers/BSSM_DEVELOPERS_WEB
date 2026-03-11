@@ -167,26 +167,29 @@ export default function TokenIssuePage() {
       <Container center>
         <FlexColumn center animated>
         {step === "NAME" ? (
-          <SingleInputActionForm
-            title="신규 발급 받을 토큰 이름을 입력해주세요"
-            label="토큰 이름"
-            value={name}
-            onChange={setName}
-            placeholder="토큰 이름을 입력해주세요"
-            onSubmit={() => setStep("DOMAIN")}
-            submitText="다음"
-            isSubmitting={isSubmitting}
-            isDisabled={!name.trim()}
-            maxWidth="800px"
-            animated
-            errorText={errorMessage || undefined}
-          />
+          <StepContent key="name">
+            <SingleInputActionForm
+              title="신규 발급 받을 토큰 이름을 입력해주세요"
+              subtitle="토큰 이름은 사용 목적과 대상을 구분하기 쉬운 형태로 작성해 주세요."
+              label="토큰 이름"
+              value={name}
+              onChange={setName}
+              placeholder="토큰 이름을 입력해주세요"
+              onSubmit={() => setStep("DOMAIN")}
+              submitText="다음"
+              isSubmitting={isSubmitting}
+              isDisabled={!name.trim()}
+              maxWidth="800px"
+              animated
+              errorText={errorMessage || undefined}
+            />
+          </StepContent>
         ) : (
-          <>
-            <InputTitle>도메인을 입력해주세요 (선택)</InputTitle>
-            <DomainDescription>쉼표(,) 또는 줄바꿈으로 여러 도메인을 입력할 수 있습니다.</DomainDescription>
+          <StepContent key="domain">
+            <InputTitle>허용할 origin을 입력해주세요</InputTitle>
+            <DomainDescription>쉼표(,) 또는 줄바꿈으로 여러 origin을 입력할 수 있습니다.</DomainDescription>
             <DomainTextarea
-              placeholder={"예: bssm-dev.com, app.bssm-dev.com"}
+              placeholder={"예: https://bssm-dev.com, https://app.bssm-dev.com"}
               value={domainInput}
               onChange={(e) => setDomainInput(e.target.value)}
               autoFocus
@@ -209,7 +212,7 @@ export default function TokenIssuePage() {
             <BackButton onClick={() => setStep("NAME")} disabled={isSubmitting}>
               이전
             </BackButton>
-          </>
+          </StepContent>
         )}
         {step === "DOMAIN" && errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
       </FlexColumn>
@@ -234,6 +237,11 @@ const FlexColumn = styled.div<{ center?: boolean; animated?: boolean }>`
   ${({ animated }) => animated && css`
     animation: ${slideIn} 0.6s ease-out forwards;
   `}
+`;
+
+const StepContent = styled.div`
+  width: 100%;
+  animation: ${slideIn} 0.35s ease-out;
 `;
 
 const InputTitle = styled.h2`
@@ -270,6 +278,7 @@ const DomainDescription = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: ${({ theme }) => theme.colors.grey[500]};
   margin-bottom: 16px;
+  text-align: center;
 `;
 
 const DomainList = styled.div`

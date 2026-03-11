@@ -1,9 +1,10 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent as ReactMouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { ParamItem } from "@/components/ui/param/ParamItem";
-import { validateParams } from "@/utils/apiUtils/paramUtils";
+import { generateParamExamples, validateParams } from "@/utils/apiUtils/paramUtils";
 import { useConfirm } from "@/hooks/useConfirm";
 
 interface ApiParam {
@@ -23,8 +24,99 @@ interface ApiParamsSectionProps {
   editable?: boolean;
   paramLocation?: string;
   hideRequired?: boolean;
+  enableJsonInput?: boolean;
   onParamsChange?: (params: ApiParam[]) => void;
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+};
+
+const inferPrimitiveType = (value: string | number | boolean | null): ApiParam["type"] => {
+  if (value === null) {
+    return "null";
+  }
+  if (typeof value === "boolean") {
+    return "boolean";
+  }
+  if (typeof value === "number") {
+    return Number.isInteger(value) ? "integer" : "number";
+  }
+  return "string";
+};
+
+const primitiveToExample = (value: string | number | boolean | null): string => {
+  if (value === null) {
+    return "null";
+  }
+  return String(value);
+};
+
+const mapExistingParamsByName = (existingParams: ApiParam[] | undefined): Map<string, ApiParam> => {
+  const map = new Map<string, ApiParam>();
+  if (!existingParams) {
+    return map;
+  }
+
+  for (const param of existingParams) {
+    const normalizedName = param.name.trim();
+    if (!normalizedName || map.has(normalizedName)) {
+      continue;
+    }
+    map.set(normalizedName, param);
+  }
+
+  return map;
+};
+
+const jsonValueToParam = (name: string, value: unknown, existingParam?: ApiParam): ApiParam => {
+  if (isRecord(value)) {
+    const existingChildrenByName = mapExistingParamsByName(existingParam?.children);
+    const children = Object.entries(value).map(([childKey, childValue]) =>
+      jsonValueToParam(childKey, childValue, existingChildrenByName.get(childKey.trim()))
+    );
+    return {
+      name,
+      type: "object",
+      description: existingParam?.description ?? "",
+      required: existingParam?.required ?? false,
+      example: existingParam?.example ?? "",
+      children,
+    };
+  }
+
+  if (Array.isArray(value)) {
+    const firstObject = value.find((item) => isRecord(item));
+    const existingChildrenByName = mapExistingParamsByName(existingParam?.children);
+    const children = firstObject
+      ? Object.entries(firstObject).map(([childKey, childValue]) =>
+        jsonValueToParam(childKey, childValue, existingChildrenByName.get(childKey.trim()))
+      )
+      : [];
+    return {
+      name,
+      type: "array",
+      description: existingParam?.description ?? "",
+      required: existingParam?.required ?? false,
+      example: children.length > 0 ? "" : JSON.stringify(value),
+      children: children.length > 0 ? children : undefined,
+    };
+  }
+
+  const primitive = value as string | number | boolean | null;
+  return {
+    name,
+    type: inferPrimitiveType(primitive),
+    description: existingParam?.description ?? "",
+    required: existingParam?.required ?? false,
+    example: primitiveToExample(primitive),
+  };
+};
+
+const jsonObjectToParams = (jsonObject: Record<string, unknown>, existingParams: ApiParam[]): ApiParam[] => {
+  const existingByName = mapExistingParamsByName(existingParams);
+  return Object.entries(jsonObject).map(([key, value]) => jsonValueToParam(key, value, existingByName.get(key.trim())));
+};
 
 export function ApiParamsSection({
   title,
@@ -33,6 +125,7 @@ export function ApiParamsSection({
   editable = false,
   paramLocation = 'body',
   hideRequired = false,
+  enableJsonInput = false,
   onParamsChange
 }: ApiParamsSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -40,6 +133,9 @@ export function ApiParamsSection({
     isValid: true,
     errors: {}
   });
+  const [jsonModalOpen, setJsonModalOpen] = useState(false);
+  const [jsonDraft, setJsonDraft] = useState("");
+  const [jsonError, setJsonError] = useState("");
 
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -76,6 +172,52 @@ export function ApiParamsSection({
     }
   };
 
+  const openJsonModal = () => {
+    const seed = params.length > 0 ? generateParamExamples(params) : {};
+    setJsonDraft(JSON.stringify(seed, null, 2));
+    setJsonError("");
+    setJsonModalOpen(true);
+  };
+
+  const closeJsonModal = () => {
+    setJsonModalOpen(false);
+    setJsonError("");
+  };
+
+  const handleJsonBackdropMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    closeJsonModal();
+  };
+
+  const applyJsonDraft = () => {
+    if (!onParamsChange) {
+      closeJsonModal();
+      return;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonDraft);
+    } catch {
+      setJsonError("유효한 JSON 형식이 아닙니다.");
+      return;
+    }
+
+    if (!isRecord(parsed)) {
+      setJsonError("최상위는 JSON 객체({}) 형식이어야 합니다.");
+      return;
+    }
+
+    const nextParams = jsonObjectToParams(parsed, params);
+    onParamsChange(nextParams);
+    if (!isOpen) {
+      setIsOpen(true);
+    }
+    closeJsonModal();
+  };
+
   if (params.length === 0 && !editable) return null;
 
   return (
@@ -91,6 +233,14 @@ export function ApiParamsSection({
           </ValidationIndicator>
         )}
       </ParamSectionHeader>
+
+      {enableJsonInput && editable && (
+        <JsonImportRow>
+          <JsonImportButton type="button" onClick={openJsonModal}>
+            JSON으로 입력
+          </JsonImportButton>
+        </JsonImportRow>
+      )}
 
       {isOpen && (
         <>
@@ -131,6 +281,34 @@ export function ApiParamsSection({
             )}
           </ParamList>
         </>
+      )}
+      {jsonModalOpen && typeof document !== "undefined" && createPortal(
+        <JsonModalBackdrop onMouseDown={handleJsonBackdropMouseDown}>
+          <JsonModalCard onClick={(event) => event.stopPropagation()}>
+            <JsonModalTitle>Body JSON 입력</JsonModalTitle>
+            <JsonModalDescription>JSON을 붙여넣으면 Body 파라미터가 자동 생성됩니다.</JsonModalDescription>
+            <JsonTextarea
+              value={jsonDraft}
+              onChange={(event) => {
+                setJsonDraft(event.target.value);
+                if (jsonError) {
+                  setJsonError("");
+                }
+              }}
+              placeholder='{"post_id":"abc123","title":"제목","enabled":true}'
+            />
+            {jsonError ? <JsonError>{jsonError}</JsonError> : null}
+            <JsonModalActions>
+              <JsonActionButton type="button" onClick={closeJsonModal}>
+                취소
+              </JsonActionButton>
+              <JsonActionButton type="button" primary onClick={applyJsonDraft}>
+                적용
+              </JsonActionButton>
+            </JsonModalActions>
+          </JsonModalCard>
+        </JsonModalBackdrop>,
+        document.body
       )}
       {ConfirmDialog}
     </ParamSection>
@@ -257,4 +435,118 @@ const ParamList = styled.div`
   gap: 8px;
   width: 100%;
   margin-top: 12px;
+`;
+
+const JsonImportRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -8px;
+`;
+
+const JsonImportButton = styled.button`
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: 1px solid #D1D5DB;
+  background: #FFFFFF;
+  color: #4B5563;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: #16335C;
+    color: #16335C;
+    background: #F8FAFC;
+  }
+`;
+
+const JsonModalBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(15, 23, 40, 0.38);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+`;
+
+const JsonModalCard = styled.div`
+  width: min(760px, 100%);
+  border-radius: 12px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 10px 30px rgba(15, 23, 40, 0.22);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const JsonModalTitle = styled.h4`
+  margin: 0;
+  color: #191F28;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+`;
+
+const JsonModalDescription = styled.p`
+  margin: 0;
+  color: #6B7280;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+`;
+
+const JsonTextarea = styled.textarea`
+  width: 100%;
+  min-height: 260px;
+  border-radius: 10px;
+  border: 1px solid #D1D5DB;
+  background: #F8FAFC;
+  color: #0F172A;
+  font-family: "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 12px;
+  resize: vertical;
+  outline: none;
+
+  &:focus {
+    border-color: #16335C;
+    box-shadow: 0 0 0 2px rgba(22, 51, 92, 0.15);
+    background: #FFFFFF;
+  }
+`;
+
+const JsonError = styled.div`
+  color: #DC2626;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+`;
+
+const JsonModalActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+`;
+
+const JsonActionButton = styled.button<{ primary?: boolean }>`
+  min-width: 76px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid ${({ primary }) => (primary ? "#16335C" : "#D1D5DB")};
+  background: ${({ primary }) => (primary ? "#16335C" : "#FFFFFF")};
+  color: ${({ primary }) => (primary ? "#FFFFFF" : "#4B5563")};
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
 `;

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { tokenManager } from "@/utils/fetcher";
 import { signUpApi } from "@/app/sign-up/api";
 import { userApi } from "@/app/user/api";
-import styled from "@emotion/styled";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 
 import { useLoginMutation } from "@/app/login/queries";
 import { authApi } from "@/app/login/api";
@@ -105,29 +105,14 @@ function GoogleCallbackContent() {
   }, [searchParams, router, loginMutation]);
 
   return (
-    <Container>
-      <Message>{status}</Message>
-    </Container>
+    <BsdevLoader fullScreen label={status} size={92} />
   );
 }
 
 export default function GoogleCallbackPage() {
   return (
-    <Suspense fallback={<Container><Message>로딩 중...</Message></Container>}>
+    <Suspense fallback={<BsdevLoader fullScreen label="로그인 정보를 확인하는 중입니다..." size={92} />}>
       <GoogleCallbackContent />
     </Suspense>
   );
 }
-
-const Container = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background-color: #f9fafb;
-`;
-
-const Message = styled.h2`
-  font-size: 20px;
-  color: #374151;
-`;

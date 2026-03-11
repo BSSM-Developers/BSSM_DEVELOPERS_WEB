@@ -13,7 +13,6 @@ interface ApiHeaderProps {
   endpoint: string;
   onTryClick?: () => void;
   editable?: boolean;
-  disableVerification?: boolean;
   missingPathParams?: string[];
   onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
 }
@@ -28,7 +27,6 @@ export function ApiHeader({
   endpoint,
   onTryClick,
   editable = false,
-  disableVerification = false,
   missingPathParams = [],
   onChange
 }: ApiHeaderProps) {
@@ -111,12 +109,12 @@ export function ApiHeader({
         <TitleSection>
           <EditTitleInput
             value={title}
-            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, isVerified: false })}
+            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint })}
             placeholder="API 제목"
           />
           <EditDescInput
             value={description}
-            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, isVerified: false })}
+            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint })}
             placeholder="API 설명"
           />
         </TitleSection>
@@ -130,24 +128,13 @@ export function ApiHeader({
         <EndpointSection>
           <MethodSelect
             value={method}
-            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, isVerified: false })}
+            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint })}
           />
           <EditEndpointInput
             value={endpoint}
-            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, isVerified: false })}
+            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
-          {!disableVerification ? (
-            <VerifyButton
-              state={verifyState}
-              onClick={handleVerify}
-              disabled={isVerifying}
-            >
-              {isVerifying ? "검증 중..." :
-                verifyState === 'success' ? "검증 완료" :
-                  verifyState === 'fail' ? "검증 실패" : "검증"}
-            </VerifyButton>
-          ) : null}
         </EndpointSection>
 
         {ConfirmDialog}

@@ -146,7 +146,7 @@ export function ParamItem({
               )}
             </DescriptionWrapper>
           </ParamInfo>
-          <DeleteButton type="button" onClick={onDelete}>×</DeleteButton>
+          <DeleteButton type="button" onClick={onDelete}>삭제</DeleteButton>
         </Container>
         {isComplexType && (
           <ChildrenContainer>
@@ -421,14 +421,27 @@ const EditInput = styled.input`
 `;
 
 const DeleteButton = styled.button`
-  background: none;
-  border: none;
+  min-width: 52px;
+  height: 30px;
+  padding: 0 12px;
+  margin-left: 12px;
+  border-radius: 6px;
+  border: 1px solid #FCA5A5;
+  background: #FFF1F2;
   color: #FF4D4F;
-  font-size: 20px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 1;
   cursor: pointer;
-  padding: 0 8px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+
   &:hover {
     color: #CF1322;
+    border-color: #EF4444;
+    background: #FFE4E6;
   }
 `;
 
@@ -436,6 +449,7 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 0 20px 0 0;
   width: 100%;
   max-width: 850px;

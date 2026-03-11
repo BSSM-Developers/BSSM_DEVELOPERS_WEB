@@ -35,7 +35,7 @@ export default function DocsProjectPage() {
         router.replace(`/docs/${slug}/page/${firstId}`);
       }
     }
-  }, [sidebarData, setSelected, slug, router]);
+  }, [router, setSelected, sidebarData, slug]);
 
   if (isSidebarLoading) {
     return (

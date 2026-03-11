@@ -6,6 +6,7 @@ import { tokenApi } from "../../api";
 import { SingleInputActionForm } from "@/components/common/SingleInputActionForm";
 import {
   getPlaceholderText,
+  getSubtitleText,
   getSuccessText,
   getTitleText,
   parseTokenId,
@@ -150,6 +151,7 @@ function TokenEditContent() {
   }, [apiIdParam, endpoint, isSubmitting, step, tokenId, tokenName, usageName]);
 
   const titleText = getTitleText(step);
+  const subtitleText = getSubtitleText(step);
   const placeholderText = getPlaceholderText(step);
   const inputValue = step === "TOKEN_NAME" ? tokenName : step === "USAGE_NAME" ? usageName : endpoint;
   const inputLabel = step === "TOKEN_NAME" ? "토큰 이름" : step === "USAGE_NAME" ? "API 이름" : "엔드포인트";
@@ -196,6 +198,7 @@ function TokenEditContent() {
     <Container center>
       <SingleInputActionForm
         title={titleText}
+        subtitle={subtitleText}
         label={inputLabel}
         value={inputValue}
         onChange={handleInputChange}

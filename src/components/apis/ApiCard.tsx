@@ -2,7 +2,6 @@
 
 import styled from "@emotion/styled";
 import { useRouter } from "next/navigation";
-import type { MouseEvent } from "react";
 import { applyTypography } from "@/lib/themeHelper";
 
 interface ApiCardProps {
@@ -13,11 +12,10 @@ interface ApiCardProps {
   type?: string;
   logo?: string;
   onExplore?: () => void;
-  onUse?: () => void;
   onPrefetch?: () => void;
 }
 
-export function ApiCard({ id, title, description, tags, type, onExplore, onUse, onPrefetch }: ApiCardProps) {
+export function ApiCard({ id, title, description, tags, type, onExplore, onPrefetch }: ApiCardProps) {
   const router = useRouter();
 
   const handleExplore = () => {
@@ -26,12 +24,6 @@ export function ApiCard({ id, title, description, tags, type, onExplore, onUse, 
     } else {
       router.push(`/docs/${id}`);
     }
-  };
-
-  const handleUse = (event: MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onUse?.();
   };
 
   const dotType = type || tags[0];
@@ -48,8 +40,9 @@ export function ApiCard({ id, title, description, tags, type, onExplore, onUse, 
       </CardHeader>
       <CardFooter>
         <ButtonGroup>
-          <ActionButton type="button" onClick={handleExplore}>둘러보기</ActionButton>
-          <ActionButton type="button" primary onClick={handleUse} disabled={!onUse}>사용하기</ActionButton>
+          <ActionButton type="button" primary onClick={handleExplore}>
+            자세히 보기
+          </ActionButton>
         </ButtonGroup>
       </CardFooter>
     </CardContainer>

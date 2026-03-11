@@ -3,7 +3,7 @@
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
 import { apiUseReasonApi, type ApiUsageByApiItem } from "@/app/apis/useReasonApi";
@@ -183,6 +183,8 @@ export default function MyApiManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [processingKey, setProcessingKey] = useState<string | null>(null);
+  const [isDocsMenuOpen, setIsDocsMenuOpen] = useState(false);
+  const docsSelectRef = useRef<HTMLDivElement>(null);
 
   const loadItems = useCallback(async () => {
     try {
@@ -257,6 +259,25 @@ export default function MyApiManagementPage() {
     }
   }, [selectedDocsIdFromQuery]);
 
+  useEffect(() => {
+    if (!isDocsMenuOpen) {
+      return;
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const targetNode = event.target;
+      if (!(targetNode instanceof Node)) {
+        return;
+      }
+      if (!docsSelectRef.current?.contains(targetNode)) {
+        setIsDocsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isDocsMenuOpen]);
+
   const handleDecision = useCallback(async (item: ManagedUsageItem, action: "approve" | "reject") => {
     const apiTargetId = String(item.apiTokenId ?? item.queryApiId ?? item.apiId ?? "").trim();
     const reasonId = String(item.apiUseReasonId ?? "").trim();
@@ -317,6 +338,14 @@ export default function MyApiManagementPage() {
     return [...items].sort((a, b) => Number(b.apiUseReasonId) - Number(a.apiUseReasonId));
   }, [items]);
 
+  const selectedDocsLabel = useMemo(() => {
+    if (!selectedDocsId) {
+      return "전체 ORIGINAL 문서";
+    }
+    const selectedDocs = ownedOriginalDocs.find((docs) => String(docs.docsId ?? "") === selectedDocsId);
+    return selectedDocs?.title || "전체 ORIGINAL 문서";
+  }, [ownedOriginalDocs, selectedDocsId]);
+
   return (
     <Container>
       <DocsHeader title="내 API 관리" breadcrumb={["마이페이지"]} />
@@ -333,19 +362,52 @@ export default function MyApiManagementPage() {
         </HeaderRow>
         <FilterRow>
           <FilterLabel>문서 선택</FilterLabel>
-          <DocsSelect
-            value={selectedDocsId}
-            onChange={(event) => {
-              setSelectedDocsId(event.target.value);
-            }}
-          >
-            <option value="">전체 ORIGINAL 문서</option>
-            {ownedOriginalDocs.map((docs) => (
-              <option key={String(docs.docsId ?? "")} value={String(docs.docsId ?? "")}>
-                {docs.title}
-              </option>
-            ))}
-          </DocsSelect>
+          <DocsSelectContainer ref={docsSelectRef}>
+            <DocsSelectTrigger
+              type="button"
+              aria-haspopup="listbox"
+              aria-expanded={isDocsMenuOpen}
+              onClick={() => setIsDocsMenuOpen((prev) => !prev)}
+            >
+              <DocsSelectValue>{selectedDocsLabel}</DocsSelectValue>
+              <DocsSelectArrow open={isDocsMenuOpen}>▲</DocsSelectArrow>
+            </DocsSelectTrigger>
+            {isDocsMenuOpen ? (
+              <DocsOptionList role="listbox" aria-label="문서 선택">
+                <DocsOptionButton
+                  type="button"
+                  role="option"
+                  $selected={selectedDocsId === ""}
+                  aria-selected={selectedDocsId === ""}
+                  onClick={() => {
+                    setSelectedDocsId("");
+                    setIsDocsMenuOpen(false);
+                  }}
+                >
+                  전체 ORIGINAL 문서
+                </DocsOptionButton>
+                {ownedOriginalDocs.map((docs) => {
+                  const docsId = String(docs.docsId ?? "");
+                  const isSelected = selectedDocsId === docsId;
+                  return (
+                    <DocsOptionButton
+                      key={docsId}
+                      type="button"
+                      role="option"
+                      $selected={isSelected}
+                      aria-selected={isSelected}
+                      onClick={() => {
+                        setSelectedDocsId(docsId);
+                        setIsDocsMenuOpen(false);
+                      }}
+                    >
+                      {docs.title}
+                    </DocsOptionButton>
+                  );
+                })}
+              </DocsOptionList>
+            ) : null}
+          </DocsSelectContainer>
         </FilterRow>
 
         {isLoading ? <StatusText>사용 신청 목록을 불러오는 중입니다.</StatusText> : null}
@@ -479,16 +541,68 @@ const FilterLabel = styled.span`
   font-weight: 700;
 `;
 
-const DocsSelect = styled.select`
-  height: 40px;
+const DocsSelectContainer = styled.div`
+  position: relative;
   min-width: 260px;
+`;
+
+const DocsSelectTrigger = styled.button`
+  width: 100%;
+  height: 40px;
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.colors.grey[300]};
   background: #ffffff;
   color: ${({ theme }) => theme.colors.grey[800]};
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+`;
+
+const DocsSelectValue = styled.span`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   font-weight: 600;
-  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const DocsSelectArrow = styled.span<{ open: boolean }>`
+  color: ${({ theme }) => theme.colors.grey[500]};
+  font-size: 12px;
+  transform: ${({ open }) => (open ? "rotate(0deg)" : "rotate(180deg)")};
+  transition: transform 0.15s ease;
+`;
+
+const DocsOptionList = styled.div`
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+`;
+
+const DocsOptionButton = styled.button<{ $selected: boolean }>`
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  background: ${({ $selected }) => ($selected ? "rgba(22, 51, 92, 0.08)" : "#ffffff")};
+  color: ${({ theme }) => theme.colors.grey[800]};
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    background: #f3f4f6;
+  }
 `;
 
 const RequestList = styled.div`

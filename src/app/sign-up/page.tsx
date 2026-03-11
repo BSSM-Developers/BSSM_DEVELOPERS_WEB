@@ -180,6 +180,7 @@ export default function SignUpPage() {
         <FormOnlyCenter>
           <SingleInputActionForm
             title="회원가입 신청 목적을 입력해주세요"
+            subtitle="BSSM Developers는 학생들의 안전한 API 관리를 위해 외부 사용자의 접근을 제한하고 있습니다."
             label="신청 목적"
             value={purpose}
             onChange={setPurpose}

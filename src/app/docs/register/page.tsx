@@ -13,6 +13,7 @@ import { useUserStore } from '@/store/userStore';
 import { useDocsStore } from '@/store/docsStore';
 import { useConfirm } from '@/hooks/useConfirm';
 import { useRouter } from 'next/navigation';
+import { RequireLoginGate } from "@/components/auth/RequireLoginGate";
 
 const DRAFT_STORAGE_KEY = "docs-register-draft";
 const DRAFT_VERSION = 1;
@@ -134,10 +135,6 @@ export default function DocsRegisterPage() {
               return;
             }
 
-            if (!api.isVerified) {
-              await confirm({ title: "검증 실패", message: `[${docName}] 실제 API 검증이 누락되었거나 실패했습니다. 검증을 다시 완벽하게 완료해주세요.`, hideCancel: true });
-              return;
-            }
           }
         }
       }
@@ -293,52 +290,60 @@ export default function DocsRegisterPage() {
     return () => document.removeEventListener('click', handleLinkClick, { capture: true });
   }, [step, hasDraftContent, confirm, router]);
 
-  if (!isRestored) return <div style={{ minHeight: '100vh', background: '#FAFAFA' }} />;
+  if (!isRestored) {
+    return (
+      <RequireLoginGate>
+        <div style={{ minHeight: '100vh', background: '#FAFAFA' }} />
+      </RequireLoginGate>
+    );
+  }
 
   return (
-    <>
-      {ConfirmDialog}
-      {step === 'EDITOR' ? (
-        <EditorStep
-          formData={formData}
-          sidebarItems={sidebarItems}
-          setSidebarItems={setSidebarItems}
-          docsBlocks={docsBlocks}
-          handleBlockChange={handleBlockChange}
-          handleAddBlock={handleAddBlock}
-          handleDuplicateBlock={handleDuplicateBlock}
-          handleRemoveBlock={handleRemoveBlock}
-          handleFocusMove={handleFocusMove}
-          handleMoveBlock={handleMoveBlock}
-          handleStepChange={setStep}
-          handleNext={handleNextStep}
-        />
-      ) : (
-        <Container>
-          {step === 'INPUT' && (
-            <InputStep
-              formData={formData}
-              updateFormData={updateFormData}
-              handleNext={handleNextStep}
-              userName={userName}
-            />
-          )}
+    <RequireLoginGate>
+      <>
+        {ConfirmDialog}
+        {step === 'EDITOR' ? (
+          <EditorStep
+            formData={formData}
+            sidebarItems={sidebarItems}
+            setSidebarItems={setSidebarItems}
+            docsBlocks={docsBlocks}
+            handleBlockChange={handleBlockChange}
+            handleAddBlock={handleAddBlock}
+            handleDuplicateBlock={handleDuplicateBlock}
+            handleRemoveBlock={handleRemoveBlock}
+            handleFocusMove={handleFocusMove}
+            handleMoveBlock={handleMoveBlock}
+            handleStepChange={setStep}
+            handleNext={handleNextStep}
+          />
+        ) : (
+          <Container>
+            {step === 'INPUT' && (
+              <InputStep
+                formData={formData}
+                updateFormData={updateFormData}
+                handleNext={handleNextStep}
+                userName={userName}
+              />
+            )}
 
-          {step === 'CONFIRM' && (
-            <ConfirmStep
-              formData={formData}
-              userName={userName}
-              handleStepChange={setStep}
-              handleSubmit={handleSubmit}
-              loading={loading}
-            />
-          )}
+            {step === 'CONFIRM' && (
+              <ConfirmStep
+                formData={formData}
+                userName={userName}
+                handleStepChange={setStep}
+                handleSubmit={handleSubmit}
+                loading={loading}
+              />
+            )}
 
-          {step === 'SUCCESS' && (
-            <SuccessStep />
-          )}
-        </Container>
-      )}
-    </>
+            {step === 'SUCCESS' && (
+              <SuccessStep />
+            )}
+          </Container>
+        )}
+      </>
+    </RequireLoginGate>
   );
 }

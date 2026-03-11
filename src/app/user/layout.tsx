@@ -4,6 +4,7 @@ import { DocsLayout } from "@/components/layout/DocsLayout";
 import { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { useUserQuery } from "@/app/user/queries";
 import { useMemo } from "react";
+import { RequireLoginGate } from "@/components/auth/RequireLoginGate";
 
 const BASE_USER_SIDEBAR_ITEMS: SidebarNode[] = [
   {
@@ -55,13 +56,15 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }, [user?.role]);
 
   return (
-    <DocsLayout
-      sidebarItems={sidebarItems}
-      projectName="마이페이지"
-      showSidebar={true}
-      editable={false}
-    >
-      {children}
-    </DocsLayout>
+    <RequireLoginGate>
+      <DocsLayout
+        sidebarItems={sidebarItems}
+        projectName="마이페이지"
+        showSidebar={true}
+        editable={false}
+      >
+        {children}
+      </DocsLayout>
+    </RequireLoginGate>
   );
 }

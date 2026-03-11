@@ -8,20 +8,19 @@ import { appendChild, insertAfter } from "@/components/layout/sidebarUtils";
 type Node = SidebarNode & { id: string };
 
 interface UseSidebarDragProps {
+  editable: boolean;
   effectiveItems: SidebarNode[];
   onChange: (items: SidebarNode[]) => void;
 }
 
-export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps) => {
+export const useSidebarDrag = ({ editable, effectiveItems, onChange }: UseSidebarDragProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overIntent, setOverIntent] = useState<{ id: string; mode: "sibling" | "child" } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 10,
-        delay: 100,
-        tolerance: 5
+        distance: 14,
       }
     })
   );
@@ -50,11 +49,13 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
   };
 
   const onDragStart = (evt: DragStartEvent) => {
+    if (!editable) return;
     setActiveId(String(evt.active.id));
     setOverIntent(null);
   };
 
   const onDragOver = (evt: DragOverEvent) => {
+    if (!editable) return;
     const { over, active } = evt;
     if (!over) {
       setOverIntent(null);
@@ -89,6 +90,7 @@ export const useSidebarDrag = ({ effectiveItems, onChange }: UseSidebarDragProps
 
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!editable) return;
     setActiveId(null);
     setOverIntent(null);
     if (!over || active.id === over.id) return;

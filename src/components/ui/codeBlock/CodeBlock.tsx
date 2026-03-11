@@ -255,9 +255,9 @@ const CodeContent = styled.div`
     code {
       font-family: "Spoqa Han Sans Neo", sans-serif;
       font-weight: 300;
-      font-size: 20px;
+      font-size: 16px;
       color: #D1D6DB;
-      line-height: 1.5;
+      line-height: 1.45;
       white-space: pre;
     }
   }
@@ -266,7 +266,7 @@ const CodeContent = styled.div`
     padding: 0 12px 12px 16px;
 
     pre code {
-      font-size: 16px;
+      font-size: 14px;
       line-height: 1.4;
     }
   }
@@ -275,7 +275,7 @@ const CodeContent = styled.div`
     padding: 0 8px 8px 12px;
 
     pre code {
-      font-size: 14px;
+      font-size: 12px;
       line-height: 1.3;
     }
   }

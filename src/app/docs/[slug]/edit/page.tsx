@@ -1483,7 +1483,6 @@ export default function DocsEditPage() {
                   index={index}
                   block={block}
                   domain=""
-                  disableApiVerification={true}
                   onChange={handleBlockChange}
                   onAddBlock={handleAddBlock}
                   onDuplicateBlock={handleDuplicateBlock}

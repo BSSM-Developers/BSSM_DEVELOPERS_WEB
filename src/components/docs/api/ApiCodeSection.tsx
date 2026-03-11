@@ -162,10 +162,12 @@ const CodeSection = styled.div`
   width: 420px;
   flex-shrink: 0;
   margin-left: auto;
+  transform: translateX(6px);
 
   @media (max-width: 1400px) {
     width: 100%;
     margin: 0;
+    transform: none;
   }
 
   @media (max-width: 768px) {

@@ -30,7 +30,7 @@ export const landingFeatures: readonly LandingFeature[] = [
     ],
     buttonLabel: "API 등록하러 가기",
     href: "/docs/register",
-    imageSrc: "/images/main_ex2.png",
+    imageSrc: "/images/main_ex3.png",
     imageAlt: "API 문서 UI 예시",
   },
   {
@@ -42,7 +42,7 @@ export const landingFeatures: readonly LandingFeature[] = [
     ],
     buttonLabel: "API 사용하러 가기",
     href: "/apis",
-    imageSrc: "/images/main_ex3.png",
+    imageSrc: "/images/main_ex2.png",
     imageAlt: "토큰 관리 예시",
   },
 ] as const;

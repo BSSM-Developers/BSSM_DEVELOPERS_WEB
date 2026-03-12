@@ -23,6 +23,8 @@ interface DocsBlockEditorProps {
   domain?: string;
 }
 
+type CodeLanguage = "javascript" | "python";
+
 export const DocsBlockEditor = memo(function DocsBlockEditor({
   block,
   index,
@@ -39,8 +41,10 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const languageMenuRef = useRef<HTMLDivElement>(null);
   const [imageWidth, setImageWidth] = useState<number | string>(block.imageWidth || "100%");
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
 
   const {
     attributes,
@@ -76,6 +80,10 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     { id: 'list', label: '리스트', icon: '•', module: 'list' },
     { id: 'code', label: '코드 블록', icon: '</>', module: 'code' },
     { id: 'image', label: '이미지', icon: 'IMG', module: 'image' },
+  ];
+  const CODE_LANGUAGE_OPTIONS: Array<{ value: CodeLanguage; label: string }> = [
+    { value: "javascript", label: "JavaScript" },
+    { value: "python", label: "Python" },
   ];
 
   const filteredOptions = MENU_OPTIONS.filter(opt =>
@@ -130,11 +138,67 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     };
   }, [showContextMenu]);
 
-  const detectModuleType = (text: string): { module: DocsBlockType["module"]; content: string; imageSrc?: string } | null => {
+  useEffect(() => {
+    if (!isLanguageMenuOpen) {
+      return;
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target as Node)) {
+        setIsLanguageMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isLanguageMenuOpen]);
+
+  useEffect(() => {
+    if (block.module !== "code") {
+      setIsLanguageMenuOpen(false);
+    }
+  }, [block.module]);
+
+  const normalizeCodeLanguage = (value?: string): string => {
+    const normalized = (value || "").trim().toLowerCase();
+    if (normalized === "py" || normalized === "python") {
+      return "python";
+    }
+    if (normalized === "js" || normalized === "jsx" || normalized === "ts" || normalized === "tsx" || normalized === "javascript") {
+      return "javascript";
+    }
+    return "javascript";
+  };
+
+  const selectedCodeLanguage: CodeLanguage = normalizeCodeLanguage(block.language) === "python" ? "python" : "javascript";
+
+  const detectModuleType = (
+    text: string
+  ): { module: DocsBlockType["module"]; content: string; imageSrc?: string; language?: string } | null => {
     if (/^#\s/.test(text)) return { module: "headline_1", content: text.replace(/^#\s*/, "") };
     if (/^##\s/.test(text)) return { module: "headline_2", content: text.replace(/^##\s*/, "") };
     if (/^-\s/.test(text)) return { module: "list", content: text.replace(/^-\s*/, "") };
-    if (/^```\s/.test(text)) return { module: "code", content: text.replace(/^```\s*/, "") };
+
+    const closedFenceMatch = text.match(/^```([a-zA-Z0-9_-]*)\n([\s\S]*?)\n```$/);
+    if (closedFenceMatch) {
+      return {
+        module: "code",
+        content: closedFenceMatch[2],
+        language: normalizeCodeLanguage(closedFenceMatch[1]),
+      };
+    }
+
+    const openFenceMatch = text.match(/^```([a-zA-Z0-9_-]*)\n?([\s\S]*)$/);
+    if (openFenceMatch) {
+      return {
+        module: "code",
+        content: openFenceMatch[2],
+        language: normalizeCodeLanguage(openFenceMatch[1]),
+      };
+    }
+
     if (/^!\[(.*)\]\s/.test(text)) {
       const match = text.match(/^!\[(.*)\]\s/);
       return { module: "image", content: "", imageSrc: match ? match[1] : "" };
@@ -164,7 +228,8 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
           ...block,
           module: detection.module,
           content: detection.content,
-          imageSrc: detection.imageSrc
+          imageSrc: detection.imageSrc,
+          language: detection.language || block.language
         });
         requestFocus();
         return;
@@ -464,32 +529,45 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
           </li>
         ) : isCode ? (
           <div style={{ position: 'relative', width: '100%', background: '#0d1117', borderRadius: '8px', padding: '12px' }}>
-            <div style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              zIndex: 20,
-              display: 'flex',
-              gap: '8px'
-            }}>
-              <select
-                value={block.language || "javascript"}
-                onChange={(e) => onChange(index, { ...block, language: e.target.value })}
-                style={{
-                  background: '#21262d',
-                  color: '#c9d1d9',
-                  border: '1px solid #30363d',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  padding: '2px 4px',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="javascript">JavaScript</option>
-                <option value="python">Python</option>
-              </select>
-            </div>
+            <CodeToolbar>
+              <CodeLanguageDropdown ref={languageMenuRef}>
+                <CodeLanguageTrigger
+                  type="button"
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setIsLanguageMenuOpen((prev) => !prev);
+                  }}
+                >
+                  <span>{selectedCodeLanguage === "python" ? "Python" : "JavaScript"}</span>
+                  <CodeLanguageArrow open={isLanguageMenuOpen}>▼</CodeLanguageArrow>
+                </CodeLanguageTrigger>
+                {isLanguageMenuOpen ? (
+                  <CodeLanguageMenu role="listbox" aria-label="코드 언어 선택">
+                    {CODE_LANGUAGE_OPTIONS.map((option) => {
+                      const isSelected = option.value === selectedCodeLanguage;
+                      return (
+                        <CodeLanguageOption
+                          key={option.value}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          $selected={isSelected}
+                          onMouseDown={(event) => event.stopPropagation()}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onChange(index, { ...block, language: option.value });
+                            setIsLanguageMenuOpen(false);
+                          }}
+                        >
+                          {option.label}
+                        </CodeLanguageOption>
+                      );
+                    })}
+                  </CodeLanguageMenu>
+                ) : null}
+              </CodeLanguageDropdown>
+            </CodeToolbar>
             <div style={{ position: 'relative', minHeight: '120px' }}>
               <pre
                 aria-hidden="true"
@@ -511,7 +589,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                   overflow: 'hidden'
                 }}
                 dangerouslySetInnerHTML={{
-                  __html: highlightCode(value, block.language || "javascript") + '\n'
+                  __html: highlightCode(value, selectedCodeLanguage) + '\n'
                 }}
               />
               <textarea
@@ -798,4 +876,74 @@ const MenuIcon = styled.div`
 const MenuLabel = styled.div`
   font-size: 14px;
   color: #374151;
+`;
+
+const CodeToolbar = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+`;
+
+const CodeLanguageDropdown = styled.div`
+  position: relative;
+`;
+
+const CodeLanguageTrigger = styled.button`
+  min-width: 120px;
+  height: 30px;
+  border: 1px solid #30363d;
+  border-radius: 7px;
+  background: #171b22;
+  color: #c9d1d9;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+`;
+
+const CodeLanguageArrow = styled.span<{ open: boolean }>`
+  font-size: 10px;
+  color: #8b949e;
+  transition: transform 0.2s ease;
+  transform: ${({ open }) => (open ? "rotate(180deg)" : "rotate(0deg)")};
+`;
+
+const CodeLanguageMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 140px;
+  background: #171b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+`;
+
+const CodeLanguageOption = styled.button<{ $selected: boolean }>`
+  width: 100%;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: ${({ $selected }) => ($selected ? "#16335c" : "transparent")};
+  color: ${({ $selected }) => ($selected ? "#ffffff" : "#c9d1d9")};
+  text-align: left;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: ${({ $selected }) => ($selected ? 700 : 500)};
+  cursor: pointer;
+
+  &:hover {
+    background: ${({ $selected }) => ($selected ? "#16335c" : "#21262d")};
+  }
 `;

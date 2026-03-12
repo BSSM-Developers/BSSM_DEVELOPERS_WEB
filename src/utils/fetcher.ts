@@ -21,6 +21,11 @@ interface ParsedRefreshTokens {
   refreshToken?: string;
 }
 
+interface RefreshRequestPayload {
+  refreshToken?: string;
+  refresh_token?: string;
+}
+
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const AUTH_SESSION_HINT_KEY = "authSessionHint";
@@ -262,8 +267,28 @@ const parseRefreshTokens = async (response: Response): Promise<ParsedRefreshToke
   }
 
   const refreshText = await response.text();
-  const refreshData: RefreshResponse = refreshText ? JSON.parse(refreshText) : {};
+  let refreshData: RefreshResponse = {};
+  if (refreshText) {
+    try {
+      refreshData = JSON.parse(refreshText) as RefreshResponse;
+    } catch {
+      refreshData = {};
+    }
+  }
+
+  const authorizationHeader = response.headers.get("authorization");
+  const bearerToken = authorizationHeader?.startsWith("Bearer ")
+    ? authorizationHeader.slice("Bearer ".length).trim()
+    : null;
+
+  const headerAccessToken =
+    response.headers.get("x-access-token") ||
+    response.headers.get("access-token") ||
+    response.headers.get("access_token");
+
   const accessToken =
+    bearerToken ||
+    headerAccessToken ||
     refreshData.accessToken ||
     refreshData.data?.accessToken ||
     refreshData.data?.access_token ||
@@ -284,8 +309,17 @@ const parseRefreshTokens = async (response: Response): Promise<ParsedRefreshToke
 };
 
 const requestRefreshFromUrl = async (url: string): Promise<ParsedRefreshTokens | null> => {
+  const refreshToken = tokenManager.getRefreshToken();
+  const payload: RefreshRequestPayload = refreshToken
+    ? { refreshToken, refresh_token: refreshToken }
+    : {};
+
   const response = await fetch(url, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
     credentials: "include",
     cache: "no-store",
   });

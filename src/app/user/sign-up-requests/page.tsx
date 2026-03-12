@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { DocsHeader } from "@/components/docs/DocsHeader";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useUserQuery } from "@/app/user/queries";
 import type { SignUpRequestItem } from "./api";
@@ -152,7 +153,7 @@ export default function SignUpRequestsPage() {
           </RefreshButton>
         </HeaderRow>
 
-        {isListLoading ? <StatusText>신청 목록을 불러오는 중입니다.</StatusText> : null}
+        {isListLoading ? <BsdevLoader label="신청 목록을 불러오는 중입니다." size={52} minHeight="140px" /> : null}
         {listError ? (
           <ErrorText>
             {listError instanceof Error ? listError.message : "신청 목록을 불러오지 못했습니다."}

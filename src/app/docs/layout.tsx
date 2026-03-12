@@ -7,16 +7,18 @@ import { useEffect, useState, useCallback } from "react";
 import { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { DocsLayout } from "@/components/layout/DocsLayout";
 
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 const toHttpMethod = (value: unknown): HttpMethod | undefined => {
+  if (value === "UPDATE") {
+    return "PATCH";
+  }
   if (
     value === "GET" ||
     value === "POST" ||
     value === "PUT" ||
     value === "PATCH" ||
-    value === "DELETE" ||
-    value === "UPDATE"
+    value === "DELETE"
   ) {
     return value;
   }

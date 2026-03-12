@@ -4,6 +4,7 @@ import styled from "@emotion/styled";
 import { keyframes, css } from "@emotion/react";
 import { applyTypography } from "@/lib/themeHelper";
 import { FloatingInput } from "@/components/ui/FloatingInput";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 
 interface SingleInputActionFormProps {
   title: string;
@@ -43,6 +44,7 @@ export function SingleInputActionForm({
   animated = false,
 }: SingleInputActionFormProps) {
   const disabled = isSubmitting || isDisabled;
+  const isLoadingStatus = Boolean(statusText?.includes("불러오는 중"));
 
   return (
     <Shell maxWidth={maxWidth} animated={animated}>
@@ -64,7 +66,11 @@ export function SingleInputActionForm({
           placeholder={placeholder}
           autoFocus={autoFocus}
         />
-        {statusText ? <StatusText>{statusText}</StatusText> : null}
+        {statusText
+          ? isLoadingStatus
+            ? <BsdevLoader label={statusText} size={44} minHeight="72px" />
+            : <StatusText>{statusText}</StatusText>
+          : null}
         {errorText ? <ErrorText>{errorText}</ErrorText> : null}
         <SubmitButton type="submit" disabled={disabled}>
           {isSubmitting ? submittingText : submitText}

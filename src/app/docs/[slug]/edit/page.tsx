@@ -18,13 +18,14 @@ import { DocsLayout } from "@/components/layout/DocsLayout";
 import { SidebarModuleOption } from "@/components/layout/DocsSidebar";
 import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useDocsStore } from "@/store/docsStore";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
 import { useDocsSidebarQuery } from "@/app/docs/queries";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import type { ApiParam, DocsBlock } from "@/types/docs";
-import { findNodeById, updateNode } from "@/components/layout/treeUtils";
+import { findNodeById, findNodePathById, updateNode } from "@/components/layout/treeUtils";
 import {
   buildPageSignatureWithSource,
   buildSidebarSignature,
@@ -100,12 +101,6 @@ const ReadonlyNotice = styled.div`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 14px;
   font-weight: 600;
-`;
-
-const LoadingBox = styled.div`
-  padding: 40px;
-  text-align: center;
-  color: #6b7280;
 `;
 
 const ErrorBox = styled.div`
@@ -396,8 +391,7 @@ export default function DocsEditPage() {
   const pageTargets = useMemo(() => collectPageTargetsFromSidebar(sidebarItems), [sidebarItems]);
   const customSidebarModuleOptions = useMemo<SidebarModuleOption[]>(
     () => [
-      { label: "기본", module: "default" },
-      { label: "메인", module: "main_title" },
+      { label: "문서", module: "default" },
       { label: "그룹", module: "collapse" },
       { label: "API", module: "api" },
     ],
@@ -689,12 +683,27 @@ export default function DocsEditPage() {
     prevSelectedRef.current = selectedId;
   }, [selectedId, sidebarItems]);
 
+  const selectedPathLabels = useMemo(() => {
+    if (!selectedId) {
+      return [];
+    }
+    return findNodePathById(sidebarItems, selectedId)?.map((node) => node.label).filter((label) => Boolean(label)) ?? [];
+  }, [selectedId, sidebarItems]);
   const currentLabel = useMemo(() => {
+    if (selectedPathLabels.length > 0) {
+      return selectedPathLabels[selectedPathLabels.length - 1];
+    }
     if (!selectedId) {
       return "문서 수정";
     }
     return pageTargets.find((target) => target.mappedId === selectedId)?.label || "문서 수정";
-  }, [pageTargets, selectedId]);
+  }, [pageTargets, selectedId, selectedPathLabels]);
+  const breadcrumbPath = useMemo(() => {
+    if (selectedPathLabels.length > 1) {
+      return selectedPathLabels.slice(0, -1);
+    }
+    return [sidebarItems[0]?.label || effectiveProjectTitle || "문서"];
+  }, [effectiveProjectTitle, selectedPathLabels, sidebarItems]);
   const selectedTarget = useMemo(
     () => pageTargets.find((target) => target.mappedId === selectedId),
     [pageTargets, selectedId]
@@ -1398,7 +1407,7 @@ export default function DocsEditPage() {
   ]);
 
   if (sidebarLoading) {
-    return <LoadingBox>문서 정보를 불러오는 중입니다.</LoadingBox>;
+    return <BsdevLoader label="문서 정보를 불러오는 중입니다." size={52} minHeight="160px" />;
   }
 
   if (sidebarError) {
@@ -1428,7 +1437,7 @@ export default function DocsEditPage() {
     >
       <DocsHeader
         title={currentLabel}
-        breadcrumb={[sidebarItems[0]?.label || effectiveProjectTitle || "문서"]}
+        breadcrumb={breadcrumbPath}
         isApi={false}
       />
 

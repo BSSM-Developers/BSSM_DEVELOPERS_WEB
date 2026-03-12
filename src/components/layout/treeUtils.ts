@@ -13,6 +13,21 @@ export function findNodeById(list: Node[], id: string): Node | null {
   return null;
 }
 
+export function findNodePathById(list: Node[], id: string): Node[] | null {
+  for (const n of list) {
+    if (n.id === id) {
+      return [n];
+    }
+    if (n.childrenItems?.length) {
+      const childPath = findNodePathById(n.childrenItems as Node[], id);
+      if (childPath) {
+        return [n, ...childPath];
+      }
+    }
+  }
+  return null;
+}
+
 export function findParentId(list: Node[], childId: string, parentId: string | null = null): string | null {
   for (const n of list) {
     if (n.id === childId) return parentId;

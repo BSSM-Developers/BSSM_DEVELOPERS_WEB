@@ -62,12 +62,8 @@ export function ApiCodeSection({
       setGeneratedCode(sampleCode || getDefaultSampleCode());
     }
 
-    if (responseData) {
-      const actualResponse = highlightJson(JSON.stringify({
-        status: responseStatus,
-        message: responseMessage,
-        data: responseData
-      }, null, 2));
+    if (responseData !== null && responseData !== undefined) {
+      const actualResponse = highlightJson(JSON.stringify(responseData, null, 2));
       setGeneratedResponse(actualResponse);
       return;
     }

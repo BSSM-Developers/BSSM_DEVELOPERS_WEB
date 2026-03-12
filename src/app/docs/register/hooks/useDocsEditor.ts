@@ -155,9 +155,7 @@ export const useDocsEditor = (step: Step, title: string) => {
         if (currentBlock.module === "api" && currentBlock.apiData) {
           labelToUpdate = currentBlock.apiData.name;
           const m = currentBlock.apiData.method;
-          if (m !== "UPDATE") {
-            methodToUpdate = m;
-          }
+          methodToUpdate = m;
         } else if (index === 0 && currentBlock.module !== "api") {
           if (currentBlock.module === "headline_1") {
             labelToUpdate = currentBlock.content || "";

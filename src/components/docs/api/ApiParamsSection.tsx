@@ -27,6 +27,7 @@ interface ApiParamsSectionProps {
   paramLocation?: string;
   hideRequired?: boolean;
   enableJsonInput?: boolean;
+  jsonInputLabel?: string;
   onParamsChange?: (params: ApiParam[]) => void;
 }
 
@@ -214,6 +215,30 @@ const jsonObjectToParams = (jsonObject: Record<string, unknown>, existingParams:
   return Object.entries(jsonObject).map(([key, value]) => jsonValueToParam(key, value, existingByName.get(key.trim())));
 };
 
+const formatJsonParseError = (error: unknown, source: string): string => {
+  if (!(error instanceof Error) || !error.message) {
+    return "JSON 파싱 중 알 수 없는 오류가 발생했습니다.";
+  }
+
+  const message = error.message;
+  const positionMatch = message.match(/position\s+(\d+)/i);
+  if (!positionMatch) {
+    return message;
+  }
+
+  const rawPosition = Number(positionMatch[1]);
+  if (Number.isNaN(rawPosition)) {
+    return message;
+  }
+
+  const safePosition = Math.max(0, Math.min(rawPosition, source.length));
+  const before = source.slice(0, safePosition);
+  const line = before.split("\n").length;
+  const column = safePosition - before.lastIndexOf("\n");
+
+  return `${message} (라인 ${line}, 열 ${column})`;
+};
+
 export function ApiParamsSection({
   title,
   params,
@@ -222,6 +247,7 @@ export function ApiParamsSection({
   paramLocation = 'body',
   hideRequired = false,
   enableJsonInput = false,
+  jsonInputLabel = "Body",
   onParamsChange
 }: ApiParamsSectionProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -297,8 +323,8 @@ export function ApiParamsSection({
     let parsed: unknown;
     try {
       parsed = JSON.parse(jsonDraft);
-    } catch {
-      setJsonError("유효한 JSON 형식이 아닙니다.");
+    } catch (error: unknown) {
+      setJsonError(formatJsonParseError(error, jsonDraft));
       return;
     }
 
@@ -402,9 +428,9 @@ export function ApiParamsSection({
       )}
       {jsonModalOpen && typeof document !== "undefined" && createPortal(
         <JsonModalBackdrop onMouseDown={handleJsonBackdropMouseDown}>
-          <JsonModalCard onClick={(event) => event.stopPropagation()}>
-            <JsonModalTitle>Body JSON 입력</JsonModalTitle>
-            <JsonModalDescription>JSON을 붙여넣으면 Body 파라미터가 자동 생성됩니다.</JsonModalDescription>
+            <JsonModalCard onClick={(event) => event.stopPropagation()}>
+            <JsonModalTitle>{jsonInputLabel} JSON 입력</JsonModalTitle>
+            <JsonModalDescription>JSON을 붙여넣으면 {jsonInputLabel} 파라미터가 자동 생성됩니다.</JsonModalDescription>
             <JsonCodeEditor>
               <CodeMirror
                 value={jsonDraft}

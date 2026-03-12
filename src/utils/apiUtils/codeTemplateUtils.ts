@@ -176,21 +176,15 @@ export function paramsToObject(params: ApiParam[]): Record<string, unknown> {
 }
 
 export function generateResponseTemplate(
-  statusCode: number = 200,
-  message: string = "성공",
+  _statusCode: number = 200,
+  _message: string = "성공",
   responseParams?: ApiParam[]
 ): string {
-  const data = responseParams && responseParams.length > 0
+  const responseShape = responseParams && responseParams.length > 0
     ? paramsToObject(responseParams)
     : null;
 
-  const responseObj = {
-    status: statusCode,
-    message,
-    data
-  };
-
-  return highlightJson(JSON.stringify(responseObj, null, 2));
+  return highlightJson(JSON.stringify(responseShape, null, 2));
 }
 
 function generateShellCode(

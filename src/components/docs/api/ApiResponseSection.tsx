@@ -37,6 +37,8 @@ export function ApiResponseSection({
         editable={editable}
         paramLocation="body"
         hideRequired={true}
+        enableJsonInput={true}
+        jsonInputLabel="Response"
         onParamsChange={onParamsChange}
       />
     </ResponseSection>

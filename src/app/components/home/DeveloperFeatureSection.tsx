@@ -1,145 +1,167 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
+import styled from "@emotion/styled";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 interface DeveloperFeatureSectionProps {
   active: boolean;
 }
 
-interface AccordionItem {
+interface FeatureItem {
   title: string;
   description: string;
+  imageSources: readonly string[];
+  imagePosition: string;
+  imageScale: number;
+  imageTransformOrigin: string;
+  imageAlt: string;
+  captureGuide: string;
+  accent: "blue" | "green" | "yellow";
 }
 
-const accordionItems: readonly AccordionItem[] = [
+const FEATURE_CYCLE_MS = 5000;
+
+const featureItems: readonly FeatureItem[] = [
   {
-    title: "코드 한 줄로 연동되는 결제",
-    description: "문서에 결제 API를 연결하면 요청/응답 예시를 자동으로 생성해 빠르게 공개할 수 있어요.",
+    title: "파라미터 타입 자동 추론",
+    description: "JSON 입력과 예시 값을 바탕으로 string, integer, array, object 타입을 자동 추론해 작성 시간을 줄입니다.",
+    imageSources: ["/images/typeAuto1.png"],
+    imagePosition: "center center",
+    imageScale: 1,
+    imageTransformOrigin: "center center",
+    imageAlt: "파라미터 타입 자동 추론 미리보기",
+    captureGuide: "문서 에디터에서 파라미터 타입이 자동 추론되는 화면",
+    accent: "blue",
   },
   {
-    title: "노코드 결제수단 운영",
-    description: "문서 편집 화면에서 토글만으로 결제수단 노출을 조정하고 변경사항을 바로 반영할 수 있어요.",
+    title: "JSON 입력 자동 변환",
+    description: "JSON을 붙여넣으면 파라미터 스키마를 자동으로 생성하고, 기존 필수/설명 설정을 유지한 채 빠르게 수정할 수 있습니다.",
+    imageSources: ["/images/json_ex1.png"],
+    imagePosition: "left center",
+    imageScale: 1,
+    imageTransformOrigin: "left center",
+    imageAlt: "JSON 입력 자동 변환 미리보기",
+    captureGuide: "Body 또는 Response에서 JSON 입력 모달로 스키마가 변환되는 화면",
+    accent: "green",
   },
   {
-    title: "코드 수정 없이 디자인 커스텀",
-    description: "개발자의 도움 없이 문서 테마와 컴포넌트 스타일을 커스텀할 수 있어요.",
+    title: "예시 코드 실시간 동기화",
+    description: "메서드와 파라미터를 수정하면 우측 예시 코드가 즉시 반영되어 문서 검수와 API 공유가 빨라집니다.",
+    imageSources: ["/images/request_ex1.png"],
+    imagePosition: "center top",
+    imageScale: 1,
+    imageTransformOrigin: "top center",
+    imageAlt: "Request Response 동기화 미리보기",
+    captureGuide: "좌측 파라미터 수정 시 우측 코드 예시가 즉시 바뀌는 화면",
+    accent: "yellow",
   },
 ] as const;
 
-const paymentOptions = [
-  { id: "card", label: "신용·체크카드" },
-  { id: "virtual", label: "가상계좌" },
-  { id: "naver", label: "네이버페이" },
-  { id: "kakao", label: "카카오페이" },
-  { id: "toss", label: "토스페이" },
-] as const;
+const accentColorMap: Record<FeatureItem["accent"], { main: string; soft: string; deep: string }> = {
+  blue: { main: "#006AB7", soft: "#E7F3FC", deep: "#16335C" },
+  green: { main: "#00A9A4", soft: "#E7F9F8", deep: "#0D7B77" },
+  yellow: { main: "#F3A941", soft: "#FFF4E5", deep: "#A86D11" },
+};
 
 export function DeveloperFeatureSection({ active }: DeveloperFeatureSectionProps) {
-  const [openIndex, setOpenIndex] = useState(2);
-  const [selectedPayment, setSelectedPayment] = useState<(typeof paymentOptions)[number]["id"]>("card");
+  const [openIndex, setOpenIndex] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [cycleSeed, setCycleSeed] = useState(0);
 
-  const previewContent = useMemo(() => {
-    if (openIndex === 0) {
-      return (
-        <PreviewSurface>
-          <PreviewTitleRow>
-            <PreviewDot />
-            <PreviewChip>SDK</PreviewChip>
-          </PreviewTitleRow>
-          <CodeBlock>
-            {`import { bsdevPay } from "@bsdev/pay"\n\nbsdevPay.open({\n  orderId: "order_1294",\n  amount: 29000,\n  onSuccess: "/success"\n})`}
-          </CodeBlock>
-        </PreviewSurface>
-      );
+  useEffect(() => {
+    setProgress(0);
+    const startedAt = performance.now();
+
+    let frameId = 0;
+    const animate = () => {
+      const elapsed = performance.now() - startedAt;
+      const ratio = Math.min(elapsed / FEATURE_CYCLE_MS, 1);
+      setProgress(ratio * 100);
+
+      if (ratio >= 1) {
+        setOpenIndex((prev) => (prev + 1) % featureItems.length);
+        return;
+      }
+
+      frameId = window.requestAnimationFrame(animate);
+    };
+    frameId = window.requestAnimationFrame(animate);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [openIndex, cycleSeed]);
+
+  const activeItem = useMemo(() => {
+    return featureItems[openIndex] ?? featureItems[0];
+  }, [openIndex]);
+
+  const activeAccent = accentColorMap[activeItem.accent];
+  const activeImage = useMemo(() => {
+    if (activeItem.imageSources.length === 0) {
+      return null;
     }
 
-    if (openIndex === 1) {
-      return (
-        <PreviewSurface>
-          <PreviewHeaderBar>
-            <BackArrow>&lt;</BackArrow>
-            <PreviewHeaderTitle>결제 운영</PreviewHeaderTitle>
-            <BackArrow aria-hidden> </BackArrow>
-          </PreviewHeaderBar>
-          <NoCodeList>
-            <NoCodeItem>
-              <NoCodeLabel>신용·체크카드</NoCodeLabel>
-              <NoCodeBadge>활성</NoCodeBadge>
-            </NoCodeItem>
-            <NoCodeItem>
-              <NoCodeLabel>가상계좌</NoCodeLabel>
-              <NoCodeBadge disabled>비활성</NoCodeBadge>
-            </NoCodeItem>
-            <NoCodeItem>
-              <NoCodeLabel>간편결제</NoCodeLabel>
-              <NoCodeBadge>활성</NoCodeBadge>
-            </NoCodeItem>
-          </NoCodeList>
-        </PreviewSurface>
-      );
+    if (activeItem.imageSources.length === 1) {
+      return activeItem.imageSources[0];
     }
 
-    return (
-      <PreviewSurface>
-        <PreviewHeaderBar>
-          <BackArrow>&lt;</BackArrow>
-          <PreviewHeaderTitle>주문서</PreviewHeaderTitle>
-          <BackArrow aria-hidden> </BackArrow>
-        </PreviewHeaderBar>
-        <PaymentTitle>결제 수단</PaymentTitle>
-        <PaymentList role="radiogroup" aria-label="결제 수단 선택">
-          {paymentOptions.map((option) => {
-            const checked = selectedPayment === option.id;
-            return (
-              <PaymentOption key={option.id}>
-                <PaymentRadio
-                  type="radio"
-                  name="payment-option"
-                  checked={checked}
-                  onChange={() => setSelectedPayment(option.id)}
-                  aria-label={option.label}
-                />
-                <PaymentLabel>{option.label}</PaymentLabel>
-              </PaymentOption>
-            );
-          })}
-        </PaymentList>
-        <CardCompanyBox>
-          <CardCompanyLabel>카드사 선택</CardCompanyLabel>
-          <ChevronDown>∨</ChevronDown>
-        </CardCompanyBox>
-        <BottomFade />
-      </PreviewSurface>
+    const elapsedMs = (progress / 100) * FEATURE_CYCLE_MS;
+    const segmentMs = FEATURE_CYCLE_MS / activeItem.imageSources.length;
+    const imageIndex = Math.min(
+      Math.floor(elapsedMs / segmentMs),
+      activeItem.imageSources.length - 1
     );
-  }, [openIndex, selectedPayment]);
+
+    return activeItem.imageSources[imageIndex] ?? null;
+  }, [activeItem, progress]);
+
+  const handleSelect = (index: number) => {
+    if (index === openIndex) {
+      setCycleSeed((prev) => prev + 1);
+      return;
+    }
+    setOpenIndex(index);
+    setCycleSeed((prev) => prev + 1);
+  };
 
   return (
     <SectionFrame active={active}>
       <SectionInner>
         <LeftPane>
-          <SectionTitle>개발자의 시간을 아껴드려요</SectionTitle>
+          <SectionTitle>API 문서 작성 시간을 단축해 드릴게요</SectionTitle>
           <AccordionList>
-            {accordionItems.map((item, index) => {
+            {featureItems.map((item, index) => {
               const expanded = openIndex === index;
+              const accent = accentColorMap[item.accent];
               return (
-                <AccordionItemRow key={item.title} expanded={expanded}>
+                <AccordionItemRow key={item.title}>
                   <AccordionTrigger
                     type="button"
-                    onClick={() => setOpenIndex(index)}
+                    onClick={() => handleSelect(index)}
                     aria-expanded={expanded}
                     aria-controls={`feature-accordion-panel-${index}`}
                   >
-                    <AccordionTitle expanded={expanded}>{item.title}</AccordionTitle>
-                    <AccordionIcon>{expanded ? "∧" : "∨"}</AccordionIcon>
+                    <AccordionTitle expanded={expanded} color={accent.main}>
+                      {item.title}
+                    </AccordionTitle>
+                    <AccordionIcon expanded={expanded} color={accent.main} aria-hidden>
+                      <ChevronDown size={20} strokeWidth={2.2} />
+                    </AccordionIcon>
                   </AccordionTrigger>
                   <AccordionPanel
                     id={`feature-accordion-panel-${index}`}
                     expanded={expanded}
                     aria-hidden={!expanded}
                   >
-                    <AccordionDescription>{item.description}</AccordionDescription>
+                    <AccordionPanelInner expanded={expanded}>
+                      <AccordionDescription>{item.description}</AccordionDescription>
+                      <ProgressTrack>
+                        <ProgressFill progress={expanded ? progress : 0} color={accent.main} />
+                      </ProgressTrack>
+                    </AccordionPanelInner>
                   </AccordionPanel>
                 </AccordionItemRow>
               );
@@ -148,8 +170,24 @@ export function DeveloperFeatureSection({ active }: DeveloperFeatureSectionProps
         </LeftPane>
 
         <RightPane>
-          <PreviewCardOuter>
-            <PreviewAnimation key={openIndex}>{previewContent}</PreviewAnimation>
+          <PreviewCardOuter main={activeAccent.main} deep={activeAccent.deep}>
+            <PreviewAnimation key={`${openIndex}-${activeImage ?? "placeholder"}`}>
+              {activeImage ? (
+                <PreviewImage
+                  src={activeImage}
+                  alt={activeItem.imageAlt}
+                  position={activeItem.imagePosition}
+                  scale={activeItem.imageScale}
+                  origin={activeItem.imageTransformOrigin}
+                />
+              ) : (
+                <PreviewPlaceholder soft={activeAccent.soft}>
+                  <PlaceholderBadge main={activeAccent.main} soft={activeAccent.soft}>BSDEV</PlaceholderBadge>
+                  <PlaceholderTitle>{activeItem.title}</PlaceholderTitle>
+                  <PlaceholderText>{activeItem.captureGuide}</PlaceholderText>
+                </PreviewPlaceholder>
+              )}
+            </PreviewAnimation>
           </PreviewCardOuter>
         </RightPane>
       </SectionInner>
@@ -160,69 +198,84 @@ export function DeveloperFeatureSection({ active }: DeveloperFeatureSectionProps
 const previewEnter = keyframes`
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(14px) scale(0.992);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 `;
 
 const SectionFrame = styled.div<{ active: boolean }>`
   width: 100%;
-  background: #0d0d0d;
+  min-height: calc(100vh - 74px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f5f7;
   opacity: ${({ active }) => (active ? 1 : 0.45)};
-  transform: ${({ active }) => (active ? "translateY(0)" : "translateY(18px)")};
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  transform: ${({ active }) => (active ? "translateY(0)" : "translateY(12px)")};
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+
+  @media (max-width: 1023px) {
+    min-height: auto;
+  }
 `;
 
 const SectionInner = styled.div`
-  width: min(1160px, calc(100% - 72px));
+  width: min(1320px, calc(100% - 72px));
   margin: 0 auto;
-  padding: 78px 0;
+  padding: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 44px;
+  grid-template-columns: minmax(0, 560px) minmax(0, 560px);
+  column-gap: clamp(56px, 6vw, 104px);
   align-items: center;
+  justify-content: center;
 
   @media (max-width: 1023px) {
     width: calc(100% - 40px);
-    gap: 24px;
+    row-gap: 38px;
     padding: 58px 0;
-    grid-template-columns: 1.05fr 0.95fr;
+    grid-template-columns: 1fr;
   }
 
   @media (max-width: 767px) {
-    grid-template-columns: 1fr;
-    gap: 30px;
-    padding: 46px 0;
+    row-gap: 18px;
+    padding: 42px 0;
   }
 `;
 
 const LeftPane = styled.div`
   width: 100%;
+  max-width: 560px;
 `;
 
 const SectionTitle = styled.h2`
   margin: 0 0 22px 0;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: clamp(28px, 3vw, 32px);
+  font-size: clamp(28px, 3vw, 36px);
   font-weight: 700;
-  color: #ffffff;
+  color: #111827;
   letter-spacing: -0.02em;
+  line-height: 1.24;
+
+  @media (min-width: 1200px) {
+    white-space: nowrap;
+  }
 `;
 
 const AccordionList = styled.div`
   width: 100%;
+  border-top: 0;
+  border-bottom: 1px solid #d9e0ec;
 `;
 
-const AccordionItemRow = styled.div<{ expanded: boolean }>`
-  border-top: 1px solid ${({ expanded }) => (expanded ? "#00c4b4" : "#262b31")};
-  padding: 14px 0 10px 0;
-  transition: border-color 0.25s ease-in-out;
+const AccordionItemRow = styled.div`
+  border-top: 1px solid #d9e0ec;
+  padding: 14px 0 12px 0;
 
-  &:last-of-type {
-    border-bottom: 1px solid ${({ expanded }) => (expanded ? "#00c4b4" : "#262b31")};
+  &:first-of-type {
+    border-top: 0;
   }
 `;
 
@@ -237,222 +290,145 @@ const AccordionTrigger = styled.button`
   cursor: pointer;
 `;
 
-const AccordionTitle = styled.span<{ expanded: boolean }>`
+const AccordionTitle = styled.span<{ expanded: boolean; color: string }>`
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 22px;
-  font-weight: 600;
-  color: ${({ expanded }) => (expanded ? "#00c4b4" : "#aaaaaa")};
-  transition: color 0.25s ease-in-out;
-
-  @media (max-width: 767px) {
-    font-size: 20px;
-  }
+  font-size: clamp(20px, 2.2vw, 24px);
+  font-weight: 700;
+  color: ${({ expanded, color }) => (expanded ? color : "#5f697f")};
+  transition: color 0.28s ease;
 `;
 
-const AccordionIcon = styled.span`
-  color: #d4d8de;
-  font-size: 18px;
+const AccordionIcon = styled.span<{ expanded: boolean; color: string }>`
+  color: ${({ expanded, color }) => (expanded ? color : "#7f8798")};
+  transform: rotate(${({ expanded }) => (expanded ? "180deg" : "0deg")});
+  transition: transform 0.28s ease, color 0.28s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const AccordionPanel = styled.div<{ expanded: boolean }>`
-  max-height: ${({ expanded }) => (expanded ? "120px" : "0px")};
+  display: grid;
+  grid-template-rows: ${({ expanded }) => (expanded ? "1fr" : "0fr")};
+  transition: grid-template-rows 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+`;
+
+const AccordionPanelInner = styled.div<{ expanded: boolean }>`
+  min-height: 0;
   overflow: hidden;
-  transition: max-height 0.25s ease-in-out;
+  opacity: ${({ expanded }) => (expanded ? 1 : 0)};
+  transform: translateY(${({ expanded }) => (expanded ? "0px" : "-4px")});
+  transition: opacity 0.28s ease, transform 0.36s ease;
 `;
 
 const AccordionDescription = styled.p`
-  margin: 10px 0 0 0;
+  margin: 10px 0 12px 0;
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 15px;
-  line-height: 1.5;
-  color: #cccccc;
+  line-height: 1.6;
+  color: #556079;
   word-break: keep-all;
+`;
+
+const ProgressTrack = styled.div`
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: #dce3ef;
+  overflow: hidden;
+`;
+
+const ProgressFill = styled.span<{ color: string; progress: number }>`
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: ${({ color }) => color};
+  transform-origin: left center;
+  transform: scaleX(${({ progress }) => Math.max(0, Math.min(progress, 100)) / 100});
+  transition: transform 0.06s linear;
+  will-change: transform;
 `;
 
 const RightPane = styled.div`
   width: 100%;
   display: flex;
   justify-content: center;
+
+  @media (max-width: 1023px) {
+    justify-content: center;
+  }
 `;
 
-const PreviewCardOuter = styled.div`
-  width: min(520px, 100%);
-  min-height: 520px;
-  border-radius: 22px;
-  background: linear-gradient(155deg, #00c4b4 0%, #12d5c1 100%);
-  padding: 20px;
+const PreviewCardOuter = styled.div<{ main: string; deep: string }>`
+  width: min(560px, 100%);
+  height: 420px;
+  border-radius: 24px;
+  background: linear-gradient(155deg, ${({ deep }) => deep} 0%, ${({ main }) => main} 100%);
+  padding: 14px;
+  box-shadow: 0 20px 42px rgba(19, 37, 72, 0.18);
   position: relative;
   overflow: hidden;
 
   @media (max-width: 1023px) {
-    min-height: 470px;
-    padding: 16px;
+    height: 360px;
   }
 `;
 
 const PreviewAnimation = styled.div`
   width: 100%;
   height: 100%;
-  animation: ${previewEnter} 0.3s ease-in-out;
+  border-radius: 18px;
+  overflow: hidden;
+  animation: ${previewEnter} 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+  background: #edf1f7;
 `;
 
-const PreviewSurface = styled.div`
+const PreviewImage = styled.img<{ position: string; scale: number; origin: string }>`
   width: 100%;
   height: 100%;
-  background: #ffffff;
-  border-radius: 18px;
-  position: relative;
-  padding: 18px 18px 24px 18px;
-  display: flex;
-  flex-direction: column;
+  object-fit: cover;
+  object-position: ${({ position }) => position};
+  display: block;
+  transform: scale(${({ scale }) => scale});
+  transform-origin: ${({ origin }) => origin};
+  transition: transform 0.36s ease;
 `;
 
-const PreviewTitleRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const PreviewDot = styled.span`
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #00c4b4;
-`;
-
-const PreviewChip = styled.span`
-  background: #e9fbf8;
-  color: #06867c;
-  border-radius: 999px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 700;
-`;
-
-const CodeBlock = styled.pre`
-  margin: 16px 0 0 0;
+const PreviewPlaceholder = styled.div<{ soft: string }>`
   width: 100%;
-  border-radius: 14px;
-  background: #0f1729;
-  color: #d4e2ff;
-  font-family: "Fira Code", "Menlo", monospace;
-  font-size: 13px;
-  line-height: 1.6;
-  padding: 16px;
-  overflow: auto;
-`;
-
-const PreviewHeaderBar = styled.div`
-  display: grid;
-  grid-template-columns: 20px 1fr 20px;
-  align-items: center;
-  margin-bottom: 14px;
-`;
-
-const BackArrow = styled.span`
-  font-size: 14px;
-  color: #667084;
-  text-align: left;
-`;
-
-const PreviewHeaderTitle = styled.span`
-  font-size: 15px;
-  font-weight: 600;
-  color: #111827;
-  text-align: center;
-`;
-
-const NoCodeList = styled.div`
-  margin-top: 8px;
+  height: 100%;
+  padding: 30px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  justify-content: center;
+  gap: 14px;
+  background: radial-gradient(circle at 18% 14%, #ffffff 0%, ${({ soft }) => soft} 60%);
 `;
 
-const NoCodeItem = styled.div`
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const NoCodeLabel = styled.span`
-  font-size: 14px;
-  color: #111827;
-  font-weight: 500;
-`;
-
-const NoCodeBadge = styled.span<{ disabled?: boolean }>`
+const PlaceholderBadge = styled.span<{ main: string; soft: string }>`
+  width: fit-content;
   border-radius: 999px;
-  padding: 4px 10px;
+  background: ${({ soft }) => soft};
+  color: ${({ main }) => main};
   font-size: 12px;
-  font-weight: 600;
-  color: ${({ disabled }) => (disabled ? "#6b7280" : "#07756b")};
-  background: ${({ disabled }) => (disabled ? "#eef1f4" : "#e3faf7")};
-`;
-
-const PaymentTitle = styled.h3`
-  margin: 6px 0 14px 0;
-  font-size: 16px;
   font-weight: 700;
-  color: #111827;
+  padding: 6px 12px;
 `;
 
-const PaymentList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const PaymentOption = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-`;
-
-const PaymentRadio = styled.input`
-  width: 16px;
-  height: 16px;
+const PlaceholderTitle = styled.h3`
   margin: 0;
-  accent-color: #00c4b4;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: clamp(20px, 2.4vw, 26px);
+  color: #111827;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
 `;
 
-const PaymentLabel = styled.span`
-  font-size: 14px;
-  color: #151b2c;
-`;
-
-const CardCompanyBox = styled.div`
-  margin-top: auto;
-  min-height: 52px;
-  border: 1px solid #d4d8de;
-  border-radius: 12px;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const CardCompanyLabel = styled.span`
-  font-size: 14px;
-  color: #1f2937;
-  font-weight: 500;
-`;
-
-const ChevronDown = styled.span`
-  font-size: 14px;
-  color: #667084;
-`;
-
-const BottomFade = styled.div`
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 76px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), #ffffff 86%);
-  pointer-events: none;
+const PlaceholderText = styled.p`
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4c5a74;
+  word-break: keep-all;
 `;

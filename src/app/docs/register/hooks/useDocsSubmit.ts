@@ -5,6 +5,7 @@ import { DocsBlock } from "@/types/docs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { FormData } from "./useDocsForm";
 import { useUserStore } from "@/store/userStore";
+import { flattenSidebarNodes, resolveContentMapWithApiDefaults } from "./contentMapUtils";
 
 const DRAFT_STORAGE_KEY = "docs-register-draft";
 
@@ -27,17 +28,6 @@ interface DocsPage {
   id: string;
   endpoint?: string;
   blocks: DocsPageBlock[];
-}
-
-function flattenNodes(nodes: SidebarNode[]): SidebarNode[] {
-  const result: SidebarNode[] = [];
-  for (const node of nodes) {
-    result.push(node);
-    if (node.childrenItems && node.childrenItems.length > 0) {
-      result.push(...flattenNodes(node.childrenItems));
-    }
-  }
-  return result;
 }
 
 function toSidebarBlock(node: SidebarNode): SidebarBlock {
@@ -103,9 +93,15 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
         return;
       }
 
-      const allNodes = flattenNodes(sidebarItems);
+      const resolvedContentMap = resolveContentMapWithApiDefaults(
+        sidebarItems,
+        contentMap,
+        selectedId,
+        currentDocsBlocks
+      );
+      const allNodes = flattenSidebarNodes(sidebarItems);
       const docs_pages: DocsPage[] = allNodes.map((node) => {
-        const blocks = contentMap[node.id] ?? (node.id === selectedId ? currentDocsBlocks : []);
+        const blocks = resolvedContentMap[node.id] ?? [];
         const apiData = blocks.find((b) => b.module === 'api')?.apiData;
         const page: DocsPage = {
           id: node.id,

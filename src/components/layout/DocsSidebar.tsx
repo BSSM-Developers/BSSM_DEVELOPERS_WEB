@@ -20,7 +20,7 @@ export interface SidebarModuleOption {
 }
 
 const DEFAULT_MODULE_OPTIONS: SidebarModuleOption[] = [
-  { label: "메인", module: "main_title" },
+  { label: "문서", module: "default" },
   { label: "그룹", module: "collapse" },
   { label: "API(GET)", module: "api", method: "GET" as const },
   { label: "API(POST)", module: "api", method: "POST" as const },
@@ -95,8 +95,9 @@ const Picker = styled.div`
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   padding: 8px;
   width: 140px;
-  max-height: 250px;
+  max-height: min(320px, calc(100vh - 32px));
   overflow-y: auto;
+  overscroll-behavior: contain;
 `;
 
 const PickerItem = styled.button`
@@ -276,8 +277,20 @@ export function DocsSidebar({
 
   const openPicker = (e: React.MouseEvent, mode: "sibling" | "child", targetId: string | null) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const viewportPadding = 16;
+    const pickerWidth = 140;
+    const menuCount = groupedModuleOptions.plainOptions.length + (groupedModuleOptions.apiOptions.length > 0 ? 1 : 0);
+    const estimatedPickerHeight = Math.min(320, menuCount * 34 + 16);
+    const nextX = Math.min(rect.right + 8, window.innerWidth - pickerWidth - viewportPadding);
+    const maxY = window.innerHeight - estimatedPickerHeight - viewportPadding;
+    const nextY = Math.min(rect.top, maxY);
     setApiMethodOpen(false);
-    setPicker({ open: true, anchor: { x: rect.right + 8, y: rect.top }, mode, targetId });
+    setPicker({
+      open: true,
+      anchor: { x: Math.max(viewportPadding, nextX), y: Math.max(viewportPadding, nextY) },
+      mode,
+      targetId
+    });
   };
 
   const closePicker = useCallback(() => {
@@ -507,10 +520,6 @@ export function DocsSidebar({
 
       {isClient && typeof document !== "undefined" && picker.open && picker.anchor && createPortal(
         <>
-          <div
-            style={{ position: "fixed", inset: 0, zIndex: 999 }}
-            onClick={closePicker}
-          />
           <PickerGroup
             anchor={picker.anchor}
             onMouseDown={(e) => e.stopPropagation()}

@@ -1,7 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useEffect, type MouseEvent as ReactMouseEvent } from "react";
+import { useState, useEffect, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
 import { ParamItem } from "@/components/ui/param/ParamItem";
 import { generateParamExamples, validateParams } from "@/utils/apiUtils/paramUtils";
@@ -69,6 +69,64 @@ const mapExistingParamsByName = (existingParams: ApiParam[] | undefined): Map<st
   return map;
 };
 
+const mergeRecordShape = (base: Record<string, unknown>, incoming: Record<string, unknown>): Record<string, unknown> => {
+  const merged = { ...base };
+
+  for (const [key, incomingValue] of Object.entries(incoming)) {
+    const currentValue = merged[key];
+
+    if (isRecord(currentValue) && isRecord(incomingValue)) {
+      merged[key] = mergeRecordShape(currentValue, incomingValue);
+      continue;
+    }
+
+    if (Array.isArray(currentValue) && Array.isArray(incomingValue)) {
+      merged[key] = mergeArrayShape(currentValue, incomingValue);
+      continue;
+    }
+
+    if (currentValue === undefined) {
+      merged[key] = incomingValue;
+      continue;
+    }
+  }
+
+  return merged;
+};
+
+const mergeArrayShape = (base: unknown[], incoming: unknown[]): unknown[] => {
+  if (base.length === 0) {
+    return [...incoming];
+  }
+
+  if (incoming.length === 0) {
+    return [...base];
+  }
+
+  const baseFirst = base[0];
+  const incomingFirst = incoming[0];
+
+  if (isRecord(baseFirst) && isRecord(incomingFirst)) {
+    return [mergeRecordShape(baseFirst, incomingFirst)];
+  }
+
+  if (Array.isArray(baseFirst) && Array.isArray(incomingFirst)) {
+    return [mergeArrayShape(baseFirst, incomingFirst)];
+  }
+
+  return [...base];
+};
+
+const getArrayObjectShape = (items: unknown[]): Record<string, unknown> | null => {
+  const objectItems = items.filter((item): item is Record<string, unknown> => isRecord(item));
+  if (objectItems.length === 0) {
+    return null;
+  }
+
+  const [firstObject, ...restObjects] = objectItems;
+  return restObjects.reduce((acc, item) => mergeRecordShape(acc, item), firstObject);
+};
+
 const jsonValueToParam = (name: string, value: unknown, existingParam?: ApiParam): ApiParam => {
   if (isRecord(value)) {
     const existingChildrenByName = mapExistingParamsByName(existingParam?.children);
@@ -86,10 +144,10 @@ const jsonValueToParam = (name: string, value: unknown, existingParam?: ApiParam
   }
 
   if (Array.isArray(value)) {
-    const firstObject = value.find((item) => isRecord(item));
+    const objectShape = getArrayObjectShape(value);
     const existingChildrenByName = mapExistingParamsByName(existingParam?.children);
-    const children = firstObject
-      ? Object.entries(firstObject).map(([childKey, childValue]) =>
+    const children = objectShape
+      ? Object.entries(objectShape).map(([childKey, childValue]) =>
         jsonValueToParam(childKey, childValue, existingChildrenByName.get(childKey.trim()))
       )
       : [];
@@ -218,6 +276,45 @@ export function ApiParamsSection({
     closeJsonModal();
   };
 
+  const handleJsonTextareaKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    event.preventDefault();
+    const textarea = event.currentTarget;
+    const { selectionStart, selectionEnd, value } = textarea;
+    const tab = "  ";
+    const nextValue = `${value.slice(0, selectionStart)}${tab}${value.slice(selectionEnd)}`;
+
+    setJsonDraft(nextValue);
+    if (jsonError) {
+      setJsonError("");
+    }
+
+    const nextCursor = selectionStart + tab.length;
+    requestAnimationFrame(() => {
+      textarea.selectionStart = nextCursor;
+      textarea.selectionEnd = nextCursor;
+    });
+  };
+
+  const handleJsonTextareaBlur = () => {
+    const trimmed = jsonDraft.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    try {
+      const formatted = JSON.stringify(JSON.parse(jsonDraft), null, 2);
+      if (formatted !== jsonDraft) {
+        setJsonDraft(formatted);
+      }
+    } catch {
+      return;
+    }
+  };
+
   if (params.length === 0 && !editable) return null;
 
   return (
@@ -295,6 +392,8 @@ export function ApiParamsSection({
                   setJsonError("");
                 }
               }}
+              onKeyDown={handleJsonTextareaKeyDown}
+              onBlur={handleJsonTextareaBlur}
               placeholder='{"post_id":"abc123","title":"제목","enabled":true}'
             />
             {jsonError ? <JsonError>{jsonError}</JsonError> : null}

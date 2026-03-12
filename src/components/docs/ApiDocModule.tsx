@@ -9,6 +9,8 @@ import type { HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 import type { ApiDoc, ApiParam } from "@/types/docs";
 import { generateParamExamples, extractParams } from "@/utils/apiUtils/paramUtils";
 
+const BODY_METHODS = new Set<HttpMethod>(["POST", "PUT", "PATCH", "DELETE"]);
+
 type ApiDocModuleProps = {
   apiId: string;
   apiName: string;
@@ -159,7 +161,7 @@ export function ApiDocModule({
           targetUrl: url,
           method,
           headers: examples.header,
-          body: ['POST', 'PUT', 'PATCH'].includes(method) ? examples.body : undefined
+          body: BODY_METHODS.has(method) ? examples.body : undefined
         }),
       });
 

@@ -21,7 +21,7 @@ import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { PrevButton, NextButton } from '../styles';
 import { Step } from '../hooks/types';
 import { useDocsStore } from "@/store/docsStore";
-import { findNodeById } from "@/components/layout/treeUtils";
+import { findNodeById, findNodePathById } from "@/components/layout/treeUtils";
 import { FormData } from '../hooks/useDocsForm';
 
 interface EditorStepProps {
@@ -55,9 +55,11 @@ export const EditorStep = ({
 }: EditorStepProps) => {
   const currentId = useDocsStore((state) => state.selected);
   const selectedNode = currentId ? findNodeById(sidebarItems, currentId) : null;
-  const isRoot = selectedNode?.id === sidebarItems[0]?.id;
-
-  const breadcrumb = isRoot ? [] : [formData.title || "새 문서"];
+  const selectedPathLabels = currentId
+    ? (findNodePathById(sidebarItems, currentId)?.map((node) => node.label).filter((label) => Boolean(label)) ?? [])
+    : [];
+  const resolvedTitle = selectedPathLabels[selectedPathLabels.length - 1] || selectedNode?.label || formData.title || "새 문서";
+  const breadcrumb = selectedPathLabels.length > 1 ? selectedPathLabels.slice(0, -1) : [];
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -82,7 +84,7 @@ export const EditorStep = ({
         projectName={formData.title || "새 문서"}
         editable={true}
       >
-        <DocsHeader title={selectedNode?.label || formData.title || "새 문서"} breadcrumb={breadcrumb} isApi={false} />
+        <DocsHeader title={resolvedTitle} breadcrumb={breadcrumb} isApi={false} />
         <div
           style={{
             minHeight: "500px",

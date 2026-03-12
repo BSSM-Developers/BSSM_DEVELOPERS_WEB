@@ -25,7 +25,7 @@ import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
 import { useDocsSidebarQuery } from "@/app/docs/queries";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import type { ApiParam, DocsBlock } from "@/types/docs";
-import { findNodeById, updateNode } from "@/components/layout/treeUtils";
+import { findNodeById, findNodePathById, updateNode } from "@/components/layout/treeUtils";
 import {
   buildPageSignatureWithSource,
   buildSidebarSignature,
@@ -683,12 +683,27 @@ export default function DocsEditPage() {
     prevSelectedRef.current = selectedId;
   }, [selectedId, sidebarItems]);
 
+  const selectedPathLabels = useMemo(() => {
+    if (!selectedId) {
+      return [];
+    }
+    return findNodePathById(sidebarItems, selectedId)?.map((node) => node.label).filter((label) => Boolean(label)) ?? [];
+  }, [selectedId, sidebarItems]);
   const currentLabel = useMemo(() => {
+    if (selectedPathLabels.length > 0) {
+      return selectedPathLabels[selectedPathLabels.length - 1];
+    }
     if (!selectedId) {
       return "문서 수정";
     }
     return pageTargets.find((target) => target.mappedId === selectedId)?.label || "문서 수정";
-  }, [pageTargets, selectedId]);
+  }, [pageTargets, selectedId, selectedPathLabels]);
+  const breadcrumbPath = useMemo(() => {
+    if (selectedPathLabels.length > 1) {
+      return selectedPathLabels.slice(0, -1);
+    }
+    return [sidebarItems[0]?.label || effectiveProjectTitle || "문서"];
+  }, [effectiveProjectTitle, selectedPathLabels, sidebarItems]);
   const selectedTarget = useMemo(
     () => pageTargets.find((target) => target.mappedId === selectedId),
     [pageTargets, selectedId]
@@ -1422,7 +1437,7 @@ export default function DocsEditPage() {
     >
       <DocsHeader
         title={currentLabel}
-        breadcrumb={[sidebarItems[0]?.label || effectiveProjectTitle || "문서"]}
+        breadcrumb={breadcrumbPath}
         isApi={false}
       />
 

@@ -9,7 +9,7 @@ import { DndContext, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSidebarDrag } from "@/hooks/useSidebarDrag";
-import { createMutators, type Mutators } from "@/components/layout/sidebarUtils";
+import { appendChild, createMutators, insertAfter, type Mutators } from "@/components/layout/sidebarUtils";
 import { useConfirm } from "@/hooks/useConfirm";
 import { findNodeById } from "@/components/layout/treeUtils";
 
@@ -248,6 +248,7 @@ export function DocsSidebar({
   onRequestAddApi,
   disableApiRename = false,
 }: DocsSidebarProps) {
+  const MAX_GROUP_NESTING_DEPTH = 3;
   const { confirm, ConfirmDialog } = useConfirm();
   const propItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
   const [localItems, setLocalItems] = useState<SidebarNode[]>([]);
@@ -291,16 +292,99 @@ export function DocsSidebar({
     return () => window.removeEventListener("mousedown", handleClick);
   }, [picker.open, closePicker]);
 
+  const getMaxCollapseDepth = useCallback((nodes: SidebarNode[]): number => {
+    const walk = (items: SidebarNode[], depth: number): number => {
+      let maxDepth = depth;
+      for (const item of items) {
+        const nextDepth = item.module === "collapse" ? depth + 1 : depth;
+        if (nextDepth > maxDepth) {
+          maxDepth = nextDepth;
+        }
+        if (!item.childrenItems?.length) {
+          continue;
+        }
+        const childMaxDepth = walk(item.childrenItems, nextDepth);
+        if (childMaxDepth > maxDepth) {
+          maxDepth = childMaxDepth;
+        }
+      }
+      return maxDepth;
+    };
+    return walk(nodes, 0);
+  }, []);
+
+  const applyItemsChange = useCallback((nextItems: SidebarNode[]) => {
+    const currentMaxDepth = getMaxCollapseDepth(effectiveItems);
+    const nextMaxDepth = getMaxCollapseDepth(nextItems);
+    if (nextMaxDepth > MAX_GROUP_NESTING_DEPTH && nextMaxDepth > currentMaxDepth) {
+      void confirm({
+        title: "그룹 중첩 제한",
+        message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+        confirmText: "확인",
+        hideCancel: true,
+      });
+      return;
+    }
+    if (onChange) {
+      onChange(nextItems);
+      return;
+    }
+    setLocalItems(nextItems);
+  }, [confirm, effectiveItems, getMaxCollapseDepth, onChange, MAX_GROUP_NESTING_DEPTH]);
+
   const { sensors, onDragStart, onDragOver, onDragEnd, overIntent, activeId } = useSidebarDrag({
     editable,
     effectiveItems,
-    onChange: onChange || setLocalItems,
+    onChange: applyItemsChange,
   });
 
-  const baseMutators = useMemo(() => createMutators(effectiveItems, onChange, setLocalItems), [effectiveItems, onChange]);
+  const baseMutators = useMemo(() => createMutators(effectiveItems, applyItemsChange), [effectiveItems, applyItemsChange]);
+
+  const hasCollapseInSubtree = useCallback((node: Omit<SidebarNode, "id">): boolean => {
+    const walk = (target: Omit<SidebarNode, "id">): boolean => {
+      if (target.module === "collapse") {
+        return true;
+      }
+      if (!target.childrenItems?.length) {
+        return false;
+      }
+      return target.childrenItems.some((child) => walk(child));
+    };
+    return walk(node);
+  }, []);
 
   const mutators: Mutators = useMemo(() => ({
     ...baseMutators,
+    addSibling: (targetId: string, node: Omit<SidebarNode, "id">) => {
+      const candidate = insertAfter(effectiveItems, targetId, node);
+      const isAddingCollapse = hasCollapseInSubtree(node);
+      const nextMaxDepth = getMaxCollapseDepth(candidate);
+      if (isAddingCollapse && nextMaxDepth > MAX_GROUP_NESTING_DEPTH) {
+        void confirm({
+          title: "그룹 중첩 제한",
+          message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+      baseMutators.addSibling(targetId, node);
+    },
+    addChild: (parentId: string, node: Omit<SidebarNode, "id">) => {
+      const candidate = appendChild(effectiveItems, parentId, node);
+      const isAddingCollapse = hasCollapseInSubtree(node);
+      const nextMaxDepth = getMaxCollapseDepth(candidate);
+      if (isAddingCollapse && nextMaxDepth > MAX_GROUP_NESTING_DEPTH) {
+        void confirm({
+          title: "그룹 중첩 제한",
+          message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+      baseMutators.addChild(parentId, node);
+    },
     remove: async (id: string) => {
       const isConfirmed = await confirm({
         title: "요소 삭제",
@@ -310,7 +394,7 @@ export function DocsSidebar({
       });
       if (isConfirmed) baseMutators.remove(id);
     }
-  }), [baseMutators, confirm]);
+  }), [baseMutators, confirm, effectiveItems, getMaxCollapseDepth, hasCollapseInSubtree, MAX_GROUP_NESTING_DEPTH]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!editable) return;
@@ -330,7 +414,22 @@ export function DocsSidebar({
     }
   }, [editable, handleKeyDown]);
 
-  const onPickModule = (opt: SidebarModuleOption) => {
+  const getCollapseDepthInfo = useCallback((targetId: string): { nodeDepth: number; parentDepth: number } | null => {
+    const walk = (nodes: SidebarNode[], depth: number): { nodeDepth: number; parentDepth: number } | null => {
+      for (const node of nodes) {
+        const nextDepth = node.module === "collapse" ? depth + 1 : depth;
+        if (node.id === targetId) return { nodeDepth: nextDepth, parentDepth: depth };
+        if (!node.childrenItems?.length) continue;
+        const foundDepth = walk(node.childrenItems, nextDepth);
+        if (foundDepth !== null) return foundDepth;
+      }
+      return null;
+    };
+
+    return walk(effectiveItems, 0);
+  }, [effectiveItems]);
+
+  const onPickModule = async (opt: SidebarModuleOption) => {
     if (opt.module === "api" && onRequestAddApi) {
       onRequestAddApi({ mode: picker.mode, targetId: picker.targetId });
       closePicker();
@@ -339,6 +438,21 @@ export function DocsSidebar({
 
     const node: SidebarNode = { id: crypto.randomUUID(), label: opt.label, module: opt.module, childrenItems: [] };
     if (opt.method) node.method = opt.method;
+    if (opt.module === "collapse" && picker.targetId) {
+      const depthInfo = getCollapseDepthInfo(picker.targetId);
+      const parentDepth = picker.mode === "child" ? depthInfo?.nodeDepth ?? 0 : depthInfo?.parentDepth ?? 0;
+      const nextGroupDepth = parentDepth + 1;
+      if (nextGroupDepth > MAX_GROUP_NESTING_DEPTH) {
+        closePicker();
+        await confirm({
+          title: "그룹 중첩 제한",
+          message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+    }
     if (picker.mode === "child" && picker.targetId) {
       mutators.addChild(picker.targetId, node);
     } else {

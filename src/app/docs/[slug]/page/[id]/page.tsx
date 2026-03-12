@@ -50,15 +50,15 @@ export default function DocsPageDetail() {
     );
   }
 
-  const findLabel = (blocks: SidebarBlock[], targetId: string): string | null => {
+  const findPathLabels = (blocks: SidebarBlock[], targetId: string): string[] | null => {
     for (const block of blocks) {
       if (block.mappedId === targetId || block.id === targetId) {
-        return block.label;
+        return [block.label];
       }
       if (block.childrenItems?.length) {
-        const found = findLabel(block.childrenItems, targetId);
+        const found = findPathLabels(block.childrenItems, targetId);
         if (found) {
-          return found;
+          return [block.label, ...found];
         }
       }
     }
@@ -70,13 +70,14 @@ export default function DocsPageDetail() {
     : null;
 
   const projectTitle = sidebarTitle || "Project";
-  const pageLabel = sidebarData?.data?.blocks ? findLabel(sidebarData.data.blocks, id) : null;
-  const displayTitle = pageLabel || "문서";
+  const selectedPathLabels = sidebarData?.data?.blocks ? findPathLabels(sidebarData.data.blocks, id) ?? [] : [];
+  const displayTitle = selectedPathLabels.length > 0 ? selectedPathLabels[selectedPathLabels.length - 1] : "문서";
+  const breadcrumb = selectedPathLabels.length > 1 ? selectedPathLabels.slice(0, -1) : [projectTitle];
   const blocks = pageData?.data?.docsBlocks || [];
 
   return (
     <>
-      <DocsHeader title={displayTitle} breadcrumb={[projectTitle]} isApi={false} />
+      <DocsHeader title={displayTitle} breadcrumb={breadcrumb} isApi={false} />
       <ContentArea>
         {blocks.length > 0 ? (
           blocks.map((block: DocsBlockType, index: number) => (

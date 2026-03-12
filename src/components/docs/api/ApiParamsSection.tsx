@@ -1,8 +1,10 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useState, useEffect, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
+import { useState, useEffect, useMemo, type MouseEvent as ReactMouseEvent } from "react";
 import { createPortal } from "react-dom";
+import CodeMirror from "@uiw/react-codemirror";
+import { json } from "@codemirror/lang-json";
 import { ParamItem } from "@/components/ui/param/ParamItem";
 import { generateParamExamples, validateParams } from "@/utils/apiUtils/paramUtils";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -194,6 +196,7 @@ export function ApiParamsSection({
   const [jsonModalOpen, setJsonModalOpen] = useState(false);
   const [jsonDraft, setJsonDraft] = useState("");
   const [jsonError, setJsonError] = useState("");
+  const jsonEditorExtensions = useMemo(() => [json()], []);
 
   const { confirm, ConfirmDialog } = useConfirm();
 
@@ -276,30 +279,12 @@ export function ApiParamsSection({
     closeJsonModal();
   };
 
-  const handleJsonTextareaKeyDown = (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== "Tab") {
-      return;
-    }
-
-    event.preventDefault();
-    const textarea = event.currentTarget;
-    const { selectionStart, selectionEnd, value } = textarea;
-    const tab = "  ";
-    const nextValue = `${value.slice(0, selectionStart)}${tab}${value.slice(selectionEnd)}`;
-
-    setJsonDraft(nextValue);
-    if (jsonError) {
-      setJsonError("");
-    }
-
-    const nextCursor = selectionStart + tab.length;
-    requestAnimationFrame(() => {
-      textarea.selectionStart = nextCursor;
-      textarea.selectionEnd = nextCursor;
-    });
+  const handleJsonEditorChange = (value: string) => {
+    setJsonDraft(value);
+    setJsonError((prev) => (prev ? "" : prev));
   };
 
-  const handleJsonTextareaBlur = () => {
+  const handleJsonEditorBlur = () => {
     const trimmed = jsonDraft.trim();
     if (!trimmed) {
       return;
@@ -384,18 +369,23 @@ export function ApiParamsSection({
           <JsonModalCard onClick={(event) => event.stopPropagation()}>
             <JsonModalTitle>Body JSON 입력</JsonModalTitle>
             <JsonModalDescription>JSON을 붙여넣으면 Body 파라미터가 자동 생성됩니다.</JsonModalDescription>
-            <JsonTextarea
-              value={jsonDraft}
-              onChange={(event) => {
-                setJsonDraft(event.target.value);
-                if (jsonError) {
-                  setJsonError("");
-                }
-              }}
-              onKeyDown={handleJsonTextareaKeyDown}
-              onBlur={handleJsonTextareaBlur}
-              placeholder='{"post_id":"abc123","title":"제목","enabled":true}'
-            />
+            <JsonCodeEditor>
+              <CodeMirror
+                value={jsonDraft}
+                height="260px"
+                placeholder='{"post_id":"abc123","title":"제목","enabled":true}'
+                extensions={jsonEditorExtensions}
+                indentWithTab
+                onChange={handleJsonEditorChange}
+                onBlur={handleJsonEditorBlur}
+                basicSetup={{
+                  lineNumbers: false,
+                  foldGutter: false,
+                  highlightActiveLine: false,
+                  highlightActiveLineGutter: false
+                }}
+              />
+            </JsonCodeEditor>
             {jsonError ? <JsonError>{jsonError}</JsonError> : null}
             <JsonModalActions>
               <JsonActionButton type="button" onClick={closeJsonModal}>
@@ -602,24 +592,36 @@ const JsonModalDescription = styled.p`
   line-height: 1.4;
 `;
 
-const JsonTextarea = styled.textarea`
+const JsonCodeEditor = styled.div`
   width: 100%;
-  min-height: 260px;
   border-radius: 10px;
   border: 1px solid #D1D5DB;
   background: #F8FAFC;
-  color: #0F172A;
-  font-family: "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  padding: 12px;
-  resize: vertical;
-  outline: none;
+  overflow: hidden;
 
-  &:focus {
+  &:focus-within {
     border-color: #16335C;
     box-shadow: 0 0 0 2px rgba(22, 51, 92, 0.15);
     background: #FFFFFF;
+  }
+
+  .cm-editor {
+    min-height: 260px;
+    background: transparent;
+  }
+
+  .cm-scroller {
+    font-family: "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .cm-content {
+    padding: 12px;
+  }
+
+  .cm-focused {
+    outline: none;
   }
 `;
 

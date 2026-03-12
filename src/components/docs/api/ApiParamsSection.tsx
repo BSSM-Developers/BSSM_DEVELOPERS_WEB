@@ -147,12 +147,48 @@ const jsonValueToParam = (name: string, value: unknown, existingParam?: ApiParam
 
   if (Array.isArray(value)) {
     const objectShape = getArrayObjectShape(value);
-    const existingChildrenByName = mapExistingParamsByName(existingParam?.children);
-    const children = objectShape
-      ? Object.entries(objectShape).map(([childKey, childValue]) =>
-        jsonValueToParam(childKey, childValue, existingChildrenByName.get(childKey.trim()))
-      )
+    const existingArrayItem = existingParam?.children?.find((child) => child.name.trim().length === 0) ?? existingParam?.children?.[0];
+    const existingObjectChildrenByName = mapExistingParamsByName(existingArrayItem?.children);
+    let children: ApiParam[] = objectShape
+      ? [{
+        name: existingArrayItem?.name ?? "",
+        type: "object",
+        description: existingArrayItem?.description ?? "",
+        required: existingArrayItem?.required ?? false,
+        example: existingArrayItem?.example ?? "",
+        children: Object.entries(objectShape).map(([childKey, childValue]) =>
+          jsonValueToParam(childKey, childValue, existingObjectChildrenByName.get(childKey.trim()))
+        )
+      }]
       : [];
+
+    if (!objectShape && value.length > 0) {
+      const firstValue = value[0];
+      const arrayItemName = existingArrayItem?.name ?? "";
+      const arrayItemDescription = existingArrayItem?.description ?? "";
+      const arrayItemRequired = existingArrayItem?.required ?? false;
+      const arrayItemExample = existingArrayItem?.example ?? "";
+
+      if (Array.isArray(firstValue)) {
+        children.push({
+          name: arrayItemName,
+          type: "array",
+          description: arrayItemDescription,
+          required: arrayItemRequired,
+          example: arrayItemExample
+        });
+      } else {
+        const primitive = firstValue as string | number | boolean | null;
+        children.push({
+          name: arrayItemName,
+          type: inferPrimitiveType(primitive),
+          description: arrayItemDescription,
+          required: arrayItemRequired,
+          example: arrayItemExample || primitiveToExample(primitive)
+        });
+      }
+    }
+
     return {
       name,
       type: "array",

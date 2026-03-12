@@ -170,30 +170,7 @@ ${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColo
 }
 
 export function paramsToObject(params: ApiParam[]): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  for (const param of params) {
-    const key = param.name;
-    let value: unknown = param.example;
-
-    if (param.type === 'object' && param.children && param.children.length > 0) {
-      value = paramsToObject(param.children);
-    } else if (param.type === 'array' && param.children && param.children.length > 0) {
-      value = [paramsToObject(param.children)];
-    } else if (typeof value === 'string') {
-      if (param.type === 'boolean') {
-        value = value === 'true';
-      } else if (param.type === 'integer' || param.type === 'number') {
-        const num = Number(value);
-        if (!isNaN(num)) value = num;
-      } else if (param.type === 'null' || value === 'null') {
-        value = null;
-      }
-    }
-
-    result[key] = value;
-  }
-  return result;
+  return generateParamExamples(params);
 }
 
 export function generateResponseTemplate(

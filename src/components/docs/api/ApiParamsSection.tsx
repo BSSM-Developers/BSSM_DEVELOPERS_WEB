@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo, type MouseEvent as ReactMouseEvent } from
 import { createPortal } from "react-dom";
 import CodeMirror from "@uiw/react-codemirror";
 import { json } from "@codemirror/lang-json";
+import { parse, printParseErrorCode, type ParseError, type ParseOptions } from "jsonc-parser";
 import { ParamItem } from "@/components/ui/param/ParamItem";
 import { generateParamExamples, validateParams } from "@/utils/apiUtils/paramUtils";
 import { useConfirm } from "@/hooks/useConfirm";
@@ -215,28 +216,82 @@ const jsonObjectToParams = (jsonObject: Record<string, unknown>, existingParams:
   return Object.entries(jsonObject).map(([key, value]) => jsonValueToParam(key, value, existingByName.get(key.trim())));
 };
 
-const formatJsonParseError = (error: unknown, source: string): string => {
-  if (!(error instanceof Error) || !error.message) {
-    return "JSON 파싱 중 알 수 없는 오류가 발생했습니다.";
-  }
+const strictJsonParseOptions: ParseOptions = {
+  disallowComments: true,
+  allowTrailingComma: false,
+  allowEmptyContent: false
+};
 
-  const message = error.message;
-  const positionMatch = message.match(/position\s+(\d+)/i);
-  if (!positionMatch) {
-    return message;
-  }
-
-  const rawPosition = Number(positionMatch[1]);
-  if (Number.isNaN(rawPosition)) {
-    return message;
-  }
-
-  const safePosition = Math.max(0, Math.min(rawPosition, source.length));
-  const before = source.slice(0, safePosition);
+const getLineAndColumn = (source: string, offset: number): { line: number; column: number } => {
+  const safeOffset = Math.max(0, Math.min(offset, source.length));
+  const before = source.slice(0, safeOffset);
   const line = before.split("\n").length;
-  const column = safePosition - before.lastIndexOf("\n");
+  const column = safeOffset - before.lastIndexOf("\n");
+  return { line, column };
+};
 
+const getKoreanParseErrorMessage = (errorCodeName: string): string => {
+  switch (errorCodeName) {
+    case "InvalidSymbol":
+      return "유효하지 않은 기호가 있습니다.";
+    case "InvalidNumberFormat":
+      return "숫자 형식이 올바르지 않습니다.";
+    case "PropertyNameExpected":
+      return "객체의 속성 이름이 필요합니다.";
+    case "ValueExpected":
+      return "값이 필요합니다.";
+    case "ColonExpected":
+      return "속성 이름 뒤에 ':'가 필요합니다.";
+    case "CommaExpected":
+      return "항목 사이에 ','가 필요합니다.";
+    case "CloseBraceExpected":
+      return "객체를 닫는 '}'가 필요합니다.";
+    case "CloseBracketExpected":
+      return "배열을 닫는 ']'가 필요합니다.";
+    case "EndOfFileExpected":
+      return "JSON 데이터 뒤에 불필요한 문자가 있습니다.";
+    case "InvalidCommentToken":
+      return "JSON에서는 주석을 사용할 수 없습니다.";
+    case "UnexpectedEndOfComment":
+      return "주석이 올바르게 닫히지 않았습니다.";
+    case "UnexpectedEndOfString":
+      return "문자열이 올바르게 닫히지 않았습니다.";
+    case "UnexpectedEndOfNumber":
+      return "숫자 값이 올바르게 끝나지 않았습니다.";
+    case "InvalidUnicode":
+      return "유니코드 이스케이프 형식이 올바르지 않습니다.";
+    case "InvalidEscapeCharacter":
+      return "이스케이프 문자가 올바르지 않습니다.";
+    case "InvalidCharacter":
+      return "유효하지 않은 문자가 있습니다.";
+    default:
+      return `JSON 문법 오류(${errorCodeName})`;
+  }
+};
+
+const formatJsonParseError = (parseError: ParseError, source: string): string => {
+  const { line, column } = getLineAndColumn(source, parseError.offset);
+  const message = getKoreanParseErrorMessage(printParseErrorCode(parseError.error));
   return `${message} (라인 ${line}, 열 ${column})`;
+};
+
+type StrictJsonParseResult =
+  | { success: true; parsedValue: unknown }
+  | { success: false; errorMessage: string };
+
+const parseStrictJson = (source: string): StrictJsonParseResult => {
+  const errors: ParseError[] = [];
+  const parsedValue: unknown = parse(source, errors, strictJsonParseOptions);
+  const firstError = errors[0];
+
+  if (firstError) {
+    return {
+      success: false,
+      errorMessage: formatJsonParseError(firstError, source),
+    };
+  }
+
+  return { success: true, parsedValue };
 };
 
 export function ApiParamsSection({
@@ -320,14 +375,13 @@ export function ApiParamsSection({
       return;
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(jsonDraft);
-    } catch (error: unknown) {
-      setJsonError(formatJsonParseError(error, jsonDraft));
+    const parseResult = parseStrictJson(jsonDraft);
+    if (!parseResult.success) {
+      setJsonError(parseResult.errorMessage);
       return;
     }
 
+    const parsed = parseResult.parsedValue;
     if (!isRecord(parsed)) {
       setJsonError("최상위는 JSON 객체({}) 형식이어야 합니다.");
       return;
@@ -352,13 +406,14 @@ export function ApiParamsSection({
       return;
     }
 
-    try {
-      const formatted = JSON.stringify(JSON.parse(jsonDraft), null, 2);
-      if (formatted !== jsonDraft) {
-        setJsonDraft(formatted);
-      }
-    } catch {
+    const parseResult = parseStrictJson(jsonDraft);
+    if (!parseResult.success) {
       return;
+    }
+
+    const formatted = JSON.stringify(parseResult.parsedValue, null, 2);
+    if (formatted !== jsonDraft) {
+      setJsonDraft(formatted);
     }
   };
 

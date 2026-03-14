@@ -16,8 +16,6 @@ export interface CodeTemplateOptions {
   formatCode?: boolean;
 }
 
-const BODY_METHODS = new Set<ApiDoc["method"]>(["POST", "PUT", "PATCH", "DELETE"]);
-
 export function generateRequestCode(apiDoc: ApiDoc, options: CodeTemplateOptions): string {
   const { language, library = 'axios', baseUrl = '' } = options;
 
@@ -91,7 +89,7 @@ function generateJavaScriptCode(
 ): string {
   const authHeaders = generateAuthHeader(options);
   const headers = { ...authHeaders, ...examples.header };
-  const hasBody = BODY_METHODS.has(apiDoc.method);
+  const hasBody = Object.keys(examples.body).length > 0;
 
   switch (library) {
     case 'axios':
@@ -159,7 +157,7 @@ function generatePythonCode(
 ): string {
   const authHeaders = generateAuthHeader(options);
   const headers = { ...authHeaders, ...examples.header };
-  const hasBody = BODY_METHODS.has(apiDoc.method);
+  const hasBody = Object.keys(examples.body).length > 0;
 
   return `${wrapColor('import', 'keyword')} ${wrapColor('requests', 'function')}
 
@@ -195,7 +193,7 @@ function generateShellCode(
 ): string {
   const authHeaders = generateAuthHeader(options);
   const headers = { ...authHeaders, ...examples.header };
-  const hasBody = BODY_METHODS.has(apiDoc.method);
+  const hasBody = Object.keys(examples.body).length > 0;
 
   const curlParts = [`${wrapColor('curl', 'function')} ${wrapColor('-X', 'keyword')} ${wrapColor(apiDoc.method, 'string')}`];
 

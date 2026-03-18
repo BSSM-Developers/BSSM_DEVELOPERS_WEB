@@ -135,6 +135,21 @@ export default function AdminApiUseReasonsPage() {
               {sortedItems.map((item) => {
                 const state = (item.apiUseState || "").toUpperCase();
                 const rowKey = createApiUseReasonRowKey(item);
+                const requester = (() => {
+                  const writerName = item.writer?.trim();
+                  if (writerName) {
+                    return writerName;
+                  }
+                  const name = item.name?.trim();
+                  if (name) {
+                    return name;
+                  }
+                  const writerId = String(item.writerId ?? "").trim();
+                  if (writerId) {
+                    return `사용자 #${writerId}`;
+                  }
+                  return "-";
+                })();
                 return (
                   <Card key={rowKey}>
                     <CardHeader>
@@ -143,10 +158,8 @@ export default function AdminApiUseReasonsPage() {
                     </CardHeader>
 
                     <MetaGrid>
-                      <MetaLabel>apiUseReasonId</MetaLabel>
-                      <MetaValue>{item.apiUseReasonId ?? "-"}</MetaValue>
-                      <MetaLabel>writerId</MetaLabel>
-                      <MetaValue>{item.writerId ?? "-"}</MetaValue>
+                      <MetaLabel>요청자</MetaLabel>
+                      <MetaValue>{requester}</MetaValue>
                       <MetaLabel>신청 사유</MetaLabel>
                       <MetaValue>{item.apiUseReason || "-"}</MetaValue>
                     </MetaGrid>

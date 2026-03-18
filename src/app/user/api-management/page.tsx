@@ -420,7 +420,21 @@ export default function MyApiManagementPage() {
               {sortedItems.map((item) => {
                 const state = (item.apiUseState || "").toUpperCase();
                 const actionKey = `${item.apiTokenId}-${item.apiUseReasonId}`;
-                const requester = item.name || item.writer || (item.writerId ? String(item.writerId) : "-");
+                const requester = (() => {
+                  const writerName = item.writer?.trim();
+                  if (writerName) {
+                    return writerName;
+                  }
+                  const name = item.name?.trim();
+                  if (name) {
+                    return name;
+                  }
+                  const writerId = String(item.writerId ?? "").trim();
+                  if (writerId) {
+                    return `사용자 #${writerId}`;
+                  }
+                  return "-";
+                })();
                 return (
                   <RequestCard key={actionKey}>
                     <CardHeader>
@@ -437,12 +451,6 @@ export default function MyApiManagementPage() {
 
                       <MetaLabel>문서</MetaLabel>
                       <MetaValue>{item.sourceDocsTitle}</MetaValue>
-
-                      <MetaLabel>엔드포인트</MetaLabel>
-                      <MetaValue>{item.endpoint || "-"}</MetaValue>
-
-                      <MetaLabel>메서드</MetaLabel>
-                      <MetaValue>{item.apiMethod || "-"}</MetaValue>
 
                       <MetaLabel>신청 사유</MetaLabel>
                       <MetaValue>{item.apiUseReason || "-"}</MetaValue>

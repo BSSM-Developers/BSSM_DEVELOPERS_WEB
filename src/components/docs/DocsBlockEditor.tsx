@@ -23,7 +23,7 @@ interface DocsBlockEditorProps {
   domain?: string;
 }
 
-type CodeLanguage = "javascript" | "python";
+type CodeLanguage = "javascript" | "python" | "json";
 
 export const DocsBlockEditor = memo(function DocsBlockEditor({
   block,
@@ -83,6 +83,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   ];
   const CODE_LANGUAGE_OPTIONS: Array<{ value: CodeLanguage; label: string }> = [
     { value: "javascript", label: "JavaScript" },
+    { value: "json", label: "JSON" },
     { value: "python", label: "Python" },
   ];
 
@@ -161,10 +162,13 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     }
   }, [block.module]);
 
-  const normalizeCodeLanguage = (value?: string): string => {
+  const normalizeCodeLanguage = (value?: string): CodeLanguage => {
     const normalized = (value || "").trim().toLowerCase();
     if (normalized === "py" || normalized === "python") {
       return "python";
+    }
+    if (normalized === "json" || normalized === "jsonc") {
+      return "json";
     }
     if (normalized === "js" || normalized === "jsx" || normalized === "ts" || normalized === "tsx" || normalized === "javascript") {
       return "javascript";
@@ -172,7 +176,12 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     return "javascript";
   };
 
-  const selectedCodeLanguage: CodeLanguage = normalizeCodeLanguage(block.language) === "python" ? "python" : "javascript";
+  const selectedCodeLanguage: CodeLanguage = normalizeCodeLanguage(block.language);
+  const selectedCodeLanguageLabel = selectedCodeLanguage === "python"
+    ? "Python"
+    : selectedCodeLanguage === "json"
+      ? "JSON"
+      : "JavaScript";
 
   const detectModuleType = (
     text: string
@@ -270,6 +279,9 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     }
 
     if (e.key === "Enter") {
+      if (block.module === "code") {
+        return;
+      }
       e.preventDefault();
       onAddBlock(index, { module: block.module === "list" ? "list" : "docs_1", content: "" } as DocsBlockType);
       return;
@@ -539,7 +551,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                     setIsLanguageMenuOpen((prev) => !prev);
                   }}
                 >
-                  <span>{selectedCodeLanguage === "python" ? "Python" : "JavaScript"}</span>
+                  <span>{selectedCodeLanguageLabel}</span>
                   <CodeLanguageArrow open={isLanguageMenuOpen}>▼</CodeLanguageArrow>
                 </CodeLanguageTrigger>
                 {isLanguageMenuOpen ? (

@@ -23,13 +23,15 @@ const parseMarkdownCodeFence = (content?: string): { language: string; code: str
   const language =
     rawLanguage === "py" || rawLanguage === "python"
       ? "python"
-      : rawLanguage === "js" ||
-          rawLanguage === "jsx" ||
-          rawLanguage === "ts" ||
-          rawLanguage === "tsx" ||
-          rawLanguage === "javascript"
-        ? "javascript"
-        : "javascript";
+      : rawLanguage === "json" || rawLanguage === "jsonc"
+        ? "json"
+        : rawLanguage === "js" ||
+            rawLanguage === "jsx" ||
+            rawLanguage === "ts" ||
+            rawLanguage === "tsx" ||
+            rawLanguage === "javascript"
+          ? "javascript"
+          : "javascript";
   return {
     language,
     code: match[2],

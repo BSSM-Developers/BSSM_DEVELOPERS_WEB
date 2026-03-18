@@ -40,6 +40,15 @@ export function highlightCode(code: string, language: string): string {
     return `___TOKEN_${id}___`;
   };
 
+  if (lang === 'json' || lang === 'jsonc') {
+    return escaped
+      .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, (_, key: string, colon: string) => `${wrapColor(key, 'key')}${wrapColor(colon, 'punctuation')}`)
+      .replace(/:\s*("(?:\\.|[^"\\])*")/g, (_, str: string) => `: ${wrapColor(str, 'string')}`)
+      .replace(/:\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, (_, num: string) => `: ${wrapColor(num, 'string')}`)
+      .replace(/:\s*(true|false|null)\b/g, (_, literal: string) => `: ${wrapColor(literal, 'keyword')}`)
+      .replace(/([{}[\],])/g, wrapColor('$1', 'punctuation'));
+  }
+
   if (lang === 'javascript' || lang === 'js') {
     escaped = escaped.replace(/\/\/.*$|'[^']*'|"[^"]*"|`[^`]*`/gm, (match) => {
       if (match.startsWith('//')) return addToken(match, 'punctuation');

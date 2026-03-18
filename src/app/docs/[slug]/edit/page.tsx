@@ -1,18 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import styled from "@emotion/styled";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import {
-  DndContext,
-  closestCenter,
-} from "@dnd-kit/core";
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsLayout } from "@/components/layout/DocsLayout";
-import { SidebarModuleOption } from "@/components/layout/DocsSidebar";
-import { DocsBlockEditor } from "@/components/docs/DocsBlockEditor";
-import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useConfirm } from "@/hooks/useConfirm";
 import { useDocsStore } from "@/store/docsStore";
@@ -20,96 +11,31 @@ import { type DocsItem } from "@/app/docs/api";
 import { useDocsSidebarQuery } from "@/app/docs/queries";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import type { DocsBlock } from "@/types/docs";
-import { findNodePathById } from "@/components/layout/treeUtils";
-import {
-  collectPageTargetsFromSidebar,
-  createDefaultBlocksByModule,
-} from "./helpers";
 import { CustomApiPickerModal } from "./components/CustomApiPickerModal";
 import { useDocsEditHydration } from "./hooks/useDocsEditHydration";
 import { useDocsSelectionSync } from "./hooks/useDocsSelectionSync";
 import { useCustomApiImport } from "./hooks/useCustomApiImport";
 import { useDocsSave } from "./hooks/useDocsSave";
+import { useDocsEditViewModel } from "./hooks/useDocsEditViewModel";
 import type { SourcePageMeta } from "./hooks/shared";
 import { useDocsBlockSelection } from "./hooks/useDocsBlockSelection";
 import { useDocsBlockDnd } from "./hooks/useDocsBlockDnd";
 import { useDocsBlockMutations } from "./hooks/useDocsBlockMutations";
+import {
+  DocsEditSaveButton as SaveButton,
+  DocsEditFloatingActions as FloatingActions,
+  DocsEditErrorBox as ErrorBox,
+} from "./styles";
+import { DocsEditBlocksContent } from "./components/DocsEditBlocksContent";
 
-const ContentArea = styled.div`
-  min-height: 500px;
-  padding: 0 48px 120px;
-  display: flex;
-  flex-direction: column;
-`;
-
-const SaveButton = styled.button`
-  width: 132px;
-  height: 48px;
-  border-radius: 10px;
-  border: none;
-  background: #16335c;
-  color: white;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 10px 24px rgba(22, 51, 92, 0.2);
-
-  &:hover {
-    filter: brightness(1.05);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const FloatingActions = styled.div`
-  position: fixed;
-  right: 32px;
-  bottom: 32px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 4000;
-
-  @media (max-width: 1280px) {
-    right: 20px;
-    bottom: 20px;
-  }
-`;
-
-const EmptyText = styled.div`
-  padding: 20px 0;
-  color: #9ca3af;
-`;
-
-const ReadonlyNotice = styled.div`
-  margin-bottom: 16px;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-`;
-
-const ErrorBox = styled.div`
-  padding: 40px;
-  text-align: center;
-  color: #ef4444;
-`;
-
-const MarqueeSelectionBox = styled.div`
-  position: fixed;
-  border: 1px solid rgba(59, 130, 246, 0.8);
-  background: rgba(59, 130, 246, 0.14);
-  pointer-events: none;
-  z-index: 5000;
-`;
+const filterRecordByKeys = <T,>(prev: Record<string, T>, keys: Set<string>) => {
+  const next = Object.fromEntries(Object.entries(prev).filter(([key]) => keys.has(key)));
+  const prevKeys = Object.keys(prev);
+  const nextKeys = Object.keys(next);
+  const isSame =
+    prevKeys.length === nextKeys.length && prevKeys.every((key) => Object.prototype.hasOwnProperty.call(next, key));
+  return isSame ? prev : next;
+};
 
 export default function DocsEditPage() {
   const params = useParams();
@@ -178,52 +104,26 @@ export default function DocsEditPage() {
     };
   }, []);
 
-  const pageTargets = useMemo(() => collectPageTargetsFromSidebar(sidebarItems), [sidebarItems]);
-  const customSidebarModuleOptions = useMemo<SidebarModuleOption[]>(
-    () => [
-      { label: "문서", module: "default" },
-      { label: "그룹", module: "collapse" },
-      { label: "API", module: "api" },
-    ],
-    []
-  );
+  const {
+    pageTargets,
+    currentLabel,
+    breadcrumbPath,
+    isReadonlyImportedApi,
+    customSidebarModuleOptions,
+  } = useDocsEditViewModel({
+    sidebarItems,
+    selectedId,
+    effectiveProjectTitle,
+    isCustomDocs,
+  });
 
   useEffect(() => {
     const targetIds = new Set(pageTargets.map((target) => target.mappedId));
+    const targetPageIds = new Set(pageTargets.map((target) => target.pageMappedId));
 
-      setSourcePageMap((prev) => {
-        const next = Object.fromEntries(
-          Object.entries(prev).filter(([mappedId]) => targetIds.has(mappedId))
-        );
-      const prevKeys = Object.keys(prev);
-      const nextKeys = Object.keys(next);
-      const isSame =
-        prevKeys.length === nextKeys.length && prevKeys.every((key) => Object.prototype.hasOwnProperty.call(next, key));
-        return isSame ? prev : next;
-      });
-
-      const targetPageIds = new Set(pageTargets.map((target) => target.pageMappedId));
-      setSourcePageByPageIdMap((prev) => {
-        const next = Object.fromEntries(
-          Object.entries(prev).filter(([pageId]) => targetPageIds.has(pageId))
-        );
-        const prevKeys = Object.keys(prev);
-        const nextKeys = Object.keys(next);
-        const isSame =
-          prevKeys.length === nextKeys.length && prevKeys.every((key) => Object.prototype.hasOwnProperty.call(next, key));
-        return isSame ? prev : next;
-      });
-
-      setPageEndpointMap((prev) => {
-      const next = Object.fromEntries(
-        Object.entries(prev).filter(([mappedId]) => targetIds.has(mappedId))
-      );
-      const prevKeys = Object.keys(prev);
-      const nextKeys = Object.keys(next);
-      const isSame =
-        prevKeys.length === nextKeys.length && prevKeys.every((key) => Object.prototype.hasOwnProperty.call(next, key));
-      return isSame ? prev : next;
-    });
+    setSourcePageMap((prev) => filterRecordByKeys(prev, targetIds));
+    setSourcePageByPageIdMap((prev) => filterRecordByKeys(prev, targetPageIds));
+    setPageEndpointMap((prev) => filterRecordByKeys(prev, targetIds));
   }, [pageTargets]);
 
   useDocsEditHydration({
@@ -260,35 +160,6 @@ export default function DocsEditPage() {
     setContentMap,
     setDocsBlocks,
   });
-
-  const selectedPathLabels = useMemo(() => {
-    if (!selectedId) {
-      return [];
-    }
-    return findNodePathById(sidebarItems, selectedId)?.map((node) => node.label).filter((label) => Boolean(label)) ?? [];
-  }, [selectedId, sidebarItems]);
-  const currentLabel = useMemo(() => {
-    if (selectedPathLabels.length > 0) {
-      return selectedPathLabels[selectedPathLabels.length - 1];
-    }
-    if (!selectedId) {
-      return "문서 수정";
-    }
-    return pageTargets.find((target) => target.mappedId === selectedId)?.label || "문서 수정";
-  }, [pageTargets, selectedId, selectedPathLabels]);
-  const breadcrumbPath = useMemo(() => {
-    if (selectedPathLabels.length > 1) {
-      return selectedPathLabels.slice(0, -1);
-    }
-    return [sidebarItems[0]?.label || effectiveProjectTitle || "문서"];
-  }, [effectiveProjectTitle, selectedPathLabels, sidebarItems]);
-  const selectedTarget = useMemo(
-    () => pageTargets.find((target) => target.mappedId === selectedId),
-    [pageTargets, selectedId]
-  );
-  const isReadonlyImportedApi = Boolean(
-    isCustomDocs && selectedTarget?.module === "api"
-  );
 
   const {
     selectedBlockIds,
@@ -381,6 +252,49 @@ export default function DocsEditPage() {
     focusBlockById,
   });
 
+  const handleContentClick = useCallback(() => {
+    if (suppressContentClickRef.current) {
+      suppressContentClickRef.current = false;
+      return;
+    }
+    if (selectedBlockIds.length > 0) {
+      setSelectedBlockIds([]);
+      return;
+    }
+    if (isReadonlyImportedApi) {
+      return;
+    }
+    if (docsBlocks.length > 0) {
+      const lastBlock = docsBlocks[docsBlocks.length - 1];
+      const isTextBlock =
+        lastBlock.module === "docs_1" ||
+        lastBlock.module === "list" ||
+        lastBlock.module === "headline_1" ||
+        lastBlock.module === "headline_2";
+
+      if (isTextBlock && (lastBlock.content || "") === "") {
+        const lastId = String(lastBlock.id || "");
+        if (lastId) {
+          focusBlockById(lastId);
+        }
+        return;
+      }
+
+      handleAddBlock(docsBlocks.length);
+      return;
+    }
+
+    handleAddBlock(-1);
+  }, [
+    docsBlocks,
+    focusBlockById,
+    handleAddBlock,
+    isReadonlyImportedApi,
+    selectedBlockIds.length,
+    setSelectedBlockIds,
+    suppressContentClickRef,
+  ]);
+
   const {
     sensors,
     groupDragOffset,
@@ -428,100 +342,28 @@ export default function DocsEditPage() {
         isApi={false}
       />
 
-      <ContentArea
+      <DocsEditBlocksContent
+        docsBlocks={docsBlocks}
+        isReadonlyImportedApi={isReadonlyImportedApi}
         onMouseDownCapture={handleContentMouseDownCapture}
-        onClick={() => {
-          if (suppressContentClickRef.current) {
-            suppressContentClickRef.current = false;
-            return;
-          }
-          if (selectedBlockIds.length > 0) {
-            setSelectedBlockIds([]);
-            return;
-          }
-          if (isReadonlyImportedApi) {
-            return;
-          }
-          if (docsBlocks.length > 0) {
-            const lastBlock = docsBlocks[docsBlocks.length - 1];
-            const isTextBlock =
-              lastBlock.module === "docs_1" ||
-              lastBlock.module === "list" ||
-              lastBlock.module === "headline_1" ||
-              lastBlock.module === "headline_2";
-
-            if (isTextBlock && (lastBlock.content || "") === "") {
-              const lastId = String(lastBlock.id || "");
-              if (lastId) {
-                focusBlockById(lastId);
-              }
-              return;
-            }
-
-            handleAddBlock(docsBlocks.length);
-            return;
-          }
-
-          if (docsBlocks.length === 0) {
-            handleAddBlock(-1);
-          }
-        }}
-      >
-        {isReadonlyImportedApi ? (
-          <ReadonlyNotice>가져온 API 문서는 참조 전용입니다. 내용 수정은 원본 문서에서 진행해주세요.</ReadonlyNotice>
-        ) : null}
-        {docsBlocks.length === 0 ? (
-          <EmptyText>내용을 입력하려면 클릭하세요...</EmptyText>
-        ) : isReadonlyImportedApi ? (
-          docsBlocks.map((block, index) => (
-            <DocsBlockViewer key={String(block.id) || `${index}`} block={block} />
-          ))
-        ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragCancel={handleDragCancel}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={docsBlocks.map((block) => String(block.id))} strategy={verticalListSortingStrategy}>
-              {docsBlocks.map((block, index) => {
-                const blockId = String(block.id);
-                const isSelected = selectedBlockIdSet.has(blockId);
-                const isPrimarySelected = primarySelectedBlockId === blockId;
-                const showGroupDragGhost = isGroupDragging && isSelected && !isPrimarySelected;
-                return (
-                <DocsBlockEditor
-                  key={blockId}
-                  index={index}
-                  block={block}
-                  domain=""
-                  onChange={handleBlockChange}
-                  onAddBlock={handleAddBlock}
-                  onDuplicateBlock={handleDuplicateBlock}
-                  onRemoveBlock={handleRemoveBlock}
-                  onFocusMove={handleFocusMove}
-                  isSelected={isSelected}
-                  isPrimarySelected={isPrimarySelected}
-                  groupDragOffset={showGroupDragGhost ? groupDragOffset : null}
-                />
-                );
-              })}
-            </SortableContext>
-          </DndContext>
-        )}
-        {isMarqueeSelecting && marqueeRect ? (
-          <MarqueeSelectionBox
-            style={{
-              left: marqueeRect.left,
-              top: marqueeRect.top,
-              width: marqueeRect.width,
-              height: marqueeRect.height,
-            }}
-          />
-        ) : null}
-      </ContentArea>
+        onClick={handleContentClick}
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
+        onDragCancel={handleDragCancel}
+        onDragEnd={handleDragEnd}
+        selectedBlockIdSet={selectedBlockIdSet}
+        primarySelectedBlockId={primarySelectedBlockId}
+        isGroupDragging={isGroupDragging}
+        groupDragOffset={groupDragOffset}
+        onChangeBlock={handleBlockChange}
+        onAddBlock={handleAddBlock}
+        onDuplicateBlock={handleDuplicateBlock}
+        onRemoveBlock={handleRemoveBlock}
+        onFocusMove={handleFocusMove}
+        isMarqueeSelecting={isMarqueeSelecting}
+        marqueeRect={marqueeRect}
+      />
 
       <FloatingActions>
         <SaveButton type="button" onClick={() => void handleSave()} disabled={isSaving}>

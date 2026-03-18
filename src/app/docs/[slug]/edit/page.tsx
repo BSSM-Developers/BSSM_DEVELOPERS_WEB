@@ -379,6 +379,17 @@ export default function DocsEditPage() {
     });
   }, [selectedId, sidebarItems]);
 
+  const focusBlockById = useCallback((blockId: string) => {
+    const selector = `[data-block-id='${blockId}']`;
+    const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
+    if (directInput) {
+      directInput.focus();
+      return;
+    }
+    const codeMirrorContent = document.querySelector<HTMLElement>(`${selector} .cm-content`);
+    codeMirrorContent?.focus();
+  }, []);
+
   const handleAddBlock = useCallback((index: number, newBlock?: DocsBlock) => {
     const blockId = crypto.randomUUID();
     const blockToInsert = { id: blockId, ...(newBlock ?? { module: "docs_1", content: "" }) } as DocsBlock;
@@ -389,10 +400,9 @@ export default function DocsEditPage() {
     });
 
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${blockId}']`);
-      el?.focus();
+      focusBlockById(blockId);
     }, 0);
-  }, []);
+  }, [focusBlockById]);
 
   const handleDuplicateBlock = useCallback((index: number) => {
     setDocsBlocks((prev) => {
@@ -424,10 +434,9 @@ export default function DocsEditPage() {
       return;
     }
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${targetId}']`);
-      el?.focus();
+      focusBlockById(targetId);
     }, 0);
-  }, [docsBlocks]);
+  }, [docsBlocks, focusBlockById]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -496,10 +505,7 @@ export default function DocsEditPage() {
             if (isTextBlock && (lastBlock.content || "") === "") {
               const lastId = String(lastBlock.id || "");
               if (lastId) {
-                const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-                  `[data-block-id='${lastId}']`
-                );
-                el?.focus();
+                focusBlockById(lastId);
               }
               return;
             }

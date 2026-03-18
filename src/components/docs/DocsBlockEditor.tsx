@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef, memo } from "react";
+import React, { useState, useEffect, useRef, useMemo, memo } from "react";
 import styled from "@emotion/styled";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, Plus, Trash2, Copy, MoreHorizontal } from "lucide-react";
 import Image from "next/image";
+import CodeMirror from "@uiw/react-codemirror";
+import { json } from "@codemirror/lang-json";
 import { DocsBlock } from "@/components/docs/DocsBlock";
 import { ApiBlock } from "@/components/docs/ApiBlock";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
@@ -64,8 +66,14 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
 
   const requestFocus = () => {
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[data-block-id='${block.id}']`);
-      el?.focus();
+      const selector = `[data-block-id='${block.id}']`;
+      const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
+      if (directInput) {
+        directInput.focus();
+        return;
+      }
+      const codeMirrorContent = document.querySelector<HTMLElement>(`${selector} .cm-content`);
+      codeMirrorContent?.focus();
     }, 0);
   };
 
@@ -182,6 +190,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     : selectedCodeLanguage === "json"
       ? "JSON"
       : "JavaScript";
+  const jsonEditorExtensions = useMemo(() => [json()], []);
 
   const detectModuleType = (
     text: string
@@ -252,6 +261,43 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const composing = (e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229;
     if (composing) return;
+
+    if (block.module === "code" && e.key === "Tab") {
+      e.preventDefault();
+      const target = e.currentTarget;
+      const start = target.selectionStart ?? 0;
+      const end = target.selectionEnd ?? start;
+      const currentValue = target.value;
+      const indent = "  ";
+
+      if (e.shiftKey) {
+        const before = currentValue.slice(0, start);
+        const removeLength = before.endsWith(indent) ? indent.length : before.endsWith("\t") ? 1 : 0;
+        if (removeLength > 0 && start === end) {
+          const nextValue =
+            currentValue.slice(0, start - removeLength) +
+            currentValue.slice(end);
+          const nextCursor = start - removeLength;
+          setValue(nextValue);
+          onChange(index, { ...block, content: nextValue });
+          requestAnimationFrame(() => {
+            target.setSelectionRange(nextCursor, nextCursor);
+          });
+        }
+        return;
+      }
+
+      const nextValue = currentValue.slice(0, start) + indent + currentValue.slice(end);
+      const nextCursor = start + indent.length;
+
+      setValue(nextValue);
+      onChange(index, { ...block, content: nextValue });
+
+      requestAnimationFrame(() => {
+        target.setSelectionRange(nextCursor, nextCursor);
+      });
+      return;
+    }
 
     if (showMenu) {
       if (e.key === "ArrowDown") {
@@ -580,66 +626,91 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                 ) : null}
               </CodeLanguageDropdown>
             </CodeToolbar>
-            <div style={{ position: 'relative', minHeight: '120px' }}>
-              <pre
-                aria-hidden="true"
-                style={{
-                  margin: 0,
-                  padding: 0,
-                  fontFamily: 'monospace',
-                  fontSize: '14px',
-                  lineHeight: '1.5',
-                  color: '#c9d1d9',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                  pointerEvents: 'none',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  overflow: 'hidden'
-                }}
-                dangerouslySetInnerHTML={{
-                  __html: highlightCode(value, selectedCodeLanguage) + '\n'
-                }}
-              />
-              <textarea
-                value={value}
-                onChange={(e) => {
-                  setValue(e.target.value);
-                  onChange(index, { ...block, content: e.target.value });
-                }}
-                onKeyDown={(e) => {
-                  handleKeyDown(e);
-                }}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                data-block-id={block.id}
-                placeholder={focused ? "코드를 입력하세요" : ""}
-                spellCheck={false}
-                style={{
-                  width: "100%",
-                  minHeight: "120px",
-                  border: "none",
-                  background: "transparent",
-                  padding: "0",
-                  fontFamily: "monospace",
-                  fontSize: "14px",
-                  lineHeight: '1.5',
-                  color: "transparent",
-                  caretColor: "#c9d1d9",
-                  outline: "none",
-                  margin: 0,
-                  resize: "vertical",
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-all',
-                  position: 'relative',
-                  zIndex: 10,
-                  display: 'block'
-                }}
-              />
-            </div>
+            {selectedCodeLanguage === "json" ? (
+              <JsonCodeEditor data-block-id={block.id}>
+                <CodeMirror
+                  value={value}
+                  height="120px"
+                  placeholder={focused ? "{\n  \"key\": \"value\"\n}" : ""}
+                  extensions={jsonEditorExtensions}
+                  indentWithTab
+                  theme="dark"
+                  onChange={(nextValue) => {
+                    setValue(nextValue);
+                    onChange(index, { ...block, content: nextValue });
+                  }}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  basicSetup={{
+                    lineNumbers: false,
+                    foldGutter: false,
+                    highlightActiveLine: false,
+                    highlightActiveLineGutter: false
+                  }}
+                />
+              </JsonCodeEditor>
+            ) : (
+              <div style={{ position: 'relative', minHeight: '120px' }}>
+                <pre
+                  aria-hidden="true"
+                  style={{
+                    margin: 0,
+                    padding: 0,
+                    fontFamily: 'monospace',
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    color: '#c9d1d9',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    pointerEvents: 'none',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    overflow: 'hidden'
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: highlightCode(value, selectedCodeLanguage) + '\n'
+                  }}
+                />
+                <textarea
+                  value={value}
+                  onChange={(e) => {
+                    setValue(e.target.value);
+                    onChange(index, { ...block, content: e.target.value });
+                  }}
+                  onKeyDown={(e) => {
+                    handleKeyDown(e);
+                  }}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  data-block-id={block.id}
+                  placeholder={focused ? "코드를 입력하세요" : ""}
+                  spellCheck={false}
+                  style={{
+                    width: "100%",
+                    minHeight: "120px",
+                    border: "none",
+                    background: "transparent",
+                    padding: "0",
+                    fontFamily: "monospace",
+                    fontSize: "14px",
+                    lineHeight: '1.5',
+                    color: "transparent",
+                    caretColor: "#c9d1d9",
+                    outline: "none",
+                    margin: 0,
+                    resize: "vertical",
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-all',
+                    position: 'relative',
+                    zIndex: 10,
+                    display: 'block'
+                  }}
+                />
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ position: 'relative', width: '100%' }}>
@@ -957,5 +1028,32 @@ const CodeLanguageOption = styled.button<{ $selected: boolean }>`
 
   &:hover {
     background: ${({ $selected }) => ($selected ? "#16335c" : "#21262d")};
+  }
+`;
+
+const JsonCodeEditor = styled.div`
+  .cm-editor {
+    border: none;
+    background: transparent;
+    font-family: monospace;
+    font-size: 14px;
+  }
+
+  .cm-focused {
+    outline: none;
+  }
+
+  .cm-scroller {
+    min-height: 120px;
+    font-family: monospace;
+  }
+
+  .cm-content {
+    padding: 0;
+    line-height: 1.5;
+  }
+
+  .cm-gutters {
+    display: none;
   }
 `;

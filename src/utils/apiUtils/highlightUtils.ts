@@ -41,12 +41,29 @@ export function highlightCode(code: string, language: string): string {
   };
 
   if (lang === 'json' || lang === 'jsonc') {
-    return escaped
-      .replace(/("(?:\\.|[^"\\])*")(\s*:)/g, (_, key: string, colon: string) => `${wrapColor(key, 'key')}${wrapColor(colon, 'punctuation')}`)
-      .replace(/:\s*("(?:\\.|[^"\\])*")/g, (_, str: string) => `: ${wrapColor(str, 'string')}`)
-      .replace(/:\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, (_, num: string) => `: ${wrapColor(num, 'string')}`)
-      .replace(/:\s*(true|false|null)\b/g, (_, literal: string) => `: ${wrapColor(literal, 'keyword')}`)
-      .replace(/([{}[\],])/g, wrapColor('$1', 'punctuation'));
+    const jsonStringTokens: string[] = [];
+
+    escaped = escaped.replace(/"(?:\\.|[^"\\])*"/g, (match, offset, source) => {
+      let cursor = offset + match.length;
+      while (cursor < source.length && /\s/.test(source[cursor])) {
+        cursor += 1;
+      }
+      const tokenType: ColorType = source[cursor] === ":" ? "key" : "string";
+      const tokenId = jsonStringTokens.length;
+      jsonStringTokens.push(wrapColor(match, tokenType));
+      return `___JSON_STRING_${tokenId}___`;
+    });
+
+    escaped = escaped
+      .replace(/\b(true|false|null)\b/g, wrapColor('$1', 'keyword'))
+      .replace(/(?<=[:\[,]\s*)(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)(?=\s*[,}\]])/g, wrapColor('$1', 'special'))
+      .replace(/([{}[\],:])/g, wrapColor('$1', 'punctuation'));
+
+    jsonStringTokens.forEach((token, index) => {
+      escaped = escaped.replaceAll(`___JSON_STRING_${index}___`, token);
+    });
+
+    return escaped;
   }
 
   if (lang === 'javascript' || lang === 'js') {

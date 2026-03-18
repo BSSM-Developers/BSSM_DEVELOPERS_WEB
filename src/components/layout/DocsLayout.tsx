@@ -2,7 +2,7 @@
 
 import styled from "@emotion/styled";
 import { DocsSidebar, type SidebarModuleOption } from "./DocsSidebar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
 const testItems: SidebarNode[] = [
@@ -84,10 +84,40 @@ export function DocsLayout({
   disableApiRename?: boolean;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [renamingProjectName, setRenamingProjectName] = useState(false);
+  const [projectNameInput, setProjectNameInput] = useState(projectName ?? "");
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
 
   const items = sidebarItems || testItems;
+  const canRenameProjectName = editable && Boolean(onSidebarChange) && items.length > 0;
+
+  useEffect(() => {
+    setProjectNameInput(projectName ?? "");
+  }, [projectName]);
+
+  const commitProjectName = () => {
+    if (!canRenameProjectName || !onSidebarChange || !sidebarItems) {
+      setRenamingProjectName(false);
+      return;
+    }
+    const nextTitle = projectNameInput.trim();
+    if (!nextTitle) {
+      setProjectNameInput(projectName ?? "");
+      setRenamingProjectName(false);
+      return;
+    }
+
+    const rootIndex = sidebarItems.findIndex((item) => item.module === "main_title");
+    const nextItems = [...sidebarItems];
+    if (rootIndex >= 0) {
+      nextItems[rootIndex] = { ...nextItems[rootIndex], label: nextTitle };
+    } else if (nextItems.length > 0) {
+      nextItems[0] = { ...nextItems[0], label: nextTitle };
+    }
+    onSidebarChange(nextItems);
+    setRenamingProjectName(false);
+  };
 
   return (
     <Wrapper>
@@ -97,7 +127,37 @@ export function DocsLayout({
             <SidebarHeader collapsed={sidebarCollapsed}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'space-between' }}>
                 {!sidebarCollapsed && projectName && (
-                  <ProjectName>{projectName}</ProjectName>
+                  renamingProjectName ? (
+                    <ProjectNameInput
+                      value={projectNameInput}
+                      onChange={(event) => setProjectNameInput(event.target.value)}
+                      onBlur={commitProjectName}
+                      onKeyDown={(event) => {
+                        if (event.nativeEvent.isComposing || event.keyCode === 229) {
+                          return;
+                        }
+                        if (event.key === "Enter") {
+                          commitProjectName();
+                        }
+                        if (event.key === "Escape") {
+                          setProjectNameInput(projectName ?? "");
+                          setRenamingProjectName(false);
+                        }
+                      }}
+                      autoFocus
+                    />
+                  ) : (
+                    <ProjectName
+                      role={canRenameProjectName ? "button" : undefined}
+                      onDoubleClick={() => {
+                        if (canRenameProjectName) {
+                          setRenamingProjectName(true);
+                        }
+                      }}
+                    >
+                      {projectName}
+                    </ProjectName>
+                  )
                 )}
                 <ToggleButton onClick={toggleSidebar}>
                   {sidebarCollapsed ? "→" : "←"}
@@ -189,4 +249,23 @@ const ProjectName = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+`;
+
+const ProjectNameInput = styled.input`
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  border: 1px solid ${({ theme }) => theme.colors.grey[300]};
+  border-radius: 6px;
+  padding: 0 8px;
+  background: white;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.colors.grey[700]};
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  }
 `;

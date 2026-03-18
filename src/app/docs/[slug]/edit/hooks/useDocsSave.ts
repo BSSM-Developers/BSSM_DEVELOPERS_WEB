@@ -77,6 +77,19 @@ export const useDocsSave = ({
 }: UseDocsSaveParams) => {
   const [isSaving, setIsSaving] = useState(false);
 
+  const resolveDocsTitleFromSidebar = useCallback((items: SidebarNode[]): string => {
+    const mainTitleNode = items.find((item) => item.module === "main_title");
+    const mainTitle = mainTitleNode?.label?.trim();
+    if (mainTitle) {
+      return mainTitle;
+    }
+    const firstLabel = items[0]?.label?.trim();
+    if (firstLabel) {
+      return firstLabel;
+    }
+    return "";
+  }, []);
+
   const validateApiParams = useCallback((params: ApiParam[] | undefined, typeLabel: string, apiName: string): string | null => {
     if (!params || params.length === 0) {
       return null;
@@ -156,7 +169,7 @@ export const useDocsSave = ({
   }, [pageTargets, validateApiParams]);
 
   const resolveDocsMetaForReplace = useCallback(async () => {
-    if (docsMeta) {
+    if (docsMeta?.domain?.trim()) {
       return docsMeta;
     }
 
@@ -165,17 +178,20 @@ export const useDocsSave = ({
     }
 
     try {
-      const response = await docsApi.getMyList({ size: 100 });
-      const values = response.data.values ?? [];
-      const found = values.find((item) => String(item.docsId ?? item.id ?? "") === slug) ?? null;
-      if (found) {
-        setDocsMeta(found);
-      }
-      return found;
+      const response = await docsApi.getDetail(slug);
+      setDocsMeta(response.data);
+      return response.data;
     } catch {
-      return null;
+      return docsMeta;
     }
   }, [docsMeta, setDocsMeta, slug]);
+
+  const resolveMetaFields = useCallback((meta: DocsItem | null) => {
+    const description = meta?.description || "";
+    const domain = meta?.domain?.trim() || "";
+    const repositoryUrl = meta?.repositoryUrl || meta?.repository_url || "";
+    return { description, domain, repositoryUrl };
+  }, []);
 
   const getInitialSourceRef = useCallback((mappedId: string): SourcePageMeta | null => {
     const initialSignature = initialPageSignatureByMappedIdRef.current[mappedId];
@@ -274,6 +290,11 @@ export const useDocsSave = ({
     };
 
     const targets = collectPageTargetsFromSidebar(sidebarItems);
+    const resolvedDocsTitle =
+      resolveDocsTitleFromSidebar(sidebarItems) ||
+      effectiveProjectTitle ||
+      docsMeta?.title ||
+      "문서";
     if (targets.length === 0) {
       await confirm({
         title: "저장 실패",
@@ -470,11 +491,12 @@ export const useDocsSave = ({
 
         const docsPages = Array.from(docsPagesByPageMappedId.values());
 
+        const { description, domain, repositoryUrl } = resolveMetaFields(resolvedDocsMeta);
         await docsApi.replace(slug, {
-          title: sidebarItems[0]?.label || effectiveProjectTitle || resolvedDocsMeta?.title || "문서",
-          description: resolvedDocsMeta?.description || "",
-          domain: resolvedDocsMeta?.domain || "",
-          repository_url: resolvedDocsMeta?.repositoryUrl || resolvedDocsMeta?.repository_url || "",
+          title: resolvedDocsTitle,
+          description,
+          domain,
+          repository_url: repositoryUrl,
           auto_approval: resolvedDocsMeta?.autoApproval ?? resolvedDocsMeta?.auto_approval ?? false,
           sidebar: {
             blocks: nodesToSidebarBlockRequests(sidebarItems),
@@ -482,15 +504,52 @@ export const useDocsSave = ({
           docs_pages: docsPages,
         });
       } else {
-        if (isSidebarChanged) {
-          await docsApi.updateSidebar(slug, nodesToSidebarBlockRequests(sidebarItems));
-        }
+        const resolvedDocsMeta = docsMeta || (await resolveDocsMetaForReplace());
+        const shouldReplaceForTitle = Boolean(resolvedDocsMeta && resolvedDocsMeta.title !== resolvedDocsTitle);
+        if (shouldReplaceForTitle && resolvedDocsMeta) {
+          const docsPagesByPageMappedId = new Map<string, {
+            id: string;
+            endpoint?: string;
+            blocks?: ReturnType<typeof toDocsPageBlockRequests>;
+          }>();
 
-        await Promise.all(
-          changedPages.map((entry) =>
-            docsApi.updatePage(slug, entry.target.pageMappedId, toDocsPageBlockRequests(entry.blocks))
-          )
-        );
+          for (const target of targets) {
+            const pageMappedId = target.pageMappedId;
+            const blocks =
+              mergedMap[target.mappedId] ??
+              createDefaultBlocksByModule(target.module, target.label, target.mappedId, target.method);
+            const endpoint = extractEndpointFromBlocks(blocks);
+            docsPagesByPageMappedId.set(pageMappedId, {
+              ...(docsPagesByPageMappedId.get(pageMappedId) || { id: pageMappedId }),
+              ...(endpoint ? { endpoint } : {}),
+              blocks: toDocsPageBlockRequests(blocks),
+            });
+          }
+
+          const { description, domain, repositoryUrl } = resolveMetaFields(resolvedDocsMeta);
+          await docsApi.replace(slug, {
+            title: resolvedDocsTitle,
+            description,
+            domain,
+            repository_url: repositoryUrl,
+            auto_approval: resolvedDocsMeta?.autoApproval ?? resolvedDocsMeta?.auto_approval ?? false,
+            sidebar: {
+              blocks: nodesToSidebarBlockRequests(sidebarItems),
+            },
+            docs_pages: Array.from(docsPagesByPageMappedId.values()),
+          });
+          setDocsMeta({ ...resolvedDocsMeta, title: resolvedDocsTitle });
+        } else {
+          if (isSidebarChanged) {
+            await docsApi.updateSidebar(slug, nodesToSidebarBlockRequests(sidebarItems));
+          }
+
+          await Promise.all(
+            changedPages.map((entry) =>
+              docsApi.updatePage(slug, entry.target.pageMappedId, toDocsPageBlockRequests(entry.blocks))
+            )
+          );
+        }
       }
 
       initialSidebarSignatureRef.current = currentSidebarSignature;
@@ -531,8 +590,11 @@ export const useDocsSave = ({
     isSaving,
     pageEndpointMapRef,
     resolveDocsMetaForReplace,
+    resolveMetaFields,
+    resolveDocsTitleFromSidebar,
     router,
     selectedId,
+    setDocsMeta,
     setPageEndpointMap,
     setSourcePageByPageIdMap,
     setSourcePageMap,

@@ -344,14 +344,19 @@ export const parseDocsPageBlocksJson = (value: string): EditableDocsPageBlock[] 
 };
 
 export const toDocsPageBlockRequests = (blocks: DocsBlock[]): DocsPageBlockRequest[] => {
-  return blocks.map((block, index) => {
+  return blocks.reduce<DocsPageBlockRequest[]>((acc, block, index) => {
     const safeId = typeof block.id === "string" && block.id ? block.id : `block-${index + 1}`;
-    return {
+    const content = normalizeContent(block);
+    if (!content.trim()) {
+      return acc;
+    }
+    acc.push({
       id: safeId,
       module: block.module,
-      content: normalizeContent(block),
-    };
-  });
+      content,
+    });
+    return acc;
+  }, []);
 };
 
 export const buildPageSignature = (blocks: DocsBlock[]): string => {

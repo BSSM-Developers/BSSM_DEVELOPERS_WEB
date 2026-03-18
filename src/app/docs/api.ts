@@ -95,10 +95,11 @@ export interface CreateCustomData {
 }
 
 export interface UpdateDocsData {
-  title: string;
-  description: string;
-  domain: string;
-  repositoryUrl: string;
+  title?: string;
+  description?: string;
+  domain?: string;
+  repositoryUrl?: string;
+  repository_url?: string;
 }
 
 export interface DocsSideBarBlockRequest {

@@ -6,6 +6,64 @@ interface ApiRequestOptions extends RequestInit {
   suppressLogout?: boolean;
 }
 
+const normalizeErrorMessage = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (Array.isArray(value)) {
+    const messages = value
+      .map((item) => normalizeErrorMessage(item))
+      .filter((message): message is string => Boolean(message));
+    if (messages.length > 0) {
+      return messages.join("\n");
+    }
+  }
+
+  return null;
+};
+
+const extractApiErrorMessage = (errorBody: string): string | null => {
+  const trimmed = errorBody.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as {
+      message?: unknown;
+      error?: { message?: unknown };
+    };
+    const message =
+      normalizeErrorMessage(parsed.message) ??
+      normalizeErrorMessage(parsed.error?.message);
+    if (message) {
+      return message;
+    }
+  } catch {
+  }
+
+  if (/^<!doctype html/i.test(trimmed) || /^<html/i.test(trimmed)) {
+    return null;
+  }
+
+  return trimmed;
+};
+
+const buildApiErrorMessage = (status: number, statusText: string, errorBody: string): string => {
+  const parsedMessage = extractApiErrorMessage(errorBody);
+  if (parsedMessage) {
+    return parsedMessage;
+  }
+
+  if (statusText) {
+    return `요청 처리 중 오류가 발생했습니다. (${status} ${statusText})`;
+  }
+
+  return `요청 처리 중 오류가 발생했습니다. (${status})`;
+};
+
 export const tokenManager = {
   setTokens: (accessToken: string, refreshToken?: string) => {
     if (typeof window !== 'undefined') {
@@ -130,7 +188,7 @@ export const api = {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      throw new Error(`API Error ${response.status}: ${response.statusText} - ${errorBody}`);
+      throw new Error(buildApiErrorMessage(response.status, response.statusText, errorBody));
     }
 
     if (response.status === 204) {

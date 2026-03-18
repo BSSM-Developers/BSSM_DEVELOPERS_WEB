@@ -32,6 +32,7 @@ import {
   PrimaryButton,
 } from "./styles";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
+import { useConfirm } from "@/hooks/useConfirm";
 
 const parseOrigins = (value: string): string[] => {
   return Array.from(
@@ -59,6 +60,23 @@ const mergeOrigins = (current: string[], incoming: string[]): string[] => {
   return merged;
 };
 
+const normalizeOriginsForCompare = (value: string[]): string[] => {
+  return Array.from(
+    new Set(
+      value
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0)
+    )
+  ).sort();
+};
+
+const isSameOrigins = (before: string[], after: string[]): boolean => {
+  if (before.length !== after.length) {
+    return false;
+  }
+  return before.every((origin, index) => origin === after[index]);
+};
+
 const splitOriginDraft = (value: string): { committed: string[]; remaining: string } => {
   if (!/[\n,]/.test(value)) {
     return { committed: [], remaining: value };
@@ -77,6 +95,7 @@ const splitOriginDraft = (value: string): { committed: string[]; remaining: stri
 
 function TokenEditContent() {
   const router = useRouter();
+  const { confirm, ConfirmDialog } = useConfirm();
   const { id } = useParams();
   const tokenId = parseTokenId(id);
   const searchParams = useSearchParams();
@@ -93,6 +112,10 @@ function TokenEditContent() {
   const [isLoadingDetail, setIsLoadingDetail] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const originInputRef = useRef<HTMLInputElement | null>(null);
+  const initialTokenNameRef = useRef("");
+  const initialUsageNameRef = useRef("");
+  const initialEndpointRef = useRef("");
+  const initialOriginsRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (initialStep === "ENDPOINT") {
@@ -132,15 +155,25 @@ function TokenEditContent() {
           : detail.registeredApis[0];
         setUsageName(targetUsage?.name ?? "");
         setEndpoint(targetUsage?.endpoint ?? "");
+        initialTokenNameRef.current = detail.apiTokenName;
+        initialOriginsRef.current = detail.origins;
+        initialUsageNameRef.current = targetUsage?.name ?? "";
+        initialEndpointRef.current = targetUsage?.endpoint ?? "";
       } catch (loadError) {
         const message = loadError instanceof Error ? loadError.message : "토큰 정보를 불러오지 못했습니다.";
-        setErrorMessage(message);
+        setErrorMessage("토큰 정보를 불러오지 못했습니다.");
+        await confirm({
+          title: "조회 실패",
+          message,
+          confirmText: "확인",
+          hideCancel: true,
+        });
       } finally {
         setIsLoadingDetail(false);
       }
     };
     void loadDetail();
-  }, [apiIdParam, tokenId]);
+  }, [apiIdParam, confirm, tokenId]);
 
   const handleNext = useCallback(async () => {
     if (isSubmitting) {
@@ -153,18 +186,34 @@ function TokenEditContent() {
     }
 
     if (step === "TOKEN_NAME") {
-      if (!tokenName.trim()) {
+      const nextTokenName = tokenName.trim();
+      if (!nextTokenName) {
         setErrorMessage("토큰 이름을 입력해주세요.");
+        return;
+      }
+      if (nextTokenName === initialTokenNameRef.current.trim()) {
+        setErrorMessage("");
+        await confirm({
+          title: "변경 없음",
+          message: "변경된 내용이 없습니다.",
+          confirmText: "확인",
+          hideCancel: true,
+        });
         return;
       }
       try {
         setErrorMessage("");
         setIsSubmitting(true);
-        await tokenApi.updateName(tokenId, tokenName.trim());
+        await tokenApi.updateName(tokenId, nextTokenName);
         setStep("SUCCESS");
       } catch (submitError) {
         const message = submitError instanceof Error ? submitError.message : "토큰 이름 수정에 실패했습니다.";
-        setErrorMessage(message);
+        await confirm({
+          title: "수정 실패",
+          message,
+          confirmText: "확인",
+          hideCancel: true,
+        });
       } finally {
         setIsSubmitting(false);
       }
@@ -172,17 +221,36 @@ function TokenEditContent() {
     }
 
     if (step === "ORIGINS") {
+      const originsToSubmit = mergeOrigins(origins, parseOrigins(originDraft));
+      setOrigins(originsToSubmit);
+      setOriginDraft("");
+
+      const before = normalizeOriginsForCompare(initialOriginsRef.current);
+      const after = normalizeOriginsForCompare(originsToSubmit);
+      if (isSameOrigins(before, after)) {
+        setErrorMessage("");
+        await confirm({
+          title: "변경 없음",
+          message: "변경된 내용이 없습니다.",
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+
       try {
         setErrorMessage("");
         setIsSubmitting(true);
-        const originsToSubmit = mergeOrigins(origins, parseOrigins(originDraft));
-        setOrigins(originsToSubmit);
-        setOriginDraft("");
         await tokenApi.updateOrigins(tokenId, originsToSubmit);
         setStep("SUCCESS");
       } catch (submitError) {
         const message = submitError instanceof Error ? submitError.message : "허용 origin 수정에 실패했습니다.";
-        setErrorMessage(message);
+        await confirm({
+          title: "수정 실패",
+          message,
+          confirmText: "확인",
+          hideCancel: true,
+        });
       } finally {
         setIsSubmitting(false);
       }
@@ -195,41 +263,73 @@ function TokenEditContent() {
     }
 
     if (step === "USAGE_NAME") {
-      if (!usageName.trim()) {
+      const nextUsageName = usageName.trim();
+      if (!nextUsageName) {
         setErrorMessage("API 이름을 입력해주세요.");
+        return;
+      }
+      if (nextUsageName === initialUsageNameRef.current.trim()) {
+        setErrorMessage("");
+        await confirm({
+          title: "변경 없음",
+          message: "변경된 내용이 없습니다.",
+          confirmText: "확인",
+          hideCancel: true,
+        });
         return;
       }
       try {
         setErrorMessage("");
         setIsSubmitting(true);
-        await tokenApi.updateUsageName(apiIdParam, tokenId, usageName.trim());
+        await tokenApi.updateUsageName(apiIdParam, tokenId, nextUsageName);
         setStep("SUCCESS");
       } catch (submitError) {
         const message = submitError instanceof Error ? submitError.message : "API 이름 수정에 실패했습니다.";
-        setErrorMessage(message);
+        await confirm({
+          title: "수정 실패",
+          message,
+          confirmText: "확인",
+          hideCancel: true,
+        });
       } finally {
         setIsSubmitting(false);
       }
       return;
     }
 
-    if (!endpoint.trim()) {
-      setErrorMessage("엔드포인트를 입력해주세요.");
+    const nextEndpoint = endpoint.trim();
+    if (!nextEndpoint) {
+      setErrorMessage("새로운 엔드포인트를 입력해주세요.");
+      return;
+    }
+    if (nextEndpoint === initialEndpointRef.current.trim()) {
+      setErrorMessage("");
+      await confirm({
+        title: "변경 없음",
+        message: "변경된 내용이 없습니다.",
+        confirmText: "확인",
+        hideCancel: true,
+      });
       return;
     }
 
     try {
       setErrorMessage("");
       setIsSubmitting(true);
-      await tokenApi.updateUsageEndpoint(apiIdParam, tokenId, endpoint.trim());
+      await tokenApi.updateUsageEndpoint(apiIdParam, tokenId, nextEndpoint);
       setStep("SUCCESS");
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : "엔드포인트 수정에 실패했습니다.";
-      setErrorMessage(message);
+      await confirm({
+        title: "수정 실패",
+        message,
+        confirmText: "확인",
+        hideCancel: true,
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }, [apiIdParam, endpoint, isSubmitting, originDraft, origins, step, tokenId, tokenName, usageName]);
+  }, [apiIdParam, confirm, endpoint, isSubmitting, originDraft, origins, step, tokenId, tokenName, usageName]);
 
   const titleText = getTitleText(step);
   const subtitleText = getSubtitleText(step);
@@ -318,6 +418,7 @@ function TokenEditContent() {
           </CheckCircle>
           <PrimaryButton onClick={handleComplete}>완료</PrimaryButton>
         </FlexColumn>
+        {ConfirmDialog}
       </Container>
     );
   }
@@ -361,6 +462,7 @@ function TokenEditContent() {
             </>
           ) : null}
         </FlexColumn>
+        {ConfirmDialog}
       </Container>
     );
   }
@@ -384,6 +486,7 @@ function TokenEditContent() {
         maxWidth="800px"
         animated
       />
+      {ConfirmDialog}
     </Container>
   );
 }

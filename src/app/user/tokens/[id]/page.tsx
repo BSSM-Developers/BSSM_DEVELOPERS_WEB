@@ -114,7 +114,7 @@ export default function TokenDetailPage() {
         </ApiEndpointSection>
         <ActionGroup>
           <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=USAGE_NAME&apiId=${apiIdentifier}`)}>이름 수정</TinyButton>
-          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&apiId=${apiIdentifier}`)}>주소 수정</TinyButton>
+          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&apiId=${apiIdentifier}`)}>엔드포인트 수정</TinyButton>
           <TinyButton onClick={() => void handleCopy(apiUsage.endpoint)}>복사</TinyButton>
         </ActionGroup>
       </ApiItem>

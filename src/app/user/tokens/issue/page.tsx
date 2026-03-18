@@ -85,7 +85,6 @@ export default function TokenIssuePage() {
   const [domainInput, setDomainInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [issuedToken, setIssuedToken] = useState<ApiTokenWithSecret | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
   const domains = parseDomains(domainInput);
 
   const handleIssue = useCallback(async () => {
@@ -94,18 +93,22 @@ export default function TokenIssuePage() {
     }
 
     try {
-      setErrorMessage("");
       setIsSubmitting(true);
       const createdToken = await tokenApi.create(name.trim(), domains);
       setIssuedToken(createdToken);
       setStep("SUCCESS");
     } catch (error) {
       const message = error instanceof Error ? error.message : "토큰 발급에 실패했습니다.";
-      setErrorMessage(message);
+      await confirm({
+        title: "발급 실패",
+        message,
+        confirmText: "확인",
+        hideCancel: true,
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }, [domains, isSubmitting, name]);
+  }, [confirm, domains, isSubmitting, name]);
 
   const handleComplete = useCallback(() => {
     if (!issuedToken) {
@@ -181,7 +184,6 @@ export default function TokenIssuePage() {
               isDisabled={!name.trim()}
               maxWidth="800px"
               animated
-              errorText={errorMessage || undefined}
             />
           </StepContent>
         ) : (
@@ -214,8 +216,8 @@ export default function TokenIssuePage() {
             </BackButton>
           </StepContent>
         )}
-        {step === "DOMAIN" && errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
       </FlexColumn>
+      {ConfirmDialog}
     </Container>
   );
 }
@@ -421,12 +423,6 @@ const PrimaryInfoButton = styled.button`
   color: white;
   cursor: pointer;
   ${({ theme }) => applyTypography(theme, "Body_4")};
-`;
-
-const ErrorMessage = styled.p`
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  color: #d32f2f;
-  margin-bottom: 16px;
 `;
 
 const CheckCircle = styled.div`

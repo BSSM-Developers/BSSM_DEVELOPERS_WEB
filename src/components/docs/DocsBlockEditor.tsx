@@ -22,6 +22,9 @@ interface DocsBlockEditorProps {
   onDuplicateBlock: (index: number) => void;
   onRemoveBlock?: (index: number) => void;
   onFocusMove?: (index: number, direction: "up" | "down") => void;
+  isSelected?: boolean;
+  isPrimarySelected?: boolean;
+  groupDragOffset?: { x: number; y: number } | null;
   domain?: string;
 }
 
@@ -35,6 +38,9 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   onDuplicateBlock,
   onRemoveBlock,
   onFocusMove,
+  isSelected = false,
+  isPrimarySelected = false,
+  groupDragOffset = null,
   domain
 }: DocsBlockEditorProps) {
   const [value, setValue] = useState(block.content ?? "");
@@ -55,19 +61,28 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     transform,
     transition,
     isDragging
-  } = useSortable({ id: block.id as string });
+  } = useSortable({ id: block.id as string, disabled: isSelected && !isPrimarySelected });
 
+  const shouldRenderGroupGhost = Boolean(groupDragOffset && isSelected && !isPrimarySelected);
+  const sortableTranslate = transform
+    ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+    : undefined;
+  const showHandleControls = !isSelected || isPrimarySelected;
   const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 2000 : 1000 - index,
+    transform: shouldRenderGroupGhost
+      ? `translate3d(${groupDragOffset?.x ?? 0}px, ${groupDragOffset?.y ?? 0}px, 0)`
+      : sortableTranslate,
+    transition: shouldRenderGroupGhost || isDragging ? "none" : transition,
+    zIndex: shouldRenderGroupGhost ? 1900 : isDragging ? 2000 : 1000 - index,
     opacity: isDragging ? 0.5 : 1,
   };
 
   const requestFocus = () => {
     setTimeout(() => {
       const selector = `[data-block-id='${block.id}']`;
-      const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(selector);
+      const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `input${selector}, textarea${selector}`
+      );
       if (directInput) {
         directInput.focus();
         return;
@@ -558,7 +573,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     const isList = block.module === "list";
 
     return (
-      <DocsBlock module={block.module}>
+      <DocsBlock module={isCode ? "default" : block.module}>
         {isList ? (
           <li style={{ width: "100%" }}>
             <TextareaAutosize
@@ -586,7 +601,16 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
             />
           </li>
         ) : isCode ? (
-          <div style={{ position: 'relative', width: '100%', background: '#0d1117', borderRadius: '8px', padding: '12px' }}>
+          <div
+            style={{
+              width: "100%",
+              background: isSelected ? "#dbeafe" : "#F3F4F6",
+              borderRadius: "8px",
+              padding: "12px",
+              transition: "background 0.16s ease",
+            }}
+          >
+            <div style={{ position: 'relative', width: '100%', background: '#0d1117', borderRadius: '8px', padding: '12px' }}>
             <CodeToolbar>
               <CodeLanguageDropdown ref={languageMenuRef}>
                 <CodeLanguageTrigger
@@ -711,6 +735,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                 />
               </div>
             )}
+            </div>
           </div>
         ) : (
           <div style={{ position: 'relative', width: '100%' }}>
@@ -776,41 +801,55 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     <BlockContainer
       ref={setNodeRef}
       style={style}
+      $selected={isSelected}
+      data-docs-block-root="true"
+      data-block-id={String(block.id)}
       className="block-editor-container"
     >
-      <Gutter className="gutter-controls">
-        <HandleGroup ref={contextMenuRef}>
-          <DragHandle {...attributes} {...listeners}>
-            <GripVertical size={16} />
-          </DragHandle>
-          <MenuButton
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowContextMenu((prev) => !prev);
-            }}
-            isActive={showContextMenu}
-          >
-            <MoreHorizontal size={14} />
-          </MenuButton>
-          {showContextMenu ? (
-            <ContextMenu>
-              <ContextMenuItem onClick={() => { onAddBlock(index); setShowContextMenu(false); }}>
-                <Plus size={14} />
-                아래 블록 추가
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => { onDuplicateBlock(index); setShowContextMenu(false); }}>
-                <Copy size={14} />
-                복제
-              </ContextMenuItem>
-              <ContextMenuItem isDelete onClick={() => { onRemoveBlock?.(index); setShowContextMenu(false); }}>
-                <Trash2 size={14} />
-                삭제
-              </ContextMenuItem>
-            </ContextMenu>
-          ) : null}
-        </HandleGroup>
-      </Gutter>
+      {showHandleControls ? (
+        <Gutter className="gutter-controls" $selected={isSelected}>
+          <HandleGroup ref={contextMenuRef}>
+            <DragHandle
+              {...attributes}
+              {...listeners}
+              onMouseDownCapture={() => {
+                const selection = window.getSelection();
+                if (selection && selection.rangeCount > 0) {
+                  selection.removeAllRanges();
+                }
+              }}
+            >
+              <GripVertical size={16} />
+            </DragHandle>
+            <MenuButton
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowContextMenu((prev) => !prev);
+              }}
+              isActive={showContextMenu}
+            >
+              <MoreHorizontal size={14} />
+            </MenuButton>
+            {showContextMenu ? (
+              <ContextMenu>
+                <ContextMenuItem onClick={() => { onAddBlock(index); setShowContextMenu(false); }}>
+                  <Plus size={14} />
+                  아래 블록 추가
+                </ContextMenuItem>
+                <ContextMenuItem onClick={() => { onDuplicateBlock(index); setShowContextMenu(false); }}>
+                  <Copy size={14} />
+                  복제
+                </ContextMenuItem>
+                <ContextMenuItem isDelete onClick={() => { onRemoveBlock?.(index); setShowContextMenu(false); }}>
+                  <Trash2 size={14} />
+                  삭제
+                </ContextMenuItem>
+              </ContextMenu>
+            ) : null}
+          </HandleGroup>
+        </Gutter>
+      ) : null}
 
       <ContentArea onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
         {renderContent()}
@@ -819,25 +858,28 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   );
 });
 
-const BlockContainer = styled.div`
+const BlockContainer = styled.div<{ $selected: boolean }>`
   position: relative;
   width: 100%;
   display: flex;
   align-items: flex-start;
   margin-bottom: 4px;
+  border-radius: 8px;
+  background: ${({ $selected }) => ($selected ? "#e9f1ff" : "transparent")};
+  box-shadow: ${({ $selected }) => ($selected ? "inset 0 0 0 1px rgba(59, 130, 246, 0.38)" : "none")};
   &:hover .gutter-controls {
     opacity: 1;
   }
 `;
 
-const Gutter = styled.div`
+const Gutter = styled.div<{ $selected: boolean }>`
   position: absolute;
   left: -36px;
   top: 4px;
   display: flex;
   align-items: center;
   gap: 2px;
-  opacity: 0;
+  opacity: ${({ $selected }) => ($selected ? 1 : 0)};
   transition: opacity 0.2s;
   z-index: 100;
 `;
@@ -858,6 +900,9 @@ const DragHandle = styled.div`
   cursor: grab;
   border-radius: 4px;
   background: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
   &:hover {
     background: #F2F4F6;
     color: #191F28;

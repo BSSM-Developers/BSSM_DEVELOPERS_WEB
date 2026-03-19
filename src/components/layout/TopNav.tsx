@@ -131,10 +131,10 @@ export function TopNav() {
         <StyledLink href="/docs/register" onClick={handleProtectedMenuClick}>
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
         </StyledLink>
-        <StyledLink href="/guide/bsdev-usage">
+        <StyledLink href="/guide">
           <NavLink active={isActive("/guide")}>가이드</NavLink>
         </StyledLink>
-        <StyledLink href="/announcements/release-0-1-10">
+        <StyledLink href="/announcements">
           <NavLink active={isActive("/announcements")}>공지사항</NavLink>
         </StyledLink>
       </Nav>

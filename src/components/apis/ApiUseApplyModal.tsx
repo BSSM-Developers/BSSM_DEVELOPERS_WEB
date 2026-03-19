@@ -217,14 +217,14 @@ export function ApiUseApplyModal({
         confirmText: "확인",
         hideCancel: true,
       });
-      onClose();
+      setApiUseReason("");
       onSuccess?.();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "API 사용 신청에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [apiUseReason, confirm, docsId, onClose, onSuccess, selectedApiTarget, selectedToken]);
+  }, [apiUseReason, confirm, docsId, onSuccess, selectedApiTarget, selectedToken]);
 
   if (!isOpen || typeof document === "undefined") {
     return null;
@@ -375,7 +375,7 @@ export function ApiUseApplyModal({
 
         <ActionRow>
           <ModalButton type="button" onClick={onClose}>
-            취소
+            완료
           </ModalButton>
           <ModalButton type="button" primary onClick={() => void handleSubmit()} disabled={isSubmitting}>
             {isSubmitting ? "신청 중..." : "신청하기"}

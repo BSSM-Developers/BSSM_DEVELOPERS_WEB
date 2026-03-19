@@ -23,13 +23,15 @@ const parseMarkdownCodeFence = (content?: string): { language: string; code: str
   const language =
     rawLanguage === "py" || rawLanguage === "python"
       ? "python"
-      : rawLanguage === "js" ||
-          rawLanguage === "jsx" ||
-          rawLanguage === "ts" ||
-          rawLanguage === "tsx" ||
-          rawLanguage === "javascript"
-        ? "javascript"
-        : "javascript";
+      : rawLanguage === "json" || rawLanguage === "jsonc"
+        ? "json"
+        : rawLanguage === "js" ||
+            rawLanguage === "jsx" ||
+            rawLanguage === "ts" ||
+            rawLanguage === "tsx" ||
+            rawLanguage === "javascript"
+          ? "javascript"
+          : "javascript";
   return {
     language,
     code: match[2],
@@ -88,11 +90,12 @@ export function DocsBlockViewer({ block, domain }: DocsBlockViewerProps) {
   }
 
   if (block.module === "image") {
+    const resolvedImageSrc = block.imageSrc || block.content;
     return (
       <DocsBlock module="image">
-        {block.imageSrc ? (
+        {resolvedImageSrc ? (
           <Image
-            src={block.imageSrc}
+            src={resolvedImageSrc}
             alt="Content"
             width={1200}
             height={800}

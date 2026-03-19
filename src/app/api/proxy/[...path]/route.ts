@@ -112,6 +112,18 @@ const rewriteSignupCookiePath = (cookie: string): string => {
   return `${cookie}; Path=/api/proxy/signup`;
 };
 
+const rewriteRefreshCookiePath = (cookie: string): string => {
+  if (!cookie.toLowerCase().startsWith("refresh_token=")) {
+    return cookie;
+  }
+
+  if (/;\s*Path=/i.test(cookie)) {
+    return cookie.replace(/;\s*Path=[^;]*/i, "; Path=/api/proxy/auth");
+  }
+
+  return `${cookie}; Path=/api/proxy/auth`;
+};
+
 const splitSetCookieHeader = (headerValue: string): string[] => {
   const result: string[] = [];
   let start = 0;
@@ -229,7 +241,8 @@ async function handleProxy(request: NextRequest, params: { path: string[] }) {
       if (isRefreshPath && normalizedCookie.toLowerCase().startsWith("signup_token=")) {
         continue;
       }
-      const finalCookie = rewriteSignupCookiePath(normalizedCookie);
+      const signupRewritten = rewriteSignupCookiePath(normalizedCookie);
+      const finalCookie = rewriteRefreshCookiePath(signupRewritten);
       responseHeaders.append("set-cookie", finalCookie);
     }
 

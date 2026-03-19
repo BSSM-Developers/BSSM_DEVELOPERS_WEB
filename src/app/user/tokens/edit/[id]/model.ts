@@ -19,7 +19,7 @@ export const getTitleText = (step: TokenEditStep): string => {
   if (step === "ORIGINS") {
     return "수정하고 싶은 허용 origin을 입력해주세요";
   }
-  return "수정하고 싶은 엔드포인트를 입력해주세요";
+  return "새로운 엔드포인트를 입력해주세요";
 };
 
 export const getSubtitleText = (step: TokenEditStep): string => {
@@ -45,7 +45,7 @@ export const getPlaceholderText = (step: TokenEditStep): string => {
   if (step === "ORIGINS") {
     return "예: https://bssm-dev.com, https://app.bssm-dev.com";
   }
-  return "엔드포인트를 입력해주세요";
+  return "새로운 엔드포인트를 입력해주세요";
 };
 
 export const getSuccessText = (step: TokenEditStep): string => {

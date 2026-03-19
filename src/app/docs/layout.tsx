@@ -97,8 +97,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     if (!shouldFetchLayoutData) {
       return;
     }
-    if (slug && sidebarData?.data?.blocks) {
-      setSidebarItems(mapSidebarBlocks(sidebarData.data.blocks));
+    if (slug) {
+      if (sidebarData?.data?.blocks) {
+        setSidebarItems(mapSidebarBlocks(sidebarData.data.blocks));
+        return;
+      }
+      setSidebarItems([]);
       return;
     }
 

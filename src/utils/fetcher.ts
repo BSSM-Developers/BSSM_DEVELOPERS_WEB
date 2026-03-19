@@ -251,6 +251,64 @@ const SHOULD_USE_PROXY = process.env.NEXT_PUBLIC_USE_API_PROXY === "true";
 const IS_ABSOLUTE_API_URL = RAW_API_URL.startsWith("http://") || RAW_API_URL.startsWith("https://");
 const BASE_URL = SHOULD_USE_PROXY && IS_ABSOLUTE_API_URL ? "/api/proxy" : RAW_API_URL;
 
+const normalizeErrorMessage = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (Array.isArray(value)) {
+    const messages = value
+      .map((item) => normalizeErrorMessage(item))
+      .filter((message): message is string => Boolean(message));
+    if (messages.length > 0) {
+      return messages.join("\n");
+    }
+  }
+
+  return null;
+};
+
+const extractApiErrorMessage = (errorBody: string): string | null => {
+  const trimmed = errorBody.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as {
+      message?: unknown;
+      error?: { message?: unknown };
+    };
+    const message =
+      normalizeErrorMessage(parsed.message) ??
+      normalizeErrorMessage(parsed.error?.message);
+    if (message) {
+      return message;
+    }
+  } catch {
+  }
+
+  if (/^<!doctype html/i.test(trimmed) || /^<html/i.test(trimmed)) {
+    return null;
+  }
+
+  return trimmed;
+};
+
+const buildApiErrorMessage = (status: number, statusText: string, errorBody: string): string => {
+  const parsedMessage = extractApiErrorMessage(errorBody);
+  if (parsedMessage) {
+    return parsedMessage;
+  }
+
+  if (statusText) {
+    return `요청 처리 중 오류가 발생했습니다. (${status} ${statusText})`;
+  }
+
+  return `요청 처리 중 오류가 발생했습니다. (${status})`;
+};
+
 const createApiUrl = (endpoint: string): URL => {
   const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const normalizedBaseUrl = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
@@ -452,9 +510,7 @@ const request = async <T>(
 
         if (retryResponse.status !== 401) {
           const retryErrorBody = await retryResponse.text();
-          throw new Error(
-            `API Error ${retryResponse.status}: ${retryResponse.statusText} - ${retryErrorBody}`
-          );
+          throw new Error(buildApiErrorMessage(retryResponse.status, retryResponse.statusText, retryErrorBody));
         }
       }
     } catch {
@@ -472,9 +528,7 @@ const request = async <T>(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(
-      `API Error ${response.status}: ${response.statusText} - ${errorBody}`
-    );
+    throw new Error(buildApiErrorMessage(response.status, response.statusText, errorBody));
   }
 
   if (response.status === 204) {

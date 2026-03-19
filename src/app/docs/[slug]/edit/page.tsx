@@ -253,6 +253,20 @@ export default function DocsEditPage() {
   });
 
   const handleContentClick = useCallback(() => {
+    const active = document.activeElement;
+    if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
+      const start = active.selectionStart ?? 0;
+      const end = active.selectionEnd ?? 0;
+      if (start !== end) {
+        return;
+      }
+    }
+
+    const selectedText = window.getSelection()?.toString() ?? "";
+    if (selectedText.length > 0) {
+      return;
+    }
+
     if (suppressContentClickRef.current) {
       suppressContentClickRef.current = false;
       return;

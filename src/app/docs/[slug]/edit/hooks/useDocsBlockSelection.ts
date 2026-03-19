@@ -64,6 +64,13 @@ export function useDocsBlockSelection({ docsBlocks, isReadonlyImportedApi }: Use
         return;
       }
 
+      const isTextEditingTarget = Boolean(
+        target.closest("input, textarea, [contenteditable='true'], .cm-editor, .cm-content, .cm-line")
+      );
+      if (isTextEditingTarget) {
+        return;
+      }
+
       const blockRoot = target.closest<HTMLElement>("[data-docs-block-root='true']");
       const clickedBlockId = blockRoot?.dataset.blockId;
       const clickedInsideSelectedBlock = Boolean(clickedBlockId && selectedSet.has(clickedBlockId));

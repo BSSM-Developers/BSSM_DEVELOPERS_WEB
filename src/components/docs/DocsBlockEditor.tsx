@@ -379,6 +379,156 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     }
   };
 
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+      reader.onerror = () => reject(new Error("이미지 파일을 읽을 수 없습니다."));
+      reader.readAsDataURL(file);
+    });
+
+  const applyImageFileToBlock = async (file: File) => {
+    const dataUrl = await readFileAsDataUrl(file);
+    if (!dataUrl) {
+      return;
+    }
+
+    setImageValue(dataUrl);
+    setShowImageInput(false);
+
+    onChange(index, {
+      ...block,
+      module: "image",
+      content: "",
+      imageSrc: dataUrl,
+    });
+  };
+
+  const handlePasteCapture = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    const imageItem = Array.from(event.clipboardData.items).find((item) =>
+      item.type.startsWith("image/")
+    );
+
+    if (!imageItem) {
+      return;
+    }
+
+    const file = imageItem.getAsFile();
+    if (!file) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    void applyImageFileToBlock(file);
+  };
+
+  const handleDragOverCapture = (event: React.DragEvent<HTMLDivElement>) => {
+    const hasImageFile = Array.from(event.dataTransfer.items).some((item) =>
+      item.kind === "file" && item.type.startsWith("image/")
+    );
+
+    if (!hasImageFile) {
+      return;
+    }
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDropCapture = (event: React.DragEvent<HTMLDivElement>) => {
+    const file = Array.from(event.dataTransfer.files).find((candidate) =>
+      candidate.type.startsWith("image/")
+    );
+
+    if (!file) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    void applyImageFileToBlock(file);
+  };
+
+  const focusNextEditableBlock = (): boolean => {
+    const currentRoot = document.querySelector<HTMLElement>(
+      `[data-docs-block-root='true'][data-block-id='${String(block.id)}']`
+    );
+    if (!currentRoot) {
+      return false;
+    }
+
+    let next = currentRoot.nextElementSibling as HTMLElement | null;
+    while (next && next.getAttribute("data-docs-block-root") !== "true") {
+      next = next.nextElementSibling as HTMLElement | null;
+    }
+
+    if (!next) {
+      return false;
+    }
+
+    const editable = next.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      "input[data-block-id], textarea[data-block-id]"
+    );
+    if (editable) {
+      editable.focus();
+      return true;
+    }
+
+    const codeMirrorContent = next.querySelector<HTMLElement>(".cm-content");
+    if (codeMirrorContent) {
+      codeMirrorContent.focus();
+      return true;
+    }
+
+    return false;
+  };
+
+  const handleContentClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    const selection = window.getSelection();
+    const hasTextSelection = Boolean(selection && selection.toString().length > 0);
+    if (hasTextSelection) {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+    if (block.module === "image") {
+      if (
+        target.closest(".resize-handle") ||
+        target.closest(".image-url-input") ||
+        target.closest(".gutter-controls")
+      ) {
+        event.stopPropagation();
+        return;
+      }
+      event.stopPropagation();
+      if (focusNextEditableBlock()) {
+        return;
+      }
+      onAddBlock(index, { module: "docs_1", content: "" } as DocsBlockType);
+      return;
+    }
+
+    event.stopPropagation();
+    const insideNativeInput = target.closest("input, textarea");
+    if (insideNativeInput) {
+      const input = insideNativeInput as HTMLInputElement | HTMLTextAreaElement;
+      const start = input.selectionStart ?? 0;
+      const end = input.selectionEnd ?? 0;
+      if (start !== end) {
+        return;
+      }
+      return;
+    }
+
+    const insideCodeMirror = Boolean(target.closest(".cm-editor, .cm-content, .cm-line"));
+    if (insideCodeMirror) {
+      return;
+    }
+
+    requestFocus();
+  };
+
   const renderContent = () => {
     if (block.module === "api" && block.apiData) {
       return (
@@ -654,7 +804,6 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
               <JsonCodeEditor data-block-id={block.id}>
                 <CodeMirror
                   value={value}
-                  height="120px"
                   placeholder={focused ? "{\n  \"key\": \"value\"\n}" : ""}
                   extensions={jsonEditorExtensions}
                   indentWithTab
@@ -698,8 +847,9 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                     __html: highlightCode(value, selectedCodeLanguage) + '\n'
                   }}
                 />
-                <textarea
+                <TextareaAutosize
                   value={value}
+                  minRows={5}
                   onChange={(e) => {
                     setValue(e.target.value);
                     onChange(index, { ...block, content: e.target.value });
@@ -714,7 +864,6 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                   spellCheck={false}
                   style={{
                     width: "100%",
-                    minHeight: "120px",
                     border: "none",
                     background: "transparent",
                     padding: "0",
@@ -725,7 +874,8 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                     caretColor: "#c9d1d9",
                     outline: "none",
                     margin: 0,
-                    resize: "vertical",
+                    resize: "none",
+                    overflow: "hidden",
                     whiteSpace: 'pre-wrap',
                     wordBreak: 'break-all',
                     position: 'relative',
@@ -812,12 +962,6 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
             <DragHandle
               {...attributes}
               {...listeners}
-              onMouseDownCapture={() => {
-                const selection = window.getSelection();
-                if (selection && selection.rangeCount > 0) {
-                  selection.removeAllRanges();
-                }
-              }}
             >
               <GripVertical size={16} />
             </DragHandle>
@@ -851,7 +995,12 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
         </Gutter>
       ) : null}
 
-      <ContentArea onClick={(e) => { e.stopPropagation(); const selection = window.getSelection(); if (!selection || selection.toString().length === 0) { requestFocus(); } }}>
+      <ContentArea
+        onClick={handleContentClick}
+        onPasteCapture={handlePasteCapture}
+        onDragOverCapture={handleDragOverCapture}
+        onDropCapture={handleDropCapture}
+      >
         {renderContent()}
       </ContentArea>
     </BlockContainer>
@@ -1078,6 +1227,7 @@ const CodeLanguageOption = styled.button<{ $selected: boolean }>`
 
 const JsonCodeEditor = styled.div`
   .cm-editor {
+    min-height: 120px;
     border: none;
     background: transparent;
     font-family: monospace;
@@ -1089,7 +1239,7 @@ const JsonCodeEditor = styled.div`
   }
 
   .cm-scroller {
-    min-height: 120px;
+    overflow: hidden;
     font-family: monospace;
   }
 

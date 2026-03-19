@@ -74,6 +74,28 @@ const readJson = async (filePath: string): Promise<unknown> => {
   return JSON.parse(raw) as unknown;
 };
 
+const decodeSlugSafe = (value: string): string => {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+};
+
+const getSlugCandidates = (slug: string): string[] => {
+  const base = decodeSlugSafe(slug);
+  return Array.from(
+    new Set([
+      slug,
+      base,
+      slug.normalize("NFC"),
+      slug.normalize("NFD"),
+      base.normalize("NFC"),
+      base.normalize("NFD"),
+    ])
+  );
+};
+
 export const loadGuideSummaries = async (): Promise<GuideSummary[]> => {
   const indexPath = path.join(guidesRoot, "index.json");
   const parsed = await readJson(indexPath);
@@ -86,12 +108,17 @@ export const loadGuideSummaries = async (): Promise<GuideSummary[]> => {
 };
 
 export const loadGuideDetail = async (slug: string): Promise<GuideDetail | null> => {
-  const filePath = path.join(guidesRoot, "items", `${slug}.json`);
-
-  try {
-    const parsed = await readJson(filePath);
-    return toGuideDetail(parsed);
-  } catch {
-    return null;
+  const candidates = getSlugCandidates(slug);
+  for (const candidate of candidates) {
+    const filePath = path.join(guidesRoot, "items", `${candidate}.json`);
+    try {
+      const parsed = await readJson(filePath);
+      const detail = toGuideDetail(parsed);
+      if (detail) {
+        return detail;
+      }
+    } catch {
+    }
   }
+  return null;
 };

@@ -1,9 +1,18 @@
 {
   "items": [
     {
+      "id": "notice-1773931397735",
+      "slug": "베타-테스트-오픈",
+      "title": "베타 테스트 오픈",
+      "summary": "베타 테스트 오픈",
+      "publishedAt": "2026-03-19T14:43:17.735Z",
+      "pinned": false,
+      "author": "BSSM Developers"
+    },
+    {
       "id": "notice-2026-03-release-0-1-10",
       "slug": "release-0-1-10",
-      "title": "v0.1.10 공지사항 기능",
+      "title": "공지사항 기능",
       "summary": "공지사항 페이지가 오픈되었습니다. 주요 변경사항과 운영 공지를 이곳에서 확인할 수 있습니다.",
       "publishedAt": "2026-03-02T10:00:00+09:00",
       "pinned": true,

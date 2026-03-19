@@ -18,6 +18,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "BSSM Developers",
   description: "API 공유 플랫폼",
+  icons: {
+    icon: "/bssm-developers.svg",
+    shortcut: "/bssm-developers.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

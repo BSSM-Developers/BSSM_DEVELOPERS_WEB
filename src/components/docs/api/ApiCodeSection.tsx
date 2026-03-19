@@ -62,12 +62,8 @@ export function ApiCodeSection({
       setGeneratedCode(sampleCode || getDefaultSampleCode());
     }
 
-    if (responseData) {
-      const actualResponse = highlightJson(JSON.stringify({
-        status: responseStatus,
-        message: responseMessage,
-        data: responseData
-      }, null, 2));
+    if (responseData !== null && responseData !== undefined) {
+      const actualResponse = highlightJson(JSON.stringify(responseData, null, 2));
       setGeneratedResponse(actualResponse);
       return;
     }
@@ -162,10 +158,12 @@ const CodeSection = styled.div`
   width: 420px;
   flex-shrink: 0;
   margin-left: auto;
+  transform: translateX(6px);
 
   @media (max-width: 1400px) {
     width: 100%;
     margin: 0;
+    transform: none;
   }
 
   @media (max-width: 768px) {

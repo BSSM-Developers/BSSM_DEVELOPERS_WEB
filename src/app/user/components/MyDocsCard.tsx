@@ -105,7 +105,7 @@ export function MyDocsCard({
       <CardFooter>
         <ButtonGroup>
           <ActionButton type="button" onClick={onExplore}>
-            둘러보기
+            자세히 보기
           </ActionButton>
           <ActionButton type="button" onClick={onEditDocs} primary>
             수정하기

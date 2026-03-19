@@ -38,7 +38,6 @@ export const ConfirmStep = ({
           description={formData.description || '2025 BSSM 해커톤 시즌 1 - BSSM Developers 공식 문서입니다.'}
           tags={[userName]}
           onExplore={() => { }}
-          onUse={() => { }}
         />
       </PreviewCardWrapper>
       <Footer style={{ justifyContent: 'center', marginTop: '60px' }}>

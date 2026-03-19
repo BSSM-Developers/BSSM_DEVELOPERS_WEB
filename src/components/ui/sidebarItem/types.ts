@@ -5,6 +5,6 @@ export interface SidebarNode {
   label: string;
   module?: string;
   path?: string;
-  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE";
+  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
   childrenItems?: SidebarNode[];
 }

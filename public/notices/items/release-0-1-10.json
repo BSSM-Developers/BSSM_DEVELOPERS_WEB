@@ -1,15 +1,64 @@
 {
   "id": "notice-2026-03-release-0-1-10",
   "slug": "release-0-1-10",
-  "title": "v0.1.10 공지사항 기능 오픈",
+  "title": "공지사항 기능",
   "summary": "공지사항 페이지가 오픈되었습니다. 주요 변경사항과 운영 공지를 이곳에서 확인할 수 있습니다.",
   "publishedAt": "2026-03-02T10:00:00+09:00",
-  "updatedAt": "2026-03-02T10:00:00+09:00",
+  "updatedAt": "2026-03-19T14:20:58.940Z",
   "author": "BSSM Developers",
   "content": [
+    "공지사항 기능 오픈",
     "안녕하세요, BSSM Developers 팀입니다.",
+    "공지사항 페이지가 오픈되었습니다. 주요 변경사항과 운영 공지를 이곳에서 확인할 수 있습니다.",
     "이번 릴리스부터 공지사항 페이지를 통해 서비스 업데이트, 운영 공지, 점검 일정을 안내합니다.",
-    "공지사항 데이터는 public/notices JSON 파일 기반으로 관리되며, PR 머지 후 배포 시 즉시 반영됩니다.",
-    "앞으로 주요 변경사항은 공지사항에서 먼저 확인해 주세요."
+    "앞으로 주요 변경사항은 공지사항에서 먼저 확인해 주세요.",
+    "항상 서비스를 사용해주셔서 감사합니다."
+  ],
+  "blocks": [
+    {
+      "id": "notice-2026-03-release-0-1-10-title",
+      "module": "headline_1",
+      "content": "공지사항 기능 오픈"
+    },
+    {
+      "id": "f29c2a1c-d72f-4a84-a26a-33ca47dcf740",
+      "module": "docs_1",
+      "content": "안녕하세요, BSSM Developers 팀입니다."
+    },
+    {
+      "id": "notice-2026-03-release-0-1-10-summary",
+      "module": "docs_1",
+      "content": "공지사항 페이지가 오픈되었습니다. 주요 변경사항과 운영 공지를 이곳에서 확인할 수 있습니다."
+    },
+    {
+      "id": "bc4c2fba-9964-47fc-a5f0-d97b17dce296",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "notice-2026-03-release-0-1-10-1",
+      "module": "docs_1",
+      "content": "이번 릴리스부터 공지사항 페이지를 통해 서비스 업데이트, 운영 공지, 점검 일정을 안내합니다."
+    },
+    {
+      "id": "notice-2026-03-release-0-1-10-3",
+      "module": "docs_1",
+      "content": "앞으로 주요 변경사항은 공지사항에서 먼저 확인해 주세요."
+    },
+    {
+      "id": "d899f559-5413-439e-b0dc-f99d33c018f6",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "a8fd50da-a6c1-4115-a9ad-1e98177b9fd6",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "e3cd9d0a-ebc8-4236-8724-e41a76396b4b",
+      "module": "docs_1",
+      "content": "항상 서비스를 사용해주셔서 감사합니다."
+    }
   ]
 }

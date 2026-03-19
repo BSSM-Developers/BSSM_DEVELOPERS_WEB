@@ -118,7 +118,6 @@ export const InputStep = ({ formData, updateFormData, handleNext, userName }: In
               description={formData.description || ''}
               tags={[userName]}
               onExplore={() => { }}
-              onUse={() => { }}
             />
           </PreviewCardWrapper>
         )}

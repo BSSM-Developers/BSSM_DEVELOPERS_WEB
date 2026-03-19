@@ -26,6 +26,7 @@ type ParamItemProps = {
   editable?: boolean;
   paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
   hideRequired?: boolean;
+  parentType?: string;
   onChange?: (updated: { name: string; type: string; description: string; required: boolean; example?: string; children?: ApiParam[] }) => void;
   onDelete?: () => void;
 };
@@ -41,10 +42,14 @@ export function ParamItem({
   editable = false,
   paramLocation = 'body',
   hideRequired = false,
+  parentType,
   onChange,
   onDelete
 }: ParamItemProps) {
   const isComplexType = type === 'object' || type === 'array';
+  const isArrayElement = parentType === "array";
+  const canAddChild = type !== "array" || childrenProps.length === 0;
+  const displayName = name || (isArrayElement ? "요소" : "");
 
   const allowedTypes = (() => {
     switch (paramLocation) {
@@ -65,7 +70,9 @@ export function ParamItem({
         <Container className={className} style={{ padding: '8px 0' }}>
           <ParamInfo style={{ gap: '4px' }}>
             <ParamHeader>
-              {paramLocation === 'header' || paramLocation === 'cookie' ? (
+              {isArrayElement ? (
+                <ArrayElementTag>요소</ArrayElementTag>
+              ) : paramLocation === 'header' || paramLocation === 'cookie' ? (
                 <NameCombobox
                   value={name}
                   options={paramLocation === 'header' ? HEADER_OPTIONS : COOKIE_OPTIONS}
@@ -146,7 +153,7 @@ export function ParamItem({
               )}
             </DescriptionWrapper>
           </ParamInfo>
-          <DeleteButton type="button" onClick={onDelete}>×</DeleteButton>
+          <DeleteButton type="button" onClick={onDelete}>삭제</DeleteButton>
         </Container>
         {isComplexType && (
           <ChildrenContainer>
@@ -160,6 +167,7 @@ export function ParamItem({
                 example={child.example}
                 childrenProps={child.children}
                 paramLocation={paramLocation}
+                parentType={type}
                 editable={true}
                 hideRequired={hideRequired}
                 onChange={(updated) => {
@@ -173,12 +181,14 @@ export function ParamItem({
                 }}
               />
             ))}
-            <AddChildButton type="button" onClick={() => {
-              const nextChildren = [...childrenProps, { name: "", type: "string", description: "", required: false, example: "" }];
-              onChange?.({ name, type, description, required, example, children: nextChildren });
-            }}>
-              + 하위 속성 추가
-            </AddChildButton>
+            {canAddChild ? (
+              <AddChildButton type="button" onClick={() => {
+                const nextChildren = [...childrenProps, { name: "", type: "string", description: "", required: false, example: "" }];
+                onChange?.({ name, type, description, required, example, children: nextChildren });
+              }}>
+                {type === "array" ? "+ 요소 타입 추가" : "+ 하위 속성 추가"}
+              </AddChildButton>
+            ) : null}
           </ChildrenContainer>
         )}
       </div>
@@ -190,7 +200,7 @@ export function ParamItem({
       <Container className={className}>
         <ParamInfo>
           <ParamHeader>
-            <NameTag>{name}</NameTag>
+            <NameTag>{displayName}</NameTag>
             <TypeText>{type}</TypeText>
           </ParamHeader>
           <DescriptionWrapper>
@@ -214,6 +224,7 @@ export function ParamItem({
               example={child.example}
               childrenProps={child.children}
               paramLocation={paramLocation}
+              parentType={type}
               editable={false}
               hideRequired={hideRequired}
             />
@@ -421,14 +432,27 @@ const EditInput = styled.input`
 `;
 
 const DeleteButton = styled.button`
-  background: none;
-  border: none;
+  min-width: 52px;
+  height: 30px;
+  padding: 0 12px;
+  margin-left: 12px;
+  border-radius: 6px;
+  border: 1px solid #FCA5A5;
+  background: #FFF1F2;
   color: #FF4D4F;
-  font-size: 20px;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  line-height: 1;
   cursor: pointer;
-  padding: 0 8px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+
   &:hover {
     color: #CF1322;
+    border-color: #EF4444;
+    background: #FFE4E6;
   }
 `;
 
@@ -436,6 +460,7 @@ const Container = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   padding: 0 20px 0 0;
   width: 100%;
   max-width: 850px;
@@ -493,6 +518,23 @@ const NameTag = styled.span`
     min-width: 60px;
     font-size: 11px;
   }
+`;
+
+const ArrayElementTag = styled.span`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 8px;
+  min-width: 72px;
+  height: 24px;
+  border-radius: 3px;
+  background: #F3F4F6;
+  color: #6B7280;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: -0.6px;
+  white-space: nowrap;
 `;
 
 const TypeText = styled.span`

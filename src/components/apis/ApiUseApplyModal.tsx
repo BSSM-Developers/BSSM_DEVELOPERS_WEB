@@ -70,6 +70,7 @@ export function ApiUseApplyModal({
 
   const tokenMenuRef = useRef<HTMLDivElement>(null);
   const apiMenuRef = useRef<HTMLDivElement>(null);
+  const isOverlayPressedRef = useRef(false);
 
   const tokensQuery = useQuery({
     queryKey: ["api-use-apply-modal", "tokens"],
@@ -216,24 +217,40 @@ export function ApiUseApplyModal({
         confirmText: "확인",
         hideCancel: true,
       });
-      onClose();
+      setApiUseReason("");
       onSuccess?.();
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "API 사용 신청에 실패했습니다.");
     } finally {
       setIsSubmitting(false);
     }
-  }, [apiUseReason, confirm, docsId, onClose, onSuccess, selectedApiTarget, selectedToken]);
+  }, [apiUseReason, confirm, docsId, onSuccess, selectedApiTarget, selectedToken]);
 
   if (!isOpen || typeof document === "undefined") {
     return null;
   }
 
   return createPortal(
-    <ModalOverlay onClick={onClose}>
+    <ModalOverlay
+      onMouseDown={(event) => {
+        isOverlayPressedRef.current = event.target === event.currentTarget;
+      }}
+      onMouseUp={(event) => {
+        const isOverlayTarget = event.target === event.currentTarget;
+        if (isOverlayPressedRef.current && isOverlayTarget) {
+          onClose();
+        }
+        isOverlayPressedRef.current = false;
+      }}
+      onMouseLeave={() => {
+        isOverlayPressedRef.current = false;
+      }}
+    >
       <ModalCard onClick={(event) => event.stopPropagation()}>
-        <ModalTitle>API 사용 신청</ModalTitle>
-        <ModalDescription>API 사용 신청 정보를 작성해주세요.</ModalDescription>
+        <ModalHeader>
+          <ModalTitle>API 사용 신청</ModalTitle>
+          <ModalDescription>문서 확인 후 필요한 API를 선택하고 신청 사유를 남겨주세요.</ModalDescription>
+        </ModalHeader>
 
         <Field>
           <FieldLabel>문서</FieldLabel>
@@ -241,7 +258,7 @@ export function ApiUseApplyModal({
         </Field>
 
         <Field>
-          <FieldLabel>신청 대상 API</FieldLabel>
+          <FieldLabel>신청 API</FieldLabel>
           <SelectContainer ref={apiMenuRef}>
             <SelectTrigger
               type="button"
@@ -358,7 +375,7 @@ export function ApiUseApplyModal({
 
         <ActionRow>
           <ModalButton type="button" onClick={onClose}>
-            취소
+            완료
           </ModalButton>
           <ModalButton type="button" primary onClick={() => void handleSubmit()} disabled={isSubmitting}>
             {isSubmitting ? "신청 중..." : "신청하기"}
@@ -371,10 +388,19 @@ export function ApiUseApplyModal({
   );
 }
 
-const modalDropDown = keyframes`
+const overlayFadeIn = keyframes`
   from {
     opacity: 0;
-    transform: translateY(-44px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+  }
+`;
+
+const modalEntrance = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.965);
   }
   to {
     opacity: 1;
@@ -385,64 +411,73 @@ const modalDropDown = keyframes`
 const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(8, 16, 33, 0.58);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1200;
-  padding: 20px;
+  padding: 24px;
+  animation: ${overlayFadeIn} 240ms ease-out;
 `;
 
 const ModalCard = styled.div`
+  position: relative;
+  overflow: hidden;
   width: 100%;
-  max-width: 560px;
+  max-width: 620px;
   background: white;
-  border-radius: 14px;
-  border: 1px solid #e5e7eb;
-  padding: 24px;
-  animation: ${modalDropDown} 460ms cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 18px;
+  border: 1px solid #d4ddec;
+  box-shadow: 0 26px 62px rgba(7, 23, 55, 0.25);
+  padding: 28px;
+  animation: ${modalEntrance} 300ms cubic-bezier(0.2, 0.9, 0.2, 1);
+`;
+
+const ModalHeader = styled.div`
+  margin-bottom: 20px;
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  color: #111827;
+  color: #0f172a;
 `;
 
 const ModalDescription = styled.p`
-  margin: 0 0 20px;
+  margin: 0;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  color: #6b7280;
+  font-size: 15px;
+  color: #5f6b7f;
 `;
 
 const Field = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 9px;
+  margin-bottom: 18px;
 `;
 
 const FieldLabel = styled.label`
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
-  color: #374151;
+  color: #1f2a44;
 `;
 
 const StaticValue = styled.div`
-  height: 42px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
-  padding: 0 12px;
+  min-height: 46px;
+  border-radius: 10px;
+  border: 1px solid #cfd8ea;
+  background: #f7faff;
+  padding: 10px 14px;
   display: flex;
   align-items: center;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  color: #111827;
+  font-size: 15px;
+  color: #14233e;
 `;
 
 const SelectContainer = styled.div`
@@ -451,33 +486,34 @@ const SelectContainer = styled.div`
 
 const SelectTrigger = styled.button`
   width: 100%;
-  height: 42px;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  padding: 0 12px;
+  min-height: 46px;
+  border-radius: 10px;
+  border: 1px solid #cfd8ea;
+  padding: 10px 14px;
   background: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   cursor: pointer;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 
   &:disabled {
-    background: #f3f4f6;
+    background: #f5f7fb;
     cursor: not-allowed;
   }
 
   &:focus-visible {
     outline: none;
-    border-color: #16335c;
-    box-shadow: 0 0 0 2px rgba(22, 51, 92, 0.12);
+    border-color: #274f86;
+    box-shadow: 0 0 0 3px rgba(39, 79, 134, 0.16);
   }
 `;
 
 const TriggerText = styled.span<{ hasValue: boolean }>`
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  color: ${({ hasValue }) => (hasValue ? "#111827" : "#6b7280")};
+  font-size: 15px;
+  color: ${({ hasValue }) => (hasValue ? "#111827" : "#667085")};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -485,7 +521,7 @@ const TriggerText = styled.span<{ hasValue: boolean }>`
 
 const Arrow = styled.span<{ isOpen: boolean }>`
   font-size: 12px;
-  color: #6b7280;
+  color: #5f6b7f;
   transform: ${({ isOpen }) => (isOpen ? "rotate(180deg)" : "rotate(0deg)")};
   transition: transform 180ms ease;
 `;
@@ -496,9 +532,9 @@ const SelectMenu = styled.div`
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid #d1d5db;
+  border: 1px solid #ccd7eb;
   border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+  box-shadow: 0 14px 30px rgba(8, 22, 50, 0.16);
   z-index: 20;
   max-height: 240px;
   overflow: auto;
@@ -507,45 +543,47 @@ const SelectMenu = styled.div`
 const SelectOption = styled.button<{ selected: boolean }>`
   width: 100%;
   border: none;
-  background: ${({ selected }) => (selected ? "rgba(22, 51, 92, 0.08)" : "white")};
-  padding: 11px 12px;
+  background: ${({ selected }) => (selected ? "#eef4ff" : "white")};
+  padding: 11px 13px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  color: #111827;
+  font-size: 15px;
+  color: #101828;
   cursor: pointer;
 
   &:hover {
-    background: rgba(22, 51, 92, 0.08);
+    background: #eef4ff;
   }
 `;
 
 const SecondaryText = styled.span`
-  color: #6b7280;
+  color: #667085;
   font-size: 12px;
   flex-shrink: 0;
 `;
 
 const ReasonInput = styled.textarea`
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
+  min-height: 124px;
+  border-radius: 10px;
+  border: 1px solid #cfd8ea;
   background: white;
-  padding: 12px;
+  padding: 12px 14px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  color: #111827;
+  font-size: 15px;
+  color: #101828;
   outline: none;
   resize: vertical;
 
   &::placeholder {
-    color: #9ca3af;
+    color: #98a2b3;
   }
 
   &:focus {
-    border-color: #16335c;
+    border-color: #274f86;
+    box-shadow: 0 0 0 3px rgba(39, 79, 134, 0.16);
   }
 `;
 
@@ -553,30 +591,41 @@ const InlineError = styled.p`
   margin: 0;
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 13px;
-  color: #dc2626;
+  color: #c53333;
+  background: #fff3f2;
+  border: 1px solid #ffd2ce;
+  border-radius: 8px;
+  padding: 10px 12px;
 `;
 
 const ActionRow = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 16px;
 `;
 
 const ModalButton = styled.button<{ primary?: boolean }>`
-  height: 38px;
-  border-radius: 8px;
-  padding: 0 14px;
-  border: 1px solid ${({ primary }) => (primary ? "#16335c" : "#d1d5db")};
-  background: ${({ primary }) => (primary ? "#16335c" : "white")};
-  color: ${({ primary }) => (primary ? "white" : "#374151")};
+  min-width: 116px;
+  height: 44px;
+  border-radius: 10px;
+  padding: 0 16px;
+  border: 1px solid ${({ primary }) => (primary ? "#16335c" : "#cfd8ea")};
+  background: ${({ primary }) => (primary ? "#16335c" : "#f8fafe")};
+  color: ${({ primary }) => (primary ? "white" : "#1f2a44")};
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
+  transition: filter 160ms ease, transform 160ms ease;
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+  }
+
+  &:hover:not(:disabled) {
+    filter: brightness(1.03);
+    transform: translateY(-1px);
   }
 `;

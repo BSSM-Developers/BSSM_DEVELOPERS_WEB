@@ -21,6 +21,11 @@ interface ParsedRefreshTokens {
   refreshToken?: string;
 }
 
+interface RefreshRequestPayload {
+  refreshToken?: string;
+  refresh_token?: string;
+}
+
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const AUTH_SESSION_HINT_KEY = "authSessionHint";
@@ -124,50 +129,61 @@ export const tokenManager = {
     if (typeof window === "undefined") {
       return;
     }
-    const legacyAccessToken =
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("access_token") ||
-      localStorage.getItem("access-token");
-
-    if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && legacyAccessToken) {
-      sessionStorage.setItem(ACCESS_TOKEN_KEY, legacyAccessToken);
-      accessTokenMemory = legacyAccessToken;
-    }
-
-    const legacyRefreshToken =
-      localStorage.getItem("refreshToken") ||
-      localStorage.getItem("refresh_token") ||
-      localStorage.getItem("refresh-token");
-
-    if (!sessionStorage.getItem(REFRESH_TOKEN_KEY) && legacyRefreshToken) {
-      sessionStorage.setItem(REFRESH_TOKEN_KEY, legacyRefreshToken);
-      refreshTokenMemory = legacyRefreshToken;
-    }
-
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("access-token");
-    localStorage.removeItem("refreshToken");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("refresh-token");
-
-    let accessToken = tokenManager.getAccessToken();
-    if (accessToken) {
-      scheduleAccessTokenRefresh(accessToken);
-      localStorage.setItem(AUTH_SESSION_HINT_KEY, "1");
-      emitTokenChanged();
+    if (initializePromise) {
+      await initializePromise;
       return;
     }
+    initializePromise = (async () => {
+      const legacyAccessToken =
+        localStorage.getItem("accessToken") ||
+        localStorage.getItem("access_token") ||
+        localStorage.getItem("access-token");
 
-    const hasAuthSessionHint = localStorage.getItem(AUTH_SESSION_HINT_KEY) === "1";
-    if (!hasAuthSessionHint) {
-      return;
-    }
+      if (!sessionStorage.getItem(ACCESS_TOKEN_KEY) && legacyAccessToken) {
+        sessionStorage.setItem(ACCESS_TOKEN_KEY, legacyAccessToken);
+        accessTokenMemory = legacyAccessToken;
+      }
 
-    accessToken = await ensureRefreshedAccessToken();
-    if (accessToken) {
-      scheduleAccessTokenRefresh(accessToken);
-      emitTokenChanged();
+      const legacyRefreshToken =
+        localStorage.getItem("refreshToken") ||
+        localStorage.getItem("refresh_token") ||
+        localStorage.getItem("refresh-token");
+
+      if (!sessionStorage.getItem(REFRESH_TOKEN_KEY) && legacyRefreshToken) {
+        sessionStorage.setItem(REFRESH_TOKEN_KEY, legacyRefreshToken);
+        refreshTokenMemory = legacyRefreshToken;
+      }
+
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("access-token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("refresh-token");
+
+      let accessToken = tokenManager.getAccessToken();
+      if (accessToken) {
+        scheduleAccessTokenRefresh(accessToken);
+        localStorage.setItem(AUTH_SESSION_HINT_KEY, "1");
+        emitTokenChanged();
+        return;
+      }
+
+      const hasAuthSessionHint = localStorage.getItem(AUTH_SESSION_HINT_KEY) === "1";
+      if (!hasAuthSessionHint) {
+        return;
+      }
+
+      accessToken = await ensureRefreshedAccessToken();
+      if (accessToken) {
+        scheduleAccessTokenRefresh(accessToken);
+        emitTokenChanged();
+      }
+    })();
+    try {
+      await initializePromise;
+    } finally {
+      initializePromise = null;
     }
   },
   getUserRole: (): string | null => {
@@ -235,6 +251,64 @@ const SHOULD_USE_PROXY = process.env.NEXT_PUBLIC_USE_API_PROXY === "true";
 const IS_ABSOLUTE_API_URL = RAW_API_URL.startsWith("http://") || RAW_API_URL.startsWith("https://");
 const BASE_URL = SHOULD_USE_PROXY && IS_ABSOLUTE_API_URL ? "/api/proxy" : RAW_API_URL;
 
+const normalizeErrorMessage = (value: unknown): string | null => {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  if (Array.isArray(value)) {
+    const messages = value
+      .map((item) => normalizeErrorMessage(item))
+      .filter((message): message is string => Boolean(message));
+    if (messages.length > 0) {
+      return messages.join("\n");
+    }
+  }
+
+  return null;
+};
+
+const extractApiErrorMessage = (errorBody: string): string | null => {
+  const trimmed = errorBody.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as {
+      message?: unknown;
+      error?: { message?: unknown };
+    };
+    const message =
+      normalizeErrorMessage(parsed.message) ??
+      normalizeErrorMessage(parsed.error?.message);
+    if (message) {
+      return message;
+    }
+  } catch {
+  }
+
+  if (/^<!doctype html/i.test(trimmed) || /^<html/i.test(trimmed)) {
+    return null;
+  }
+
+  return trimmed;
+};
+
+const buildApiErrorMessage = (status: number, statusText: string, errorBody: string): string => {
+  const parsedMessage = extractApiErrorMessage(errorBody);
+  if (parsedMessage) {
+    return parsedMessage;
+  }
+
+  if (statusText) {
+    return `요청 처리 중 오류가 발생했습니다. (${status} ${statusText})`;
+  }
+
+  return `요청 처리 중 오류가 발생했습니다. (${status})`;
+};
+
 const createApiUrl = (endpoint: string): URL => {
   const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
   const normalizedBaseUrl = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
@@ -251,8 +325,28 @@ const parseRefreshTokens = async (response: Response): Promise<ParsedRefreshToke
   }
 
   const refreshText = await response.text();
-  const refreshData: RefreshResponse = refreshText ? JSON.parse(refreshText) : {};
+  let refreshData: RefreshResponse = {};
+  if (refreshText) {
+    try {
+      refreshData = JSON.parse(refreshText) as RefreshResponse;
+    } catch {
+      refreshData = {};
+    }
+  }
+
+  const authorizationHeader = response.headers.get("authorization");
+  const bearerToken = authorizationHeader?.startsWith("Bearer ")
+    ? authorizationHeader.slice("Bearer ".length).trim()
+    : null;
+
+  const headerAccessToken =
+    response.headers.get("x-access-token") ||
+    response.headers.get("access-token") ||
+    response.headers.get("access_token");
+
   const accessToken =
+    bearerToken ||
+    headerAccessToken ||
     refreshData.accessToken ||
     refreshData.data?.accessToken ||
     refreshData.data?.access_token ||
@@ -273,8 +367,17 @@ const parseRefreshTokens = async (response: Response): Promise<ParsedRefreshToke
 };
 
 const requestRefreshFromUrl = async (url: string): Promise<ParsedRefreshTokens | null> => {
+  const refreshToken = tokenManager.getRefreshToken();
+  const payload: RefreshRequestPayload = refreshToken
+    ? { refreshToken, refresh_token: refreshToken }
+    : {};
+
   const response = await fetch(url, {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
     credentials: "include",
     cache: "no-store",
   });
@@ -285,6 +388,7 @@ const requestRefreshFromUrl = async (url: string): Promise<ParsedRefreshTokens |
 let refreshPromise: Promise<string | null> | null = null;
 let refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let timerToken: string | null = null;
+let initializePromise: Promise<void> | null = null;
 
 const REFRESH_SKEW_MS = 60_000;
 const REFRESH_FALLBACK_MS = 9 * 60 * 1000;
@@ -342,32 +446,12 @@ const requestAccessTokenRefresh = async (): Promise<string | null> => {
 
 const ensureRefreshedAccessToken = async (): Promise<string | null> => {
   if (!refreshPromise) {
-    refreshPromise = requestAccessTokenRefreshWithRetry(2).finally(() => {
+    refreshPromise = requestAccessTokenRefresh().finally(() => {
       refreshPromise = null;
     });
   }
 
   return refreshPromise;
-};
-
-const requestAccessTokenRefreshWithRetry = async (retryCount: number): Promise<string | null> => {
-  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
-    try {
-      const refreshed = await requestAccessTokenRefresh();
-      if (refreshed) {
-        return refreshed;
-      }
-    } catch {
-    }
-
-    if (attempt < retryCount) {
-      await new Promise((resolve) => {
-        setTimeout(resolve, 350 * (attempt + 1));
-      });
-    }
-  }
-
-  return null;
 };
 
 const request = async <T>(
@@ -426,9 +510,7 @@ const request = async <T>(
 
         if (retryResponse.status !== 401) {
           const retryErrorBody = await retryResponse.text();
-          throw new Error(
-            `API Error ${retryResponse.status}: ${retryResponse.statusText} - ${retryErrorBody}`
-          );
+          throw new Error(buildApiErrorMessage(retryResponse.status, retryResponse.statusText, retryErrorBody));
         }
       }
     } catch {
@@ -446,9 +528,7 @@ const request = async <T>(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(
-      `API Error ${response.status}: ${response.statusText} - ${errorBody}`
-    );
+    throw new Error(buildApiErrorMessage(response.status, response.statusText, errorBody));
   }
 
   if (response.status === 204) {

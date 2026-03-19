@@ -13,12 +13,11 @@ interface ApiHeaderProps {
   endpoint: string;
   onTryClick?: () => void;
   editable?: boolean;
-  disableVerification?: boolean;
   missingPathParams?: string[];
   onChange?: (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => void;
 }
 
-const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH", "UPDATE"];
+const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 
 export function ApiHeader({
   title,
@@ -28,7 +27,6 @@ export function ApiHeader({
   endpoint,
   onTryClick,
   editable = false,
-  disableVerification = false,
   missingPathParams = [],
   onChange
 }: ApiHeaderProps) {
@@ -111,12 +109,12 @@ export function ApiHeader({
         <TitleSection>
           <EditTitleInput
             value={title}
-            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint, isVerified: false })}
+            onChange={(e) => onChange?.({ title: e.target.value, description, method, endpoint })}
             placeholder="API 제목"
           />
           <EditDescInput
             value={description}
-            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint, isVerified: false })}
+            onChange={(e) => onChange?.({ title, description: e.target.value, method, endpoint })}
             placeholder="API 설명"
           />
         </TitleSection>
@@ -130,24 +128,13 @@ export function ApiHeader({
         <EndpointSection>
           <MethodSelect
             value={method}
-            onChange={(m) => onChange?.({ title, description, method: m as HttpMethod, endpoint, isVerified: false })}
+            onChange={(m) => onChange?.({ title, description, method: m, endpoint })}
           />
           <EditEndpointInput
             value={endpoint}
-            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value, isVerified: false })}
+            onChange={(e) => onChange?.({ title, description, method, endpoint: e.target.value })}
             placeholder="실제 엔드포인트 (e.g. /api/v1/user)"
           />
-          {!disableVerification ? (
-            <VerifyButton
-              state={verifyState}
-              onClick={handleVerify}
-              disabled={isVerifying}
-            >
-              {isVerifying ? "검증 중..." :
-                verifyState === 'success' ? "검증 완료" :
-                  verifyState === 'fail' ? "검증 실패" : "검증"}
-            </VerifyButton>
-          ) : null}
         </EndpointSection>
 
         {ConfirmDialog}
@@ -182,7 +169,7 @@ export function ApiHeader({
   );
 }
 
-function MethodSelect({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+function MethodSelect({ value, onChange }: { value: HttpMethod; onChange: (val: HttpMethod) => void }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -200,21 +187,27 @@ function MethodSelect({ value, onChange }: { value: string; onChange: (val: stri
 
   return (
     <SelectContainer ref={wrapperRef}>
-      <SelectTrigger onClick={() => setIsOpen(!isOpen)}>
-        <HttpMethodTag method={value as HttpMethod} />
-        <Arrow isOpen={isOpen}>▼</Arrow>
+      <SelectTrigger
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <MethodTagStretch method={value} />
       </SelectTrigger>
       {isOpen && (
-        <SelectOptions>
+        <SelectOptions role="listbox" aria-label="HTTP method">
           {METHODS.map((m) => (
             <SelectOption
+              type="button"
               key={m}
+              aria-selected={m === value}
               onClick={() => {
                 onChange(m);
                 setIsOpen(false);
               }}
             >
-              <HttpMethodTag method={m} />
+              <MethodTagStretch method={m} />
             </SelectOption>
           ))}
         </SelectOptions>
@@ -276,48 +269,55 @@ const EditEndpointInput = styled.input`
 
 const SelectContainer = styled.div`
   position: relative;
-  min-width: 80px;
+  min-width: 96px;
 `;
 
-const SelectTrigger = styled.div`
+const SelectTrigger = styled.button`
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 4px 8px;
-  background: white;
-  border-radius: 4px;
+  justify-content: flex-start;
+  padding: 6px;
+  background: #ffffff;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  &:hover {
-    background: #F3F4F6;
+  min-height: 36px;
+  width: 100%;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.24);
   }
 `;
 
-const Arrow = styled.span<{ isOpen: boolean }>`
-  font-size: 10px;
-  transition: transform 0.2s ease;
-  transform: ${({ isOpen }) => (isOpen ? "rotate(180deg)" : "rotate(0)")};
-  color: #9CA3AF;
+const MethodTagStretch = styled(HttpMethodTag)`
+  width: 100%;
+  min-width: 0;
 `;
 
 const SelectOptions = styled.div`
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0;
-  width: 120px;
-  background: white;
-  border: 1px solid #E5E7EB;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
   z-index: 100;
   overflow: hidden;
+  padding: 8px;
 `;
 
-const SelectOption = styled.div`
-  padding: 8px 12px;
+const SelectOption = styled.button`
+  width: 100%;
+  border: 0;
+  padding: 4px 0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
   cursor: pointer;
-  &:hover {
-    background: #F3F4F6;
-  }
 `;
 
 const HeaderSection = styled.div`

@@ -258,3 +258,79 @@ export const CodeArea = styled.textarea`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   resize: vertical;
 `;
+
+export const DocsEditContentArea = styled.div`
+  min-height: 500px;
+  padding: 0 48px 120px;
+  display: flex;
+  flex-direction: column;
+`;
+
+export const DocsEditSaveButton = styled.button`
+  width: 132px;
+  height: 48px;
+  border-radius: 10px;
+  border: none;
+  background: #16335c;
+  color: white;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 24px rgba(22, 51, 92, 0.2);
+
+  &:hover {
+    filter: brightness(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+export const DocsEditFloatingActions = styled.div`
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 4000;
+
+  @media (max-width: 1280px) {
+    right: 20px;
+    bottom: 20px;
+  }
+`;
+
+export const DocsEditEmptyText = styled.div`
+  padding: 20px 0;
+  color: #9ca3af;
+`;
+
+export const DocsEditReadonlyNotice = styled.div`
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+`;
+
+export const DocsEditErrorBox = styled.div`
+  padding: 40px;
+  text-align: center;
+  color: #ef4444;
+`;
+
+export const DocsEditMarqueeSelectionBox = styled.div`
+  position: fixed;
+  border: 1px solid rgba(59, 130, 246, 0.8);
+  background: rgba(59, 130, 246, 0.14);
+  pointer-events: none;
+  z-index: 5000;
+`;

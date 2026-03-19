@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useDocsPageQuery, useDocsSidebarQuery } from "@/app/docs/queries";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
 import { SidebarBlock } from "@/app/docs/api";
@@ -38,11 +39,7 @@ export default function DocsPageDetail() {
   }, [id, setSelected]);
 
   if (isPageLoading) {
-    return (
-      <LoadingBox>
-        Loading...
-      </LoadingBox>
-    );
+    return <BsdevLoader label="문서 페이지를 불러오는 중입니다..." size={52} minHeight="160px" />;
   }
 
   if (pageError) {
@@ -53,15 +50,15 @@ export default function DocsPageDetail() {
     );
   }
 
-  const findLabel = (blocks: SidebarBlock[], targetId: string): string | null => {
+  const findPathLabels = (blocks: SidebarBlock[], targetId: string): string[] | null => {
     for (const block of blocks) {
       if (block.mappedId === targetId || block.id === targetId) {
-        return block.label;
+        return [block.label];
       }
       if (block.childrenItems?.length) {
-        const found = findLabel(block.childrenItems, targetId);
+        const found = findPathLabels(block.childrenItems, targetId);
         if (found) {
-          return found;
+          return [block.label, ...found];
         }
       }
     }
@@ -73,13 +70,14 @@ export default function DocsPageDetail() {
     : null;
 
   const projectTitle = sidebarTitle || "Project";
-  const pageLabel = sidebarData?.data?.blocks ? findLabel(sidebarData.data.blocks, id) : null;
-  const displayTitle = pageLabel || "문서";
+  const selectedPathLabels = sidebarData?.data?.blocks ? findPathLabels(sidebarData.data.blocks, id) ?? [] : [];
+  const displayTitle = selectedPathLabels.length > 0 ? selectedPathLabels[selectedPathLabels.length - 1] : "문서";
+  const breadcrumb = selectedPathLabels.length > 1 ? selectedPathLabels.slice(0, -1) : [projectTitle];
   const blocks = pageData?.data?.docsBlocks || [];
 
   return (
     <>
-      <DocsHeader title={displayTitle} breadcrumb={[projectTitle]} isApi={false} />
+      <DocsHeader title={displayTitle} breadcrumb={breadcrumb} isApi={false} />
       <ContentArea>
         {blocks.length > 0 ? (
           blocks.map((block: DocsBlockType, index: number) => (
@@ -108,12 +106,6 @@ export default function DocsPageDetail() {
     </>
   );
 }
-
-const LoadingBox = styled.div`
-  padding: 40px;
-  text-align: center;
-  color: #6b7280;
-`;
 
 const ErrorBox = styled.div`
   padding: 40px;

@@ -9,26 +9,24 @@ import { DndContext, useDroppable, DragOverlay } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSidebarDrag } from "@/hooks/useSidebarDrag";
-import { createMutators, type Mutators } from "@/components/layout/sidebarUtils";
+import { appendChild, createMutators, insertAfter, type Mutators } from "@/components/layout/sidebarUtils";
 import { useConfirm } from "@/hooks/useConfirm";
 import { findNodeById } from "@/components/layout/treeUtils";
 
 export interface SidebarModuleOption {
   label: string;
   module: "default" | "collapse" | "main_title" | "api";
-  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH" | "UPDATE";
+  method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
 }
 
 const DEFAULT_MODULE_OPTIONS: SidebarModuleOption[] = [
-  { label: "기본", module: "default" },
-  { label: "메인", module: "main_title" },
+  { label: "문서", module: "default" },
   { label: "그룹", module: "collapse" },
   { label: "API(GET)", module: "api", method: "GET" as const },
   { label: "API(POST)", module: "api", method: "POST" as const },
   { label: "API(DELETE)", module: "api", method: "DELETE" as const },
   { label: "API(PUT)", module: "api", method: "PUT" as const },
   { label: "API(PATCH)", module: "api", method: "PATCH" as const },
-  { label: "API(UPDATE)", module: "api", method: "UPDATE" as const },
 ] as const;
 
 type DocsSidebarProps = {
@@ -79,10 +77,17 @@ const AddButton = styled.button`
   cursor: pointer;
 `;
 
-const Picker = styled.div<{ anchor: { x: number; y: number } }>`
+const PickerGroup = styled.div<{ anchor: { x: number; y: number } }>`
   position: fixed;
   top: ${({ anchor }) => anchor.y}px;
   left: ${({ anchor }) => anchor.x}px;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  z-index: 1000;
+`;
+
+const Picker = styled.div`
   z-index: 1000;
   background: #fff;
   border: 1px solid #E5E7EB;
@@ -90,8 +95,9 @@ const Picker = styled.div<{ anchor: { x: number; y: number } }>`
   box-shadow: 0 8px 24px rgba(0,0,0,0.12);
   padding: 8px;
   width: 140px;
-  max-height: 250px;
+  max-height: min(320px, calc(100vh - 32px));
   overflow-y: auto;
+  overscroll-behavior: contain;
 `;
 
 const PickerItem = styled.button`
@@ -103,6 +109,18 @@ const PickerItem = styled.button`
   cursor: pointer;
   color: #4B5563;
   border-radius: 8px;
+`;
+
+const PickerItemContent = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+`;
+
+const PickerArrow = styled.span`
+  color: #9CA3AF;
+  font-size: 12px;
 `;
 
 const DropTargetWrapper = styled.div<{
@@ -167,7 +185,10 @@ const SortableNode = ({
   depth?: number;
   disableApiRename?: boolean;
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: node.id,
+    disabled: !editable,
+  });
 
   const isDropTarget = overIntent?.id === node.id;
   const isChildTarget = isDropTarget && overIntent?.mode === "child";
@@ -183,9 +204,10 @@ const SortableNode = ({
     borderLeft: depth > 0 ? "2px solid #E5E7EB" : "none",
     marginTop: depth > 0 ? 4 : 0,
   };
+  const dndInteractionProps = editable ? { ...attributes, ...listeners } : undefined;
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} data-node-id={node.id}>
+    <div ref={setNodeRef} style={style} {...dndInteractionProps} data-node-id={node.id}>
       <DropTargetWrapper
         isChildTarget={isChildTarget}
         isSiblingTarget={isSiblingTarget}
@@ -227,6 +249,7 @@ export function DocsSidebar({
   onRequestAddApi,
   disableApiRename = false,
 }: DocsSidebarProps) {
+  const MAX_GROUP_NESTING_DEPTH = 3;
   const { confirm, ConfirmDialog } = useConfirm();
   const propItems = useMemo(() => Array.isArray(items) ? items : [], [items]);
   const [localItems, setLocalItems] = useState<SidebarNode[]>([]);
@@ -244,13 +267,36 @@ export function DocsSidebar({
     mode: "sibling" | "child";
     targetId: string | null;
   }>({ open: false, anchor: null, mode: "sibling", targetId: null });
+  const [apiMethodOpen, setApiMethodOpen] = useState(false);
+
+  const groupedModuleOptions = useMemo(() => {
+    const apiOptions = moduleOptions.filter((option) => option.module === "api" && option.method);
+    const plainOptions = moduleOptions.filter((option) => option.module !== "api");
+    return { apiOptions, plainOptions };
+  }, [moduleOptions]);
 
   const openPicker = (e: React.MouseEvent, mode: "sibling" | "child", targetId: string | null) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    setPicker({ open: true, anchor: { x: rect.right + 8, y: rect.top }, mode, targetId });
+    const viewportPadding = 16;
+    const pickerWidth = 140;
+    const menuCount = groupedModuleOptions.plainOptions.length + (groupedModuleOptions.apiOptions.length > 0 ? 1 : 0);
+    const estimatedPickerHeight = Math.min(320, menuCount * 34 + 16);
+    const nextX = Math.min(rect.right + 8, window.innerWidth - pickerWidth - viewportPadding);
+    const maxY = window.innerHeight - estimatedPickerHeight - viewportPadding;
+    const nextY = Math.min(rect.top, maxY);
+    setApiMethodOpen(false);
+    setPicker({
+      open: true,
+      anchor: { x: Math.max(viewportPadding, nextX), y: Math.max(viewportPadding, nextY) },
+      mode,
+      targetId
+    });
   };
 
-  const closePicker = useCallback(() => setPicker(p => ({ ...p, open: false })), []);
+  const closePicker = useCallback(() => {
+    setApiMethodOpen(false);
+    setPicker((prev) => ({ ...prev, open: false }));
+  }, []);
 
   useEffect(() => {
     if (!picker.open) return;
@@ -259,15 +305,99 @@ export function DocsSidebar({
     return () => window.removeEventListener("mousedown", handleClick);
   }, [picker.open, closePicker]);
 
+  const getMaxCollapseDepth = useCallback((nodes: SidebarNode[]): number => {
+    const walk = (items: SidebarNode[], depth: number): number => {
+      let maxDepth = depth;
+      for (const item of items) {
+        const nextDepth = item.module === "collapse" ? depth + 1 : depth;
+        if (nextDepth > maxDepth) {
+          maxDepth = nextDepth;
+        }
+        if (!item.childrenItems?.length) {
+          continue;
+        }
+        const childMaxDepth = walk(item.childrenItems, nextDepth);
+        if (childMaxDepth > maxDepth) {
+          maxDepth = childMaxDepth;
+        }
+      }
+      return maxDepth;
+    };
+    return walk(nodes, 0);
+  }, []);
+
+  const applyItemsChange = useCallback((nextItems: SidebarNode[]) => {
+    const currentMaxDepth = getMaxCollapseDepth(effectiveItems);
+    const nextMaxDepth = getMaxCollapseDepth(nextItems);
+    if (nextMaxDepth > MAX_GROUP_NESTING_DEPTH && nextMaxDepth > currentMaxDepth) {
+      void confirm({
+        title: "그룹 중첩 제한",
+        message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+        confirmText: "확인",
+        hideCancel: true,
+      });
+      return;
+    }
+    if (onChange) {
+      onChange(nextItems);
+      return;
+    }
+    setLocalItems(nextItems);
+  }, [confirm, effectiveItems, getMaxCollapseDepth, onChange, MAX_GROUP_NESTING_DEPTH]);
+
   const { sensors, onDragStart, onDragOver, onDragEnd, overIntent, activeId } = useSidebarDrag({
+    editable,
     effectiveItems,
-    onChange: onChange || setLocalItems,
+    onChange: applyItemsChange,
   });
 
-  const baseMutators = useMemo(() => createMutators(effectiveItems, onChange, setLocalItems), [effectiveItems, onChange]);
+  const baseMutators = useMemo(() => createMutators(effectiveItems, applyItemsChange), [effectiveItems, applyItemsChange]);
+
+  const hasCollapseInSubtree = useCallback((node: Omit<SidebarNode, "id">): boolean => {
+    const walk = (target: Omit<SidebarNode, "id">): boolean => {
+      if (target.module === "collapse") {
+        return true;
+      }
+      if (!target.childrenItems?.length) {
+        return false;
+      }
+      return target.childrenItems.some((child) => walk(child));
+    };
+    return walk(node);
+  }, []);
 
   const mutators: Mutators = useMemo(() => ({
     ...baseMutators,
+    addSibling: (targetId: string, node: Omit<SidebarNode, "id">) => {
+      const candidate = insertAfter(effectiveItems, targetId, node);
+      const isAddingCollapse = hasCollapseInSubtree(node);
+      const nextMaxDepth = getMaxCollapseDepth(candidate);
+      if (isAddingCollapse && nextMaxDepth > MAX_GROUP_NESTING_DEPTH) {
+        void confirm({
+          title: "그룹 중첩 제한",
+          message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+      baseMutators.addSibling(targetId, node);
+    },
+    addChild: (parentId: string, node: Omit<SidebarNode, "id">) => {
+      const candidate = appendChild(effectiveItems, parentId, node);
+      const isAddingCollapse = hasCollapseInSubtree(node);
+      const nextMaxDepth = getMaxCollapseDepth(candidate);
+      if (isAddingCollapse && nextMaxDepth > MAX_GROUP_NESTING_DEPTH) {
+        void confirm({
+          title: "그룹 중첩 제한",
+          message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+      baseMutators.addChild(parentId, node);
+    },
     remove: async (id: string) => {
       const isConfirmed = await confirm({
         title: "요소 삭제",
@@ -277,7 +407,7 @@ export function DocsSidebar({
       });
       if (isConfirmed) baseMutators.remove(id);
     }
-  }), [baseMutators, confirm]);
+  }), [baseMutators, confirm, effectiveItems, getMaxCollapseDepth, hasCollapseInSubtree, MAX_GROUP_NESTING_DEPTH]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!editable) return;
@@ -297,7 +427,22 @@ export function DocsSidebar({
     }
   }, [editable, handleKeyDown]);
 
-  const onPickModule = (opt: SidebarModuleOption) => {
+  const getCollapseDepthInfo = useCallback((targetId: string): { nodeDepth: number; parentDepth: number } | null => {
+    const walk = (nodes: SidebarNode[], depth: number): { nodeDepth: number; parentDepth: number } | null => {
+      for (const node of nodes) {
+        const nextDepth = node.module === "collapse" ? depth + 1 : depth;
+        if (node.id === targetId) return { nodeDepth: nextDepth, parentDepth: depth };
+        if (!node.childrenItems?.length) continue;
+        const foundDepth = walk(node.childrenItems, nextDepth);
+        if (foundDepth !== null) return foundDepth;
+      }
+      return null;
+    };
+
+    return walk(effectiveItems, 0);
+  }, [effectiveItems]);
+
+  const onPickModule = async (opt: SidebarModuleOption) => {
     if (opt.module === "api" && onRequestAddApi) {
       onRequestAddApi({ mode: picker.mode, targetId: picker.targetId });
       closePicker();
@@ -306,6 +451,21 @@ export function DocsSidebar({
 
     const node: SidebarNode = { id: crypto.randomUUID(), label: opt.label, module: opt.module, childrenItems: [] };
     if (opt.method) node.method = opt.method;
+    if (opt.module === "collapse" && picker.targetId) {
+      const depthInfo = getCollapseDepthInfo(picker.targetId);
+      const parentDepth = picker.mode === "child" ? depthInfo?.nodeDepth ?? 0 : depthInfo?.parentDepth ?? 0;
+      const nextGroupDepth = parentDepth + 1;
+      if (nextGroupDepth > MAX_GROUP_NESTING_DEPTH) {
+        closePicker();
+        await confirm({
+          title: "그룹 중첩 제한",
+          message: `그룹은 최대 ${MAX_GROUP_NESTING_DEPTH}단계까지만 중첩할 수 있습니다.`,
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+    }
     if (picker.mode === "child" && picker.targetId) {
       mutators.addChild(picker.targetId, node);
     } else {
@@ -360,21 +520,49 @@ export function DocsSidebar({
 
       {isClient && typeof document !== "undefined" && picker.open && picker.anchor && createPortal(
         <>
-          <div
-            style={{ position: "fixed", inset: 0, zIndex: 999 }}
-            onClick={closePicker}
-          />
-          <Picker anchor={picker.anchor} onMouseDown={(e) => e.stopPropagation()}>
-            {moduleOptions.map((opt) => (
-              <PickerItem
-                key={opt.label}
-                onClick={() => onPickModule(opt)}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                {opt.label}
-              </PickerItem>
-            ))}
-          </Picker>
+          <PickerGroup
+            anchor={picker.anchor}
+            onMouseDown={(e) => e.stopPropagation()}
+            onMouseLeave={() => setApiMethodOpen(false)}
+          >
+            <Picker>
+              {groupedModuleOptions.plainOptions.map((opt) => (
+                <PickerItem
+                  key={opt.label}
+                  onClick={() => onPickModule(opt)}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                >
+                  {opt.label}
+                </PickerItem>
+              ))}
+              {groupedModuleOptions.apiOptions.length > 0 && (
+                <PickerItem
+                  onMouseEnter={() => setApiMethodOpen(true)}
+                  onClick={() => setApiMethodOpen((prev) => !prev)}
+                >
+                  <PickerItemContent>
+                    API
+                    <PickerArrow>▶</PickerArrow>
+                  </PickerItemContent>
+                </PickerItem>
+              )}
+            </Picker>
+            {apiMethodOpen && groupedModuleOptions.apiOptions.length > 0 && (
+              <Picker>
+                {groupedModuleOptions.apiOptions.map((opt) => (
+                  <PickerItem
+                    key={`${opt.module}-${opt.method ?? opt.label}`}
+                    onClick={() => onPickModule(opt)}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#F3F4F6")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {opt.method ?? opt.label}
+                  </PickerItem>
+                ))}
+              </Picker>
+            )}
+          </PickerGroup>
         </>,
         document.body
       )

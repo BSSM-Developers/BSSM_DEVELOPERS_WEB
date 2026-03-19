@@ -4,9 +4,11 @@ import styled from "@emotion/styled";
 import { keyframes, css } from "@emotion/react";
 import { applyTypography } from "@/lib/themeHelper";
 import { FloatingInput } from "@/components/ui/FloatingInput";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 
 interface SingleInputActionFormProps {
   title: string;
+  subtitle?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -25,6 +27,7 @@ interface SingleInputActionFormProps {
 
 export function SingleInputActionForm({
   title,
+  subtitle,
   label,
   value,
   onChange,
@@ -41,10 +44,14 @@ export function SingleInputActionForm({
   animated = false,
 }: SingleInputActionFormProps) {
   const disabled = isSubmitting || isDisabled;
+  const isLoadingStatus = Boolean(statusText?.includes("불러오는 중"));
 
   return (
     <Shell maxWidth={maxWidth} animated={animated}>
-      <Title>{title}</Title>
+      <HeaderBlock>
+        <Title>{title}</Title>
+        {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
+      </HeaderBlock>
       <Form
         onSubmit={(event) => {
           event.preventDefault();
@@ -59,7 +66,11 @@ export function SingleInputActionForm({
           placeholder={placeholder}
           autoFocus={autoFocus}
         />
-        {statusText ? <StatusText>{statusText}</StatusText> : null}
+        {statusText
+          ? isLoadingStatus
+            ? <BsdevLoader label={statusText} size={44} minHeight="72px" />
+            : <StatusText>{statusText}</StatusText>
+          : null}
         {errorText ? <ErrorText>{errorText}</ErrorText> : null}
         <SubmitButton type="submit" disabled={disabled}>
           {isSubmitting ? submittingText : submitText}
@@ -86,7 +97,7 @@ const Shell = styled.section<{ maxWidth: string; animated: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 64px;
+  gap: 56px;
   transform: translateY(-32px);
   ${({ animated }) =>
     animated &&
@@ -95,10 +106,25 @@ const Shell = styled.section<{ maxWidth: string; animated: boolean }>`
     `};
 `;
 
+const HeaderBlock = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+`;
+
 const Title = styled.h1`
   ${({ theme }) => applyTypography(theme, "Headline_1")};
   color: ${({ theme }) => theme.colors.grey[900]};
   text-align: center;
+`;
+
+const Subtitle = styled.p`
+  ${({ theme }) => applyTypography(theme, "Body_3")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  text-align: center;
+  max-width: 760px;
 `;
 
 const Form = styled.form`

@@ -1,0 +1,347 @@
+{
+  "id": "guide-1773896505008",
+  "slug": "bssm-developers-사용-가이드-api-사용",
+  "title": "BSSM Developers 사용 가이드 - API 사용",
+  "blocks": [
+    {
+      "id": "new-guide-1",
+      "module": "headline_1",
+      "content": "BSSM Developers 사용 가이드 - API 사용"
+    },
+    {
+      "id": "14cb39b3-a140-448e-8f9a-51895781a544",
+      "module": "docs_1",
+      "content": "본 가이드에서는 BSSM Developers 서비스에서 API 사용에 관해 다루고 있습니다."
+    },
+    {
+      "id": "8f024354-1338-45c2-8b4d-3fef8e4bce3d",
+      "module": "docs_1",
+      "content": "잘 읽어주세요 :)"
+    },
+    {
+      "id": "ca9b03d5-5a1a-496f-bdd5-30f191d34d7e",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "251c3f4d-51a8-4a15-9c1f-9af7bc9ac7c0",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "fdcfe556-8e8a-435f-9099-e6197ab19a00",
+      "module": "headline_2",
+      "content": "시작하기"
+    },
+    {
+      "id": "65c4dfbc-daea-42c8-b581-f840fce55c6c",
+      "module": "docs_1",
+      "content": "BSSM Developers에는 학생들이 등록한 다양한 API를 사용 신청을 통해 사용할 수 있어요."
+    },
+    {
+      "id": "35693bc0-3e98-419e-a58b-d9cf6cb61d04",
+      "module": "docs_1",
+      "content": "API 사용 신청을 위해서는 먼저 토큰을 발급 받아야해요."
+    },
+    {
+      "id": "864a2ae8-d8d5-4a13-be1f-fbe72350a8aa",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "7c706157-fa0f-441e-81c5-11cfb207328c",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "91014980-b1f0-49f8-bcb1-45a81ce09b6d",
+      "module": "headline_2",
+      "content": "토큰 발급"
+    },
+    {
+      "id": "0388e55e-b73f-482a-927f-3a87632acd2d",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1773907340666-mzsn8njg.png"
+    },
+    {
+      "id": "a1cce154-0673-422e-97ee-05348e4d156e",
+      "module": "docs_1",
+      "content": "메인 페이지 -> 마이페이지 -> 내 토큰 관리 페이지에 들어오면 자신의 토큰들을 관리할 수 있어요."
+    },
+    {
+      "id": "8d3e6990-6f79-4984-aaef-72e9f51d2dee",
+      "module": "docs_1",
+      "content": "토큰은 BSSM Developers에서 API 사용을 할때 반드시 필요해요."
+    },
+    {
+      "id": "d3b3a30f-9635-4601-bc7b-50c440ac4e3d",
+      "module": "docs_1",
+      "content": "새로운 토큰을 발급 받고 싶다면 신규 토큰 발급 버튼을 눌러 발급 받을 수 있어요."
+    },
+    {
+      "id": "e6647d8e-4061-4b89-9877-eac129f68537",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "256ecd70-8fcc-4f3d-83ba-4c054b61f308",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "ede735fa-bfb0-41e3-9b03-474bfa5b10eb",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "eb466daa-c253-4aa8-ad2e-dae8ee26cd72",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1773907340667-7w7gk1ek.png",
+      "imageWidth": 1118
+    },
+    {
+      "id": "d9715bdd-28bd-490f-8cec-3581618f0700",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1773907340667-hvtzor7u.png",
+      "imageWidth": 1080
+    },
+    {
+      "id": "0a6d3d8e-3564-491f-aa4c-3639db9fd13b",
+      "module": "docs_1",
+      "content": "먼저 발급 할 토큰의 이름과 허용할 origin 도메인을 입력해주세요."
+    },
+    {
+      "id": "f7005940-bccb-4e47-89e7-9e0dd262b687",
+      "module": "docs_1",
+      "content": "토큰의 이름과 origin은 발급 받은 이후에 수정할 수 있어요."
+    },
+    {
+      "id": "e9c71781-5f58-4182-ae4e-0f11032e4e38",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "bafb2aa7-d972-4be6-b92a-84d1e63b6158",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "91fbac75-7c0c-4189-84ba-ccd3ab7a3114",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1773907340668-elc74maj.png"
+    },
+    {
+      "id": "64c02cf8-711d-42ea-bf88-edbd0bf7716c",
+      "module": "docs_1",
+      "content": "입력이 끝나면 토큰을 발급 받을 수 있어요."
+    },
+    {
+      "id": "efaabaf6-8721-4392-a761-d52528074e7d",
+      "module": "docs_1",
+      "content": "토큰이 발급되면 클라이언드 ID와 시크릿 키가 함께 제공돼요."
+    },
+    {
+      "id": "f2ef2405-8ce9-4938-ace1-408919221856",
+      "module": "docs_1",
+      "content": "클라이언트 ID는 이후에 다시 확인할 수 있지만, 시크릿 키는 처음 발급 받은 화면에서만 확인할 수 있으니 꼭 보관해주세요."
+    },
+    {
+      "id": "4abeeded-5620-4b19-9090-145fc72215f8",
+      "module": "docs_1",
+      "content": "(시크릿 키는 서버에서 API를 사용할 때만 사용해요)"
+    },
+    {
+      "id": "5a924481-ed9a-4fef-af5d-04a413d486bd",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "52f7d764-c450-48d3-942f-922d7fdc3da5",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "369ddfbf-d736-4298-9b81-58f60fc4c0c3",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "3d85b5cb-0142-440b-81ce-573c055b2c3a",
+      "module": "headline_2",
+      "content": "API 사용 신청"
+    },
+    {
+      "id": "7ad7fb7e-3d58-4522-971f-19edf4737e6c",
+      "module": "docs_1",
+      "content": "BSSM Developers에는 학생들이 등록한 다양한 API들이 많아요."
+    },
+    {
+      "id": "7509625b-1d5c-4c88-abe3-c0349104df05",
+      "module": "docs_1",
+      "content": "사용하고 싶은 API를 골라 신청할 수 있어요."
+    },
+    {
+      "id": "017620c6-b099-405a-8dca-ab2024a063c8",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "8bed52c5-ab82-4956-9af1-15ecffc1f2ec",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1773907340668-vnq6rm6g.png"
+    },
+    {
+      "id": "c42de47b-0258-4b84-b13b-d1051575082d",
+      "module": "docs_1",
+      "content": "원하는 API 문서에서 사용 신청 버튼을 클릭하면 모달이 나와요."
+    },
+    {
+      "id": "01836b41-5aa2-4845-92eb-f886a965790a",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1773907340668-ltqf5i44.png"
+    },
+    {
+      "id": "b81ee7a9-3520-4656-81b1-73d5ead162cd",
+      "module": "docs_1",
+      "content": "신청 모달에는 신청할 API, 사용할 토큰과 사용 목적을 입력해야해요."
+    },
+    {
+      "id": "1e3c1870-bfb2-44ab-b876-c940800f1491",
+      "module": "docs_1",
+      "content": "사용 목적은 해당 API 관리자가 확인할 수 있으니 잘 작성해주세요."
+    },
+    {
+      "id": "945d5b57-8041-4ba4-968b-6be50336ef5e",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "aba45189-dea1-4332-8dce-f6e175f5f6c9",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1773907340670-agzkox0j.png"
+    },
+    {
+      "id": "4890e929-7466-43a4-8f38-35dd7bcd1b9b",
+      "module": "docs_1",
+      "content": "API를 등록한 사람이 API 사용 신청을 승인하면 API를 사용할 수 있게 돼요."
+    },
+    {
+      "id": "bc228329-a26a-4edd-824c-b9f26df8c5aa",
+      "module": "docs_1",
+      "content": "내가 신청한 API 현황을 보고 싶다면 마이페이지 -> 내 토큰 관리 페이지에서 확인할 수 있어요."
+    },
+    {
+      "id": "17e6269f-7972-4abb-91e8-b8470ae3678e",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "0f78d8df-bbbc-41cc-93ae-f938ff0aa730",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "16eecb8b-13fc-47a8-a912-5efb1da64f94",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "9086ef3c-d88d-4214-a8c1-23be44daf566",
+      "module": "headline_2",
+      "content": "API 사용 - 클라이언트"
+    },
+    {
+      "id": "c3088ad0-f96e-4bc5-a417-1bfc95c63b1f",
+      "module": "docs_1",
+      "content": "이제 승인 받은 API를 사용할 수 있어요."
+    },
+    {
+      "id": "3de19c86-4c87-413c-8f22-18bf6b3aa13a",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "1800618c-7b1a-41a1-83ab-3913dbd0c959",
+      "module": "docs_1",
+      "content": "클라이언트에서는 header에 토큰을 붙여 proxy로 요청을 보내는 방식으로 사용할 수 있어요."
+    },
+    {
+      "id": "72df5d00-00dd-4087-8375-47a7954fedaf",
+      "module": "docs_1",
+      "content": "아래의 예시 코드를 참고하여 API를 자유롭게 사용해주세요!"
+    },
+    {
+      "id": "e33360a3-a7c8-4aa6-b8c4-2280026790bb",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "79251d83-a3c8-4276-94bc-87f7d48690e3",
+      "module": "code",
+      "content": "class BssmDevelopersAdapter {\n  constructor() {\n    this.instance = axios.create({\n      baseURL: 'https://proxy.bssm-dev.com',\n      headers: {\n        'bssm-dev-token': 'd451a083-c4f0-4675-a45f-d95c5c597bb5',\n      },\n    });\n  }\n\n  async get(url, config) {\n    const response = await this.instance.get(url, config);\n    return response.data;\n  }\n}\n\nexport const bssmDevelopersAdapter = new BssmDevelopersAdapter();"
+    },
+    {
+      "id": "bb9f3a56-af04-4569-9ecb-afaef52fa954",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "9e371658-9a1f-43b1-b1ae-d73302bc112a",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "56ecc7be-c735-404a-a5f3-e8ecce966aeb",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "fe55f199-e357-40f9-8de8-f46d4ed8389f",
+      "module": "headline_2",
+      "content": "API 사용 - 서버"
+    },
+    {
+      "id": "0edeab50-81dc-4971-ac6f-ef19382f5595",
+      "module": "docs_1",
+      "content": "이제 승인 받은 API를 사용할 수 있어요."
+    },
+    {
+      "id": "967800fe-da51-4539-9f1c-377285bf79e1",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "3d9571c1-2b0b-4857-8a7d-133ca0ff15de",
+      "module": "docs_1",
+      "content": "서버에서는 header에 토큰과 시크릿 키를 담아 proxy로 요청을 보내는 방식으로 사용할 수 있어요."
+    },
+    {
+      "id": "28b7f201-0fe1-4bd3-aee8-ffcdfe5198c8",
+      "module": "docs_1",
+      "content": "아래의 예시 코드를 참고하여 API를 자유롭게 사용해주세요!"
+    },
+    {
+      "id": "35dd5712-a726-4048-844b-45bb46d08f3f",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "5a7c6ee9-3cc7-4b56-a6ef-d66d90fee185",
+      "module": "code",
+      "content": "async def get_github_repos(user_id: str):\n    profile_url = f\"https://proxy.bssm-dev.com/users/{user_id}\"\n    try:\n        profile = fetch_json(\n            url=profile_url,\n            headers={\n                \"bssm-dev-token\": \"da7a22e3-a631-454a-b138-5532397f13bf\",\n                \"bssm-dev-secret\": \"ae299e4b0dd145e18e031adc8b325314\",\n            }\n        )",
+      "language": "python"
+    },
+    {
+      "id": "c93991e8-b32a-4005-a76c-fdbf2d3e3380",
+      "module": "docs_1",
+      "content": ""
+    }
+  ]
+}

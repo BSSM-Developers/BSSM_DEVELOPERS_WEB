@@ -15,12 +15,36 @@
   padding-left: 40px;
 }
 
+.devToolbar {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 12px 0 40px;
+}
+
+.devButton {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #d9dee7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #2f5fd4;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .page {
     padding: 0 4px 64px;
   }
 
   .content {
+    padding-left: 16px;
+  }
+
+  .devToolbar {
     padding-left: 16px;
   }
 }

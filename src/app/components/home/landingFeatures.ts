@@ -30,19 +30,19 @@ export const landingFeatures: readonly LandingFeature[] = [
     ],
     buttonLabel: "API 등록하러 가기",
     href: "/docs/register",
-    imageSrc: "/images/main_ex2.png",
+    imageSrc: "/images/main_ex3.png",
     imageAlt: "API 문서 UI 예시",
   },
   {
     id: "feature-3",
-    titleLines: ["토큰으로 사용중인 API를", "관리해요"],
+    titleLines: ["토큰으로 사용 중인 API를", "관리해요"],
     descriptionLines: [
       "BSSM Developers는 토큰을 발급 받아 원하는 API의",
       "사용 권한을 토큰에 부여 받아서 사용할 수 있어요",
     ],
     buttonLabel: "API 사용하러 가기",
     href: "/apis",
-    imageSrc: "/images/main_ex3.png",
+    imageSrc: "/images/main_ex2.png",
     imageAlt: "토큰 관리 예시",
   },
 ] as const;

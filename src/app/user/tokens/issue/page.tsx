@@ -85,7 +85,6 @@ export default function TokenIssuePage() {
   const [domainInput, setDomainInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [issuedToken, setIssuedToken] = useState<ApiTokenWithSecret | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
   const domains = parseDomains(domainInput);
 
   const handleIssue = useCallback(async () => {
@@ -94,18 +93,22 @@ export default function TokenIssuePage() {
     }
 
     try {
-      setErrorMessage("");
       setIsSubmitting(true);
       const createdToken = await tokenApi.create(name.trim(), domains);
       setIssuedToken(createdToken);
       setStep("SUCCESS");
     } catch (error) {
       const message = error instanceof Error ? error.message : "토큰 발급에 실패했습니다.";
-      setErrorMessage(message);
+      await confirm({
+        title: "발급 실패",
+        message,
+        confirmText: "확인",
+        hideCancel: true,
+      });
     } finally {
       setIsSubmitting(false);
     }
-  }, [domains, isSubmitting, name]);
+  }, [confirm, domains, isSubmitting, name]);
 
   const handleComplete = useCallback(() => {
     if (!issuedToken) {
@@ -167,26 +170,28 @@ export default function TokenIssuePage() {
       <Container center>
         <FlexColumn center animated>
         {step === "NAME" ? (
-          <SingleInputActionForm
-            title="신규 발급 받을 토큰 이름을 입력해주세요"
-            label="토큰 이름"
-            value={name}
-            onChange={setName}
-            placeholder="토큰 이름을 입력해주세요"
-            onSubmit={() => setStep("DOMAIN")}
-            submitText="다음"
-            isSubmitting={isSubmitting}
-            isDisabled={!name.trim()}
-            maxWidth="800px"
-            animated
-            errorText={errorMessage || undefined}
-          />
+          <StepContent key="name">
+            <SingleInputActionForm
+              title="신규 발급 받을 토큰 이름을 입력해주세요"
+              subtitle="토큰 이름은 사용 목적과 대상을 구분하기 쉬운 형태로 작성해 주세요."
+              label="토큰 이름"
+              value={name}
+              onChange={setName}
+              placeholder="토큰 이름을 입력해주세요"
+              onSubmit={() => setStep("DOMAIN")}
+              submitText="다음"
+              isSubmitting={isSubmitting}
+              isDisabled={!name.trim()}
+              maxWidth="800px"
+              animated
+            />
+          </StepContent>
         ) : (
-          <>
-            <InputTitle>도메인을 입력해주세요 (선택)</InputTitle>
-            <DomainDescription>쉼표(,) 또는 줄바꿈으로 여러 도메인을 입력할 수 있습니다.</DomainDescription>
+          <StepContent key="domain">
+            <InputTitle>허용할 origin을 입력해주세요</InputTitle>
+            <DomainDescription>쉼표(,) 또는 줄바꿈으로 여러 origin을 입력할 수 있습니다.</DomainDescription>
             <DomainTextarea
-              placeholder={"예: bssm-dev.com, app.bssm-dev.com"}
+              placeholder={"예: https://bssm-dev.com, https://app.bssm-dev.com"}
               value={domainInput}
               onChange={(e) => setDomainInput(e.target.value)}
               autoFocus
@@ -209,10 +214,10 @@ export default function TokenIssuePage() {
             <BackButton onClick={() => setStep("NAME")} disabled={isSubmitting}>
               이전
             </BackButton>
-          </>
+          </StepContent>
         )}
-        {step === "DOMAIN" && errorMessage ? <ErrorMessage>{errorMessage}</ErrorMessage> : null}
       </FlexColumn>
+      {ConfirmDialog}
     </Container>
   );
 }
@@ -234,6 +239,11 @@ const FlexColumn = styled.div<{ center?: boolean; animated?: boolean }>`
   ${({ animated }) => animated && css`
     animation: ${slideIn} 0.6s ease-out forwards;
   `}
+`;
+
+const StepContent = styled.div`
+  width: 100%;
+  animation: ${slideIn} 0.35s ease-out;
 `;
 
 const InputTitle = styled.h2`
@@ -270,6 +280,7 @@ const DomainDescription = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: ${({ theme }) => theme.colors.grey[500]};
   margin-bottom: 16px;
+  text-align: center;
 `;
 
 const DomainList = styled.div`
@@ -412,12 +423,6 @@ const PrimaryInfoButton = styled.button`
   color: white;
   cursor: pointer;
   ${({ theme }) => applyTypography(theme, "Body_4")};
-`;
-
-const ErrorMessage = styled.p`
-  ${({ theme }) => applyTypography(theme, "Body_4")};
-  color: #d32f2f;
-  margin-bottom: 16px;
 `;
 
 const CheckCircle = styled.div`

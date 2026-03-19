@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { RootProvider } from "@/providers/RootProvider";
+import { RouteTransitionLoader } from "@/components/common/RouteTransitionLoader";
+import { TopNavHydrationSafe } from "@/components/layout/TopNavHydrationSafe";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,15 +20,12 @@ export const metadata: Metadata = {
   description: "API 공유 플랫폼",
 };
 
-import { TopNav } from "@/components/layout/TopNav";
-import { RouteTransitionLoader } from "@/components/common/RouteTransitionLoader";
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html suppressHydrationWarning lang="ko" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body suppressHydrationWarning>
         <RootProvider>
-          <TopNav />
+          <TopNavHydrationSafe />
           <Suspense fallback={null}>
             <RouteTransitionLoader />
           </Suspense>

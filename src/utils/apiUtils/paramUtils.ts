@@ -123,69 +123,100 @@ export function validateParams(params: ApiParam[]): { isValid: boolean; errors: 
 }
 
 export function generateParamExamples(params: ApiParam[]): Record<string, unknown> {
+  const primitiveFromExample = (param: ApiParam): unknown => {
+    if (param.example !== undefined && param.example !== "") {
+      if (param.type === "number" || param.type === "integer") {
+        return Number(param.example);
+      }
+      if (param.type === "boolean") {
+        return param.example === "true";
+      }
+      if (param.type === "array" || param.type === "object") {
+        try {
+          return JSON.parse(param.example);
+        } catch {
+          return param.example;
+        }
+      }
+      if (param.type === "null" || param.example === "null") {
+        return null;
+      }
+      return param.example;
+    }
+
+    switch (param.type.toLowerCase()) {
+      case "string":
+        return param.name.includes("email")
+          ? "user@example.com"
+          : param.name.includes("name")
+            ? "사용자명"
+            : param.name.includes("id")
+              ? "abc123"
+              : "item_example";
+      case "number":
+      case "integer":
+        return param.name.includes("age")
+          ? 25
+          : param.name.includes("count")
+            ? 10
+            : param.name.includes("id")
+              ? 123
+              : 42;
+      case "boolean":
+        return true;
+      case "array":
+        return [];
+      case "object":
+        return {};
+      case "null":
+        return null;
+      case "any":
+        return "any_value";
+      default:
+        return `${param.type}_example`;
+    }
+  };
+
+  const paramToValue = (param: ApiParam): unknown => {
+    if (param.type === "object") {
+      if (param.children && param.children.length > 0) {
+        return generateParamExamples(param.children);
+      }
+      return primitiveFromExample(param);
+    }
+
+    if (param.type === "array") {
+      const children = param.children ?? [];
+      if (children.length === 0) {
+        return primitiveFromExample(param);
+      }
+
+      if (children.length === 1) {
+        const child = children[0];
+        if (child.type === "object" && child.children && child.children.length > 0) {
+          return [generateParamExamples(child.children)];
+        }
+        return [paramToValue(child)];
+      }
+
+      const hasAllNamedChildren = children.every((child) => child.name.trim().length > 0);
+      if (hasAllNamedChildren) {
+        return [generateParamExamples(children)];
+      }
+
+      return children.map((child) => paramToValue(child));
+    }
+
+    return primitiveFromExample(param);
+  };
+
   const examples: Record<string, unknown> = {};
 
   params.forEach(param => {
-    if (param.example !== undefined && param.example !== "") {
-      if (param.type === 'number' || param.type === 'integer') {
-        examples[param.name] = Number(param.example);
-      } else if (param.type === 'boolean') {
-        examples[param.name] = param.example === 'true';
-      } else if (param.type === 'array') {
-        try {
-          examples[param.name] = JSON.parse(param.example);
-        } catch {
-          examples[param.name] = param.example;
-        }
-      } else if (param.type === 'object') {
-        try {
-          examples[param.name] = JSON.parse(param.example);
-        } catch {
-          examples[param.name] = param.example;
-        }
-      } else {
-        examples[param.name] = param.example;
-      }
-    } else if (param.children && param.children.length > 0) {
-      if (param.type === 'array') {
-        examples[param.name] = [generateParamExamples(param.children)];
-      } else {
-        examples[param.name] = generateParamExamples(param.children);
-      }
-    } else {
-      switch (param.type.toLowerCase()) {
-        case 'string':
-          examples[param.name] = param.name.includes('email') ? 'user@example.com'
-            : param.name.includes('name') ? '사용자명'
-              : param.name.includes('id') ? 'abc123'
-                : `${param.name}_example`;
-          break;
-        case 'number':
-        case 'integer':
-          examples[param.name] = param.name.includes('age') ? 25
-            : param.name.includes('count') ? 10
-              : param.name.includes('id') ? 123
-                : 42;
-          break;
-        case 'boolean':
-          examples[param.name] = true;
-          break;
-        case 'array':
-          examples[param.name] = ['item1', 'item2'];
-          break;
-        case 'object':
-          examples[param.name] = {};
-          break;
-        case 'null':
-          examples[param.name] = null;
-          break;
-        case 'any':
-          examples[param.name] = 'any_value';
-          break;
-        default:
-          examples[param.name] = `${param.type}_example`;
-      }
+    if (!param.name.trim()) {
+      return;
     }
+    examples[param.name] = paramToValue(param);
   });
 
   return examples;

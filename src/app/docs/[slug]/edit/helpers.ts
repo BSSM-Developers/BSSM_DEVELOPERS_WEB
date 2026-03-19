@@ -2,7 +2,7 @@ import type { DocsPageBlockRequest, DocsSideBarBlockRequest, SidebarBlock } from
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import type { ApiDoc, DocsBlock } from "@/types/docs";
 
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "UPDATE";
+type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 interface RawPageBlock {
   id?: string;
@@ -68,13 +68,15 @@ const parseApiDataFromContent = (content?: string): ApiDoc | null => {
 };
 
 const toHttpMethod = (value?: string): HttpMethod | undefined => {
+  if (value === "UPDATE") {
+    return "PATCH";
+  }
   if (
     value === "GET" ||
     value === "POST" ||
     value === "PUT" ||
     value === "PATCH" ||
-    value === "DELETE" ||
-    value === "UPDATE"
+    value === "DELETE"
   ) {
     return value;
   }
@@ -283,19 +285,22 @@ export const parseSidebarBlocksJson = (value: string): DocsSideBarBlockRequest[]
       ? candidate.childrenItems.map((child, childIndex) => normalizeItem(child, childIndex))
       : undefined;
 
+    const method =
+      candidate.method === "UPDATE"
+        ? "PATCH"
+        : candidate.method === "GET" ||
+            candidate.method === "POST" ||
+            candidate.method === "DELETE" ||
+            candidate.method === "PUT" ||
+            candidate.method === "PATCH"
+          ? candidate.method
+          : undefined;
+
     return {
       id: candidate.id.trim(),
       label: candidate.label.trim(),
       module: candidate.module,
-      method:
-        candidate.method === "GET" ||
-        candidate.method === "POST" ||
-        candidate.method === "DELETE" ||
-        candidate.method === "PUT" ||
-        candidate.method === "PATCH" ||
-        candidate.method === "UPDATE"
-          ? candidate.method
-          : undefined,
+      method,
       childrenItems: children,
     };
   };
@@ -339,14 +344,19 @@ export const parseDocsPageBlocksJson = (value: string): EditableDocsPageBlock[] 
 };
 
 export const toDocsPageBlockRequests = (blocks: DocsBlock[]): DocsPageBlockRequest[] => {
-  return blocks.map((block, index) => {
+  return blocks.reduce<DocsPageBlockRequest[]>((acc, block, index) => {
     const safeId = typeof block.id === "string" && block.id ? block.id : `block-${index + 1}`;
-    return {
+    const content = normalizeContent(block);
+    if (!content.trim()) {
+      return acc;
+    }
+    acc.push({
       id: safeId,
       module: block.module,
-      content: normalizeContent(block),
-    };
-  });
+      content,
+    });
+    return acc;
+  }, []);
 };
 
 export const buildPageSignature = (blocks: DocsBlock[]): string => {

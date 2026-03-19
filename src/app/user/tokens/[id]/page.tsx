@@ -114,13 +114,26 @@ export default function TokenDetailPage() {
         </ApiEndpointSection>
         <ActionGroup>
           <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=USAGE_NAME&apiId=${apiIdentifier}`)}>이름 수정</TinyButton>
-          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&apiId=${apiIdentifier}`)}>주소 수정</TinyButton>
+          <TinyButton primary onClick={() => router.push(`/user/tokens/edit/${tokenDetail.apiTokenId}?step=ENDPOINT&apiId=${apiIdentifier}`)}>엔드포인트 수정</TinyButton>
           <TinyButton onClick={() => void handleCopy(apiUsage.endpoint)}>복사</TinyButton>
         </ActionGroup>
       </ApiItem>
       );
     });
   }, [handleCopy, router, tokenDetail]);
+
+  const originItems = useMemo(() => {
+    if (!tokenDetail || tokenDetail.origins.length === 0) {
+      return <OriginEmpty>설정된 origin이 없습니다.</OriginEmpty>;
+    }
+    return (
+      <OriginList>
+        {tokenDetail.origins.map((origin) => (
+          <OriginChip key={origin}>{origin}</OriginChip>
+        ))}
+      </OriginList>
+    );
+  }, [tokenDetail]);
 
   const tokenName = tokenDetail?.apiTokenName ?? "토큰 상세";
 
@@ -137,6 +150,9 @@ export default function TokenDetailPage() {
           <HeaderActions>
             <HeaderButton onClick={() => router.push(`/user/tokens/edit/${tokenId ?? ""}?step=TOKEN_NAME`)} disabled={tokenId === null || isLoading || !!errorMessage}>
               이름 수정
+            </HeaderButton>
+            <HeaderButton onClick={() => router.push(`/user/tokens/edit/${tokenId ?? ""}?step=ORIGINS`)} disabled={tokenId === null || isLoading || !!errorMessage}>
+              Origin 수정
             </HeaderButton>
             <HeaderButton primary onClick={() => void handleReissue()} disabled={tokenId === null || isLoading || !!errorMessage}>
               시크릿 키 재발급
@@ -164,6 +180,10 @@ export default function TokenDetailPage() {
               {tokenDetail?.state ?? "NORMAL"}
             </TokenStateBadge>
           </TokenRow>
+          <OriginSection>
+            <Label>허용 origin</Label>
+            <OriginContent>{originItems}</OriginContent>
+          </OriginSection>
           <SecretKeyNotice>
             시크릿 키는 토큰 생성 직후에만 확인할 수 있습니다. 분실 시 시크릿 키 재발급 버튼으로 새 키를 발급받아 다시 보관해주세요.
           </SecretKeyNotice>
@@ -264,6 +284,38 @@ const TokenRow = styled.div`
     align-items: center;
     gap: 60px;
     margin-bottom: 14px;
+`;
+
+const OriginSection = styled.div`
+    display: flex;
+    align-items: flex-start;
+    gap: 60px;
+    margin-bottom: 14px;
+`;
+
+const OriginContent = styled.div`
+    flex: 1;
+`;
+
+const OriginList = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+`;
+
+const OriginChip = styled.span`
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+    background: ${({ theme }) => theme.colors.grey[50]};
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    font-size: 12px;
+    color: ${({ theme }) => theme.colors.bssmDarkBlue};
+`;
+
+const OriginEmpty = styled.span`
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: ${({ theme }) => theme.colors.grey[500]};
 `;
 
 const Label = styled.span`

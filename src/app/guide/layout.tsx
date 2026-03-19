@@ -18,7 +18,15 @@ export default async function GuideLayout({ children }: GuideLayoutProps) {
   const guides = await loadGuideSummaries();
 
   return (
-    <DocsLayout showSidebar={true} sidebarItems={toSidebarItems(guides)} projectName="가이드">
+    <DocsLayout
+      showSidebar={true}
+      sidebarItems={toSidebarItems(guides)}
+      projectName="가이드"
+      sidebarResizable={true}
+      sidebarDefaultWidth={340}
+      sidebarMinWidth={280}
+      sidebarMaxWidth={560}
+    >
       {children}
     </DocsLayout>
   );

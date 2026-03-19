@@ -6,6 +6,7 @@ import {
   useApproveSignupMutation,
   useRejectSignupMutation
 } from "@/app/admin/queries";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import styled from "@emotion/styled";
 
 export default function AdminSignUpsPage() {
@@ -46,7 +47,11 @@ export default function AdminSignUpsPage() {
   };
 
   if (isLoading) {
-    return <Container>로딩 중...</Container>;
+    return (
+      <Container>
+        <BsdevLoader label="신청 내역을 불러오는 중입니다..." size={56} minHeight="200px" />
+      </Container>
+    );
   }
 
   return (

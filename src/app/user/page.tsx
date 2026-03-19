@@ -1,6 +1,7 @@
 "use client";
 
 import { DocsHeader } from "@/components/docs/DocsHeader";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useState, useMemo, useCallback } from "react";
@@ -272,7 +273,7 @@ export default function MyDocsPage() {
           />
         </SearchSection>
 
-        {isLoading ? <StatusText>문서 목록을 불러오는 중입니다.</StatusText> : null}
+        {isLoading ? <BsdevLoader label="문서 목록을 불러오는 중입니다." size={52} minHeight="140px" /> : null}
         {activeError ? (
           <ErrorText>{activeError instanceof Error ? activeError.message : "문서 목록을 불러오지 못했습니다."}</ErrorText>
         ) : null}
@@ -387,12 +388,6 @@ const EmptyState = styled.div`
   text-align: center;
   ${({ theme }) => applyTypography(theme, "Body_2")};
   color: ${({ theme }) => theme.colors.grey[400]};
-`;
-
-const StatusText = styled.p`
-  ${({ theme }) => applyTypography(theme, "Body_2")};
-  color: ${({ theme }) => theme.colors.grey[500]};
-  margin-bottom: 20px;
 `;
 
 const ErrorText = styled.p`

@@ -5,17 +5,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { tokenManager } from "@/utils/fetcher";
 import { useUserQuery } from "@/app/user/queries";
 import { useLogoutMutation } from "@/app/login/queries";
+import { useConfirm } from "@/hooks/useConfirm";
 
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const { data: userData, isError, error } = useUserQuery(isClient);
   const logoutMutation = useLogoutMutation();
@@ -66,6 +68,17 @@ export function TopNav() {
   }, [isClient, pathname, userData, isError, error]);
 
   const handleLogout = async () => {
+    const shouldLogout = await confirm({
+      title: "로그아웃",
+      message: "로그아웃 하시겠습니까?",
+      confirmText: "로그아웃",
+      cancelText: "취소",
+    });
+
+    if (!shouldLogout) {
+      return;
+    }
+
     try {
       await logoutMutation.mutateAsync();
     } catch (e) {
@@ -75,6 +88,21 @@ export function TopNav() {
       setIsLoggedIn(false);
       router.push("/");
     }
+  };
+
+  const handleProtectedMenuClick = async (event: ReactMouseEvent<HTMLAnchorElement>) => {
+    if (tokenManager.getAccessToken()) {
+      return;
+    }
+
+    event.preventDefault();
+    await confirm({
+      title: "로그인이 필요합니다",
+      message: "로그인이 필요한 서비스입니다. 로그인 페이지로 이동합니다.",
+      confirmText: "확인",
+      hideCancel: true,
+    });
+    router.push("/login");
   };
 
   const isActive = (path: string) => {
@@ -97,16 +125,16 @@ export function TopNav() {
           />
         </LogoWrapper>
 
-        <StyledLink href="/apis">
+        <StyledLink href="/apis" onClick={handleProtectedMenuClick}>
           <NavLink active={isActive("/apis")}>API 둘러보기</NavLink>
         </StyledLink>
-        <StyledLink href="/docs/register">
+        <StyledLink href="/docs/register" onClick={handleProtectedMenuClick}>
           <NavLink active={isActive("/docs/register")}>API 공유하기</NavLink>
         </StyledLink>
-        <StyledLink href="/guide/bsdev-usage">
+        <StyledLink href="/guide">
           <NavLink active={isActive("/guide")}>가이드</NavLink>
         </StyledLink>
-        <StyledLink href="/announcements/release-0-1-10">
+        <StyledLink href="/announcements">
           <NavLink active={isActive("/announcements")}>공지사항</NavLink>
         </StyledLink>
       </Nav>
@@ -114,9 +142,9 @@ export function TopNav() {
       {isClient && (
         isLoggedIn ? (
           <AccountActions>
-            <StyledLink href="/user/profile">
+            <StyledLink href="/user">
               <ActionButton as="span" active={pathname?.startsWith("/user")}>
-                프로필
+                마이페이지
               </ActionButton>
             </StyledLink>
             <ActionButton as="span" variant="ghost" onClick={handleLogout}>로그아웃</ActionButton>
@@ -127,6 +155,7 @@ export function TopNav() {
           </StyledLink>
         )
       )}
+      {ConfirmDialog}
     </Header>
   );
 }

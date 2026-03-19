@@ -1,6 +1,6 @@
 import { fetchClinet, tokenManager } from "@/utils/fetcher";
 
-interface AuthResponse {
+interface LoginResponse {
   message: string;
   data: {
     accessToken: string;
@@ -8,9 +8,26 @@ interface AuthResponse {
   };
 }
 
+interface RefreshResponse {
+  message?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  data?: {
+    accessToken?: string;
+    refreshToken?: string;
+    access_token?: string;
+    refresh_token?: string;
+  };
+}
+
+interface RefreshResult {
+  accessToken?: string;
+  refreshToken?: string;
+}
+
 export const authApi = {
   loginWithGoogle: async (code: string, codeVerifier: string) => {
-    const response = await fetchClinet.post<AuthResponse>(
+    const response = await fetchClinet.post<LoginResponse>(
       "/auth/google/token",
       { code, codeVerifier },
       { skipAuth: true }
@@ -25,11 +42,21 @@ export const authApi = {
     }
     tokenManager.clearTokens();
   },
-  refreshAccessToken: async () => {
-    const response = await fetchClinet.post<AuthResponse>("/auth/refresh", {}, {
+  refreshAccessToken: async (): Promise<RefreshResult> => {
+    const response = await fetchClinet.post<RefreshResponse>("/auth/refresh", {}, {
       skipAuth: true,
       suppressLogout: true,
     });
-    return response.data;
+
+    const accessToken =
+      response.accessToken ||
+      response.data?.accessToken ||
+      response.data?.access_token;
+    const refreshToken =
+      response.refreshToken ||
+      response.data?.refreshToken ||
+      response.data?.refresh_token;
+
+    return { accessToken, refreshToken };
   },
 };

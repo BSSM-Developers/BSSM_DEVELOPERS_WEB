@@ -34,7 +34,8 @@ export interface ApiTokenDetail {
   apiTokenClientId: string;
   secretKey: string;
   state?: ApiTokenState;
-  domains: string[];
+  origins: string[];
+  domains?: string[];
   registeredApis: RegisteredApiSummary[];
 }
 
@@ -43,8 +44,24 @@ export interface ApiTokenWithSecret {
   apiTokenName: string;
   apiTokenClientId: string;
   secretKey: string;
-  domains: string[];
+  origins: string[];
+  domains?: string[];
 }
+
+interface ApiTokenDetailRaw extends Omit<ApiTokenDetail, "origins" | "domains"> {
+  origins?: string[];
+  domains?: string[];
+}
+
+interface ApiTokenWithSecretRaw extends Omit<ApiTokenWithSecret, "origins" | "domains"> {
+  origins?: string[];
+  domains?: string[];
+}
+
+const normalizeOrigins = (origins?: string[], domains?: string[]): string[] => {
+  const combined = [...(origins ?? []), ...(domains ?? [])];
+  return Array.from(new Set(combined.map((item) => item.trim()).filter((item) => item.length > 0)));
+};
 
 export const tokenApi = {
   getList: async (cursor?: number, size: number = 20) => {
@@ -57,16 +74,20 @@ export const tokenApi = {
   },
 
   getDetail: async (apiTokenId: number) => {
-    const response = await fetchClinet.get<ApiResponse<ApiTokenDetail>>(`/api/token/${apiTokenId}`);
-    return response.data;
+    const response = await fetchClinet.get<ApiResponse<ApiTokenDetailRaw>>(`/api/token/${apiTokenId}`);
+    const raw = response.data;
+    const origins = normalizeOrigins(raw.origins, raw.domains);
+    return { ...raw, origins, domains: origins };
   },
 
-  create: async (apiTokenName: string, domains: string[] = []) => {
-    const response = await fetchClinet.post<ApiResponse<ApiTokenWithSecret>>("/api/token", {
+  create: async (apiTokenName: string, origins: string[] = []) => {
+    const response = await fetchClinet.post<ApiResponse<ApiTokenWithSecretRaw>>("/api/token", {
       apiTokenName,
-      domains,
+      origins,
     });
-    return response.data;
+    const raw = response.data;
+    const normalizedOrigins = normalizeOrigins(raw.origins, raw.domains);
+    return { ...raw, origins: normalizedOrigins, domains: normalizedOrigins };
   },
 
   reissueSecret: async (apiTokenId: number) => {
@@ -76,6 +97,9 @@ export const tokenApi = {
 
   updateName: async (apiTokenId: number, apiTokenName: string) => {
     await fetchClinet.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/name`, { apiTokenName }, { suppressLogout: true });
+  },
+  updateOrigins: async (apiTokenId: number, origins: string[]) => {
+    await fetchClinet.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/origins`, { origins }, { suppressLogout: true });
   },
   updateUsageName: async (apiId: string, apiTokenId: number, name: string) => {
     await fetchClinet.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/name`, { name }, { suppressLogout: true });

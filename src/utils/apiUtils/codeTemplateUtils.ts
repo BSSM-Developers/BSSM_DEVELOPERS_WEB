@@ -89,7 +89,7 @@ function generateJavaScriptCode(
 ): string {
   const authHeaders = generateAuthHeader(options);
   const headers = { ...authHeaders, ...examples.header };
-  const hasBody = ['POST', 'PUT', 'PATCH'].includes(apiDoc.method);
+  const hasBody = Object.keys(examples.body).length > 0;
 
   switch (library) {
     case 'axios':
@@ -157,7 +157,7 @@ function generatePythonCode(
 ): string {
   const authHeaders = generateAuthHeader(options);
   const headers = { ...authHeaders, ...examples.header };
-  const hasBody = ['POST', 'PUT', 'PATCH'].includes(apiDoc.method);
+  const hasBody = Object.keys(examples.body).length > 0;
 
   return `${wrapColor('import', 'keyword')} ${wrapColor('requests', 'function')}
 
@@ -170,48 +170,19 @@ ${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColo
 }
 
 export function paramsToObject(params: ApiParam[]): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  for (const param of params) {
-    const key = param.name;
-    let value: unknown = param.example;
-
-    if (param.type === 'object' && param.children && param.children.length > 0) {
-      value = paramsToObject(param.children);
-    } else if (param.type === 'array' && param.children && param.children.length > 0) {
-      value = [paramsToObject(param.children)];
-    } else if (typeof value === 'string') {
-      if (param.type === 'boolean') {
-        value = value === 'true';
-      } else if (param.type === 'integer' || param.type === 'number') {
-        const num = Number(value);
-        if (!isNaN(num)) value = num;
-      } else if (param.type === 'null' || value === 'null') {
-        value = null;
-      }
-    }
-
-    result[key] = value;
-  }
-  return result;
+  return generateParamExamples(params);
 }
 
 export function generateResponseTemplate(
-  statusCode: number = 200,
-  message: string = "성공",
+  _statusCode: number = 200,
+  _message: string = "성공",
   responseParams?: ApiParam[]
 ): string {
-  const data = responseParams && responseParams.length > 0
+  const responseShape = responseParams && responseParams.length > 0
     ? paramsToObject(responseParams)
     : null;
 
-  const responseObj = {
-    status: statusCode,
-    message,
-    data
-  };
-
-  return highlightJson(JSON.stringify(responseObj, null, 2));
+  return highlightJson(JSON.stringify(responseShape, null, 2));
 }
 
 function generateShellCode(
@@ -222,7 +193,7 @@ function generateShellCode(
 ): string {
   const authHeaders = generateAuthHeader(options);
   const headers = { ...authHeaders, ...examples.header };
-  const hasBody = ['POST', 'PUT', 'PATCH'].includes(apiDoc.method);
+  const hasBody = Object.keys(examples.body).length > 0;
 
   const curlParts = [`${wrapColor('curl', 'function')} ${wrapColor('-X', 'keyword')} ${wrapColor(apiDoc.method, 'string')}`];
 

@@ -9,11 +9,10 @@ interface ApiSectionProps {
   description: string;
   items: ApiItem[];
   columns?: number;
-  onUse?: (item: ApiItem) => void;
   onPrefetch?: (item: ApiItem) => void;
 }
 
-export function ApiSection({ title, description, items, columns = 4, onUse, onPrefetch }: ApiSectionProps) {
+export function ApiSection({ title, description, items, columns = 4, onPrefetch }: ApiSectionProps) {
   return (
     <SectionContainer>
       <Header>
@@ -30,7 +29,6 @@ export function ApiSection({ title, description, items, columns = 4, onUse, onPr
             tags={item.tags}
             logo={item.logo}
             type={item.type}
-            onUse={onUse ? () => onUse(item) : undefined}
             onPrefetch={onPrefetch ? () => onPrefetch(item) : undefined}
           />
         ))}

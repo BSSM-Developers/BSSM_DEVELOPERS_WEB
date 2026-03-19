@@ -5,6 +5,7 @@ import { useDocsSidebarQuery } from "@/app/docs/queries";
 import { useEffect } from "react";
 import { SidebarBlock } from "@/app/docs/api";
 import { useDocsStore } from "@/store/docsStore";
+import { BsdevLoader } from "@/components/common/BsdevLoader";
 
 export default function DocsProjectPage() {
   const params = useParams();
@@ -35,14 +36,10 @@ export default function DocsProjectPage() {
         router.replace(`/docs/${slug}/page/${firstId}`);
       }
     }
-  }, [sidebarData, setSelected, slug, router]);
+  }, [router, setSelected, sidebarData, slug]);
 
   if (isSidebarLoading) {
-    return (
-      <div style={{ padding: "40px", textAlign: "center", color: "#6B7280" }}>
-        Loading...
-      </div>
-    );
+    return <BsdevLoader fullScreen label="문서 정보를 불러오는 중입니다..." />;
   }
 
   if (sidebarError) {
@@ -53,9 +50,5 @@ export default function DocsProjectPage() {
     );
   }
 
-  return (
-    <div style={{ padding: "40px", textAlign: "center", color: "#6B7280" }}>
-      문서 내용을 불러오는 중입니다...
-    </div>
-  );
+  return <BsdevLoader label="문서 내용을 불러오는 중입니다..." size={52} minHeight="160px" />;
 }

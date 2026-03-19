@@ -90,11 +90,12 @@ export function DocsBlockViewer({ block, domain }: DocsBlockViewerProps) {
   }
 
   if (block.module === "image") {
+    const resolvedImageSrc = block.imageSrc || block.content;
     return (
       <DocsBlock module="image">
-        {block.imageSrc ? (
+        {resolvedImageSrc ? (
           <Image
-            src={block.imageSrc}
+            src={resolvedImageSrc}
             alt="Content"
             width={1200}
             height={800}

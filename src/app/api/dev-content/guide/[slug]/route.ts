@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { DocsBlock } from "@/types/docs";
 
@@ -21,6 +21,7 @@ interface GuideDetailFile {
 const guidesRoot = path.join(process.cwd(), "public", "guides");
 const guideIndexPath = path.join(guidesRoot, "index.json");
 const guideItemsRoot = path.join(guidesRoot, "items");
+const guideUploadsRoot = path.join(guidesRoot, "uploads");
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === "object" && value !== null;
@@ -77,6 +78,63 @@ const saveJson = async (targetPath: string, value: unknown): Promise<void> => {
   await writeFile(targetPath, serialized, "utf-8");
 };
 
+const DATA_URL_PATTERN = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/;
+
+const mimeToExtension = (mime: string): string => {
+  if (mime === "image/png") return "png";
+  if (mime === "image/jpeg") return "jpg";
+  if (mime === "image/webp") return "webp";
+  if (mime === "image/gif") return "gif";
+  if (mime === "image/svg+xml") return "svg";
+  return "bin";
+};
+
+const toUploadsPublicPath = (fileName: string): string => `/guides/uploads/${fileName}`;
+
+const persistImageBlocks = async (blocks: DocsBlock[]): Promise<DocsBlock[]> => {
+  await mkdir(guideUploadsRoot, { recursive: true });
+
+  const nextBlocks = await Promise.all(
+    blocks.map(async (block) => {
+      if (block.module !== "image") {
+        return block;
+      }
+
+      const source = (typeof block.imageSrc === "string" && block.imageSrc.trim().length > 0
+        ? block.imageSrc
+        : block.content || "").trim();
+
+      if (!source) {
+        return block;
+      }
+
+      const matched = source.match(DATA_URL_PATTERN);
+      if (!matched) {
+        return {
+          ...block,
+          imageSrc: source,
+        };
+      }
+
+      const mime = matched[1].toLowerCase();
+      const base64 = matched[2].replace(/\s+/g, "");
+      const extension = mimeToExtension(mime);
+      const fileName = `img-${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
+      const targetPath = path.join(guideUploadsRoot, fileName);
+      const buffer = Buffer.from(base64, "base64");
+      await writeFile(targetPath, buffer);
+
+      return {
+        ...block,
+        imageSrc: toUploadsPublicPath(fileName),
+        content: "",
+      };
+    })
+  );
+
+  return nextBlocks;
+};
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ message: "DEV 모드에서만 사용할 수 있습니다." }, { status: 403 });
@@ -103,11 +161,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const detailPath = path.join(guideItemsRoot, `${normalizedSlug}.json`);
 
   try {
+    const normalizedBlocks = await persistImageBlocks(payload.blocks);
     const detail = await readJson<GuideDetailFile>(detailPath);
     const nextDetail: GuideDetailFile = {
       ...detail,
       title: payload.title,
-      blocks: payload.blocks,
+      blocks: normalizedBlocks,
     };
     await saveJson(detailPath, nextDetail);
 

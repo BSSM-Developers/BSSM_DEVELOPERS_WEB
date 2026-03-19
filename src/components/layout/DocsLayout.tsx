@@ -2,7 +2,7 @@
 
 import styled from "@emotion/styled";
 import { DocsSidebar, type SidebarModuleOption } from "./DocsSidebar";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 
 const testItems: SidebarNode[] = [
@@ -72,6 +72,10 @@ export function DocsLayout({
   sidebarModuleOptions,
   onRequestAddApi,
   disableApiRename = false,
+  sidebarResizable = false,
+  sidebarDefaultWidth = 260,
+  sidebarMinWidth = 240,
+  sidebarMaxWidth = 520,
 }: {
   children: React.ReactNode;
   sidebarItems?: SidebarNode[];
@@ -82,10 +86,27 @@ export function DocsLayout({
   sidebarModuleOptions?: SidebarModuleOption[];
   onRequestAddApi?: (intent: { mode: "sibling" | "child"; targetId: string | null }) => void;
   disableApiRename?: boolean;
+  sidebarResizable?: boolean;
+  sidebarDefaultWidth?: number;
+  sidebarMinWidth?: number;
+  sidebarMaxWidth?: number;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [renamingProjectName, setRenamingProjectName] = useState(false);
   const [projectNameInput, setProjectNameInput] = useState(projectName ?? "");
+  const [sidebarWidth, setSidebarWidth] = useState(sidebarDefaultWidth);
+  const isResizingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartWidthRef = useRef(sidebarDefaultWidth);
+
+  const clampSidebarWidth = useCallback(
+    (value: number) => Math.max(sidebarMinWidth, Math.min(sidebarMaxWidth, value)),
+    [sidebarMaxWidth, sidebarMinWidth]
+  );
+
+  useEffect(() => {
+    setSidebarWidth(clampSidebarWidth(sidebarDefaultWidth));
+  }, [clampSidebarWidth, sidebarDefaultWidth]);
 
   const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
 
@@ -95,6 +116,59 @@ export function DocsLayout({
   useEffect(() => {
     setProjectNameInput(projectName ?? "");
   }, [projectName]);
+
+  const handleResizeStart = useCallback(
+    (event: React.MouseEvent) => {
+      if (!sidebarResizable || sidebarCollapsed) {
+        return;
+      }
+      event.preventDefault();
+      isResizingRef.current = true;
+      dragStartXRef.current = event.clientX;
+      dragStartWidthRef.current = sidebarWidth;
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [sidebarCollapsed, sidebarResizable, sidebarWidth]
+  );
+
+  useEffect(() => {
+    if (!sidebarResizable) {
+      return;
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!isResizingRef.current) {
+        return;
+      }
+      const delta = event.clientX - dragStartXRef.current;
+      const next = clampSidebarWidth(dragStartWidthRef.current + delta);
+      setSidebarWidth(next);
+    };
+
+    const handleMouseUp = () => {
+      if (!isResizingRef.current) {
+        return;
+      }
+      isResizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+  }, [clampSidebarWidth, sidebarResizable]);
+
+  const computedSidebarWidth = useMemo(
+    () => (sidebarCollapsed ? 48 : sidebarWidth),
+    [sidebarCollapsed, sidebarWidth]
+  );
 
   const commitProjectName = () => {
     if (!canRenameProjectName || !onSidebarChange || !sidebarItems) {
@@ -123,6 +197,7 @@ export function DocsLayout({
     <Wrapper>
       <Body>
         {showSidebar && (
+          <SidebarShell width={computedSidebarWidth}>
           <Sidebar collapsed={sidebarCollapsed}>
             <SidebarHeader collapsed={sidebarCollapsed}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'space-between' }}>
@@ -175,6 +250,10 @@ export function DocsLayout({
               />
             )}
           </Sidebar>
+          {sidebarResizable && !sidebarCollapsed ? (
+            <ResizeHandle onMouseDown={handleResizeStart} />
+          ) : null}
+          </SidebarShell>
         )}
         <Content>
           {children}
@@ -196,14 +275,37 @@ const Body = styled.div`
   overflow: hidden;
 `;
 
+const SidebarShell = styled.div<{ width: number }>`
+  position: relative;
+  width: ${({ width }) => `${width}px`};
+  min-width: 48px;
+  max-width: 70vw;
+  flex: 0 0 ${({ width }) => `${width}px`};
+`;
+
 const Sidebar = styled.aside<{ collapsed: boolean }>`
-  width: ${({ collapsed }) => collapsed ? "48px" : "260px"};
+  width: 100%;
   background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.grey[200]};
   overflow-y: auto;
-  transition: width 0.3s ease;
+  transition: ${({ collapsed }) => (collapsed ? "width 0.3s ease" : "none")};
   display: flex;
   flex-direction: column;
+`;
+
+const ResizeHandle = styled.div`
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 20;
+  background: transparent;
+
+  &:hover {
+    background: rgba(22, 51, 92, 0.12);
+  }
 `;
 
 const SidebarHeader = styled.div<{ collapsed?: boolean }>`

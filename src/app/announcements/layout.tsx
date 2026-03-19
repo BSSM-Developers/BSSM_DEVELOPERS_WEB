@@ -21,7 +21,15 @@ export default async function AnnouncementsLayout({ children }: AnnouncementsLay
   const notices = await loadNoticeSummaries();
 
   return (
-    <DocsLayout showSidebar={true} sidebarItems={toSidebarItems(notices)} projectName="공지사항">
+    <DocsLayout
+      showSidebar={true}
+      sidebarItems={toSidebarItems(notices)}
+      projectName="공지사항"
+      sidebarResizable={true}
+      sidebarDefaultWidth={340}
+      sidebarMinWidth={280}
+      sidebarMaxWidth={560}
+    >
       {children}
     </DocsLayout>
   );

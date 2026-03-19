@@ -4,15 +4,16 @@
   "title": "공지사항 기능",
   "summary": "공지사항 페이지가 오픈되었습니다. 주요 변경사항과 운영 공지를 이곳에서 확인할 수 있습니다.",
   "publishedAt": "2026-03-02T10:00:00+09:00",
-  "updatedAt": "2026-03-19T14:20:58.940Z",
+  "updatedAt": "2026-03-19T15:44:01.655Z",
   "author": "BSSM Developers",
   "content": [
     "공지사항 기능 오픈",
-    "안녕하세요, BSSM Developers 팀입니다.",
+    "안녕하세요, 팀 BSSM Developers 입니다.",
     "공지사항 페이지가 오픈되었습니다. 주요 변경사항과 운영 공지를 이곳에서 확인할 수 있습니다.",
     "이번 릴리스부터 공지사항 페이지를 통해 서비스 업데이트, 운영 공지, 점검 일정을 안내합니다.",
     "앞으로 주요 변경사항은 공지사항에서 먼저 확인해 주세요.",
-    "항상 서비스를 사용해주셔서 감사합니다."
+    "항상 서비스를 사용해주셔서 감사합니다.",
+    "TEAM.BSSM Developers"
   ],
   "blocks": [
     {
@@ -23,7 +24,7 @@
     {
       "id": "f29c2a1c-d72f-4a84-a26a-33ca47dcf740",
       "module": "docs_1",
-      "content": "안녕하세요, BSSM Developers 팀입니다."
+      "content": "안녕하세요, 팀 BSSM Developers 입니다."
     },
     {
       "id": "notice-2026-03-release-0-1-10-summary",
@@ -59,6 +60,11 @@
       "id": "e3cd9d0a-ebc8-4236-8724-e41a76396b4b",
       "module": "docs_1",
       "content": "항상 서비스를 사용해주셔서 감사합니다."
+    },
+    {
+      "id": "309d3926-8433-4d6d-937a-b9c62ba2b2eb",
+      "module": "docs_1",
+      "content": "TEAM.BSSM Developers"
     }
   ]
 }

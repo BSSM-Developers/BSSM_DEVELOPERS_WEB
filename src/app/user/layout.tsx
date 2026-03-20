@@ -62,6 +62,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         projectName="마이페이지"
         showSidebar={true}
         editable={false}
+        contentBottomPadding={80}
       >
         {children}
       </DocsLayout>

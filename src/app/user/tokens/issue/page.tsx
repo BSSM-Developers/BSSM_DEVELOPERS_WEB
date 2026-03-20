@@ -8,6 +8,8 @@ import { useState, useCallback } from "react";
 import { tokenApi, type ApiTokenWithSecret } from "../api";
 import { useConfirm } from "@/hooks/useConfirm";
 import { SingleInputActionForm } from "@/components/common/SingleInputActionForm";
+import { useQueryClient } from "@tanstack/react-query";
+import { tokenPageKeys } from "../queries";
 
 const slideIn = keyframes`
   from {
@@ -79,6 +81,7 @@ const parseDomains = (value: string): string[] => {
 
 export default function TokenIssuePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { confirm, ConfirmDialog } = useConfirm();
   const [step, setStep] = useState<IssueStep>("NAME");
   const [name, setName] = useState("");
@@ -96,6 +99,7 @@ export default function TokenIssuePage() {
       setIsSubmitting(true);
       const createdToken = await tokenApi.create(name.trim(), domains);
       setIssuedToken(createdToken);
+      queryClient.invalidateQueries({ queryKey: tokenPageKeys.all });
       setStep("SUCCESS");
     } catch (error) {
       const message = error instanceof Error ? error.message : "토큰 발급에 실패했습니다.";
@@ -108,7 +112,7 @@ export default function TokenIssuePage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [confirm, domains, isSubmitting, name]);
+  }, [confirm, domains, isSubmitting, name, queryClient]);
 
   const handleComplete = useCallback(() => {
     if (!issuedToken) {
@@ -184,6 +188,7 @@ export default function TokenIssuePage() {
               isDisabled={!name.trim()}
               maxWidth="800px"
               animated
+              verticalOffset="0px"
             />
           </StepContent>
         ) : (

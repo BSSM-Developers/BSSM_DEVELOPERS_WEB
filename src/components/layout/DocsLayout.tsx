@@ -76,6 +76,7 @@ export function DocsLayout({
   sidebarDefaultWidth = 260,
   sidebarMinWidth = 240,
   sidebarMaxWidth = 520,
+  contentBottomPadding = 360,
 }: {
   children: React.ReactNode;
   sidebarItems?: SidebarNode[];
@@ -90,6 +91,7 @@ export function DocsLayout({
   sidebarDefaultWidth?: number;
   sidebarMinWidth?: number;
   sidebarMaxWidth?: number;
+  contentBottomPadding?: number;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [renamingProjectName, setRenamingProjectName] = useState(false);
@@ -255,7 +257,7 @@ export function DocsLayout({
           ) : null}
           </SidebarShell>
         )}
-        <Content>
+        <Content contentBottomPadding={contentBottomPadding}>
           {children}
         </Content>
       </Body>
@@ -333,11 +335,11 @@ const ToggleButton = styled.button`
   }
 `;
 
-const Content = styled.main`
+const Content = styled.main<{ contentBottomPadding: number }>`
   flex: 1;
   overflow-y: auto;
   background: ${({ theme }) => theme.colors.background};
-  padding: 24px 12px;
+  padding: ${({ contentBottomPadding }) => `24px 12px ${contentBottomPadding}px`};
   display: flex;
   flex-direction: column;
   cursor: text;

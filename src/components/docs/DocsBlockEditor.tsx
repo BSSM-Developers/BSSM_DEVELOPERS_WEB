@@ -241,8 +241,13 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
+    const isTextLikeModule =
+      block.module === "docs_1" ||
+      block.module === "headline_1" ||
+      block.module === "headline_2" ||
+      block.module === "list";
 
-    if (block.module === "docs_1") {
+    if (isTextLikeModule) {
       if (text.startsWith("/")) {
         setShowMenu(true);
         setMenuFilter(text.slice(1));

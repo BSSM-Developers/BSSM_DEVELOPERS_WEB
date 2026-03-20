@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
 import { loadGuideDetail } from "../data";
 import { GuideDevEditor } from "./GuideDevEditor";
+import { createPageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
 interface GuideDetailPageProps {
@@ -13,6 +15,26 @@ interface GuideDetailPageProps {
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+export async function generateMetadata({ params }: GuideDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const guide = await loadGuideDetail(slug);
+  const pathname = `/guide/${encodeURIComponent(slug)}`;
+
+  if (!guide) {
+    return createPageMetadata({
+      title: "가이드",
+      description: "BSSM Developers 가이드 문서",
+      pathname,
+    });
+  }
+
+  return createPageMetadata({
+    title: guide.title,
+    description: `${guide.title} 가이드 문서`,
+    pathname: `/guide/${encodeURIComponent(guide.slug)}`,
+  });
+}
 
 export default async function GuideDetailPage({ params, searchParams }: GuideDetailPageProps) {
   const { slug } = await params;

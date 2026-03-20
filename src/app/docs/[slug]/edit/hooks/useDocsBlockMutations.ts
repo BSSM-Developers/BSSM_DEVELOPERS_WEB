@@ -134,10 +134,13 @@ export function useDocsBlockMutations({
 
   const handleRemoveBlock = useCallback((index: number) => {
     let shouldClearSelection = false;
+    let focusTargetId: string | null = null;
     setDocsBlocks((prev) => {
       if (prev.length <= 1) {
         shouldClearSelection = true;
-        return [{ id: crypto.randomUUID(), module: "docs_1", content: "" }];
+        const nextId = crypto.randomUUID();
+        focusTargetId = nextId;
+        return [{ id: nextId, module: "docs_1", content: "" }];
       }
 
       const target = prev[index];
@@ -149,20 +152,42 @@ export function useDocsBlockMutations({
       const shouldApplyToSelection = selectedSet.size > 1 && selectedSet.has(String(target.id));
       if (!shouldApplyToSelection) {
         const copy = [...prev];
+        const previousId = copy[index - 1]?.id;
+        const nextId = copy[index + 1]?.id;
+        focusTargetId = String(previousId ?? nextId ?? "");
         copy.splice(index, 1);
         shouldClearSelection = selectedSet.has(String(target.id));
         return copy;
       }
 
+      const selectedIndexes = prev
+        .map((block, i) => (selectedSet.has(String(block.id)) ? i : -1))
+        .filter((i) => i >= 0);
+      const firstSelectedIndex = selectedIndexes[0] ?? index;
+      const lastSelectedIndex = selectedIndexes[selectedIndexes.length - 1] ?? index;
+      const previousId = prev[firstSelectedIndex - 1]?.id;
+      const nextId = prev[lastSelectedIndex + 1]?.id;
       const next = prev.filter((block) => !selectedSet.has(String(block.id)));
       shouldClearSelection = true;
-      return next.length > 0 ? next : [{ id: crypto.randomUUID(), module: "docs_1", content: "" }];
+      if (next.length > 0) {
+        focusTargetId = String(previousId ?? nextId ?? next[0]?.id ?? "");
+        return next;
+      }
+      const fallbackId = crypto.randomUUID();
+      focusTargetId = fallbackId;
+      return [{ id: fallbackId, module: "docs_1", content: "" }];
     });
 
     if (shouldClearSelection) {
       setSelectedBlockIds([]);
     }
-  }, [selectedBlockIds, setDocsBlocks, setSelectedBlockIds]);
+
+    if (focusTargetId) {
+      setTimeout(() => {
+        focusBlockById(focusTargetId as string);
+      }, 0);
+    }
+  }, [focusBlockById, selectedBlockIds, setDocsBlocks, setSelectedBlockIds]);
 
   const handleFocusMove = useCallback((index: number, direction: "up" | "down") => {
     const target = direction === "up" ? index - 1 : index + 1;

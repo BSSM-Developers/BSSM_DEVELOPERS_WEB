@@ -23,6 +23,7 @@ interface SingleInputActionFormProps {
   errorText?: string;
   maxWidth?: string;
   animated?: boolean;
+  verticalOffset?: string;
 }
 
 export function SingleInputActionForm({
@@ -42,12 +43,13 @@ export function SingleInputActionForm({
   errorText,
   maxWidth = "1000px",
   animated = false,
+  verticalOffset = "-32px",
 }: SingleInputActionFormProps) {
   const disabled = isSubmitting || isDisabled;
   const isLoadingStatus = Boolean(statusText?.includes("불러오는 중"));
 
   return (
-    <Shell maxWidth={maxWidth} animated={animated}>
+    <Shell maxWidth={maxWidth} animated={animated} verticalOffset={verticalOffset}>
       <HeaderBlock>
         <Title>{title}</Title>
         {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
@@ -91,14 +93,14 @@ const slideIn = keyframes`
   }
 `;
 
-const Shell = styled.section<{ maxWidth: string; animated: boolean }>`
+const Shell = styled.section<{ maxWidth: string; animated: boolean; verticalOffset: string }>`
   width: 100%;
   max-width: ${({ maxWidth }) => maxWidth};
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 56px;
-  transform: translateY(-32px);
+  transform: translateY(${({ verticalOffset }) => verticalOffset});
   ${({ animated }) =>
     animated &&
     css`

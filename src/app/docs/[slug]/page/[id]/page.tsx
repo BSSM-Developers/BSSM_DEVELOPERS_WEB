@@ -115,7 +115,7 @@ const ErrorBox = styled.div`
 
 const ContentArea = styled.div`
   min-height: 500px;
-  padding: 0 48px 120px 28px;
+  padding: 0 48px 0 28px;
 `;
 
 const EmptyText = styled.div`

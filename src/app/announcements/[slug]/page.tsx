@@ -1,9 +1,11 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
 import { loadNoticeDetail } from "../data";
 import { AnnouncementDevEditor } from "./AnnouncementDevEditor";
+import { createPageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
 interface AnnouncementDetailPageProps {
@@ -13,6 +15,26 @@ interface AnnouncementDetailPageProps {
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+export async function generateMetadata({ params }: AnnouncementDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const notice = await loadNoticeDetail(slug);
+  const pathname = `/announcements/${encodeURIComponent(slug)}`;
+
+  if (!notice) {
+    return createPageMetadata({
+      title: "공지사항",
+      description: "BSSM Developers 공지사항",
+      pathname,
+    });
+  }
+
+  return createPageMetadata({
+    title: notice.title,
+    description: notice.summary || `${notice.title} 공지사항`,
+    pathname: `/announcements/${encodeURIComponent(notice.slug)}`,
+  });
+}
 
 export default async function AnnouncementDetailPage({ params, searchParams }: AnnouncementDetailPageProps) {
   const { slug } = await params;

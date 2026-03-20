@@ -241,8 +241,13 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const text = e.target.value;
+    const isTextLikeModule =
+      block.module === "docs_1" ||
+      block.module === "headline_1" ||
+      block.module === "headline_2" ||
+      block.module === "list";
 
-    if (block.module === "docs_1") {
+    if (isTextLikeModule) {
       if (text.startsWith("/")) {
         setShowMenu(true);
         setMenuFilter(text.slice(1));
@@ -274,8 +279,8 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const composing = (e.nativeEvent as KeyboardEvent).isComposing || e.keyCode === 229;
-    if (composing) return;
+    const composing = (e.nativeEvent as KeyboardEvent).isComposing;
+    if (composing && e.key !== "Enter") return;
 
     if (block.module === "code" && e.key === "Tab") {
       e.preventDefault();
@@ -348,7 +353,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
       return;
     }
 
-    if (e.key === "Backspace" && value === "") {
+    if ((e.key === "Backspace" || e.key === "Delete") && value === "") {
       e.preventDefault();
       if (block.module !== "docs_1") {
         onChange(index, { ...block, module: "docs_1", content: "" });

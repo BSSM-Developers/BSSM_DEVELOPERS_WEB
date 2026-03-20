@@ -4,19 +4,21 @@ import { DocsHeader } from "@/components/docs/DocsHeader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useRouter } from "next/navigation";
-import { useMemo, useCallback, useEffect, useState } from "react";
-import { tokenApi, type ApiTokenListItem, type ApiTokenState } from "./api";
-import { apiUseReasonApi, type ApiUseReasonMineItem } from "@/app/apis/useReasonApi";
+import { useMemo, useCallback } from "react";
+import { type ApiTokenState } from "./api";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
+import { useMyUseReasonsQuery, useTokenListQuery } from "./queries";
 
 export default function TokenListPage() {
   const router = useRouter();
-  const [tokens, setTokens] = useState<ApiTokenListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [myUseReasons, setMyUseReasons] = useState<ApiUseReasonMineItem[]>([]);
-  const [isUseReasonsLoading, setIsUseReasonsLoading] = useState(true);
-  const [useReasonsError, setUseReasonsError] = useState("");
+  const tokensQuery = useTokenListQuery();
+  const useReasonsQuery = useMyUseReasonsQuery(undefined, 50);
+  const tokens = tokensQuery.data?.values ?? [];
+  const myUseReasons = useReasonsQuery.data?.data.values ?? [];
+  const isLoading = tokensQuery.isLoading;
+  const isUseReasonsLoading = useReasonsQuery.isLoading;
+  const errorMessage = tokensQuery.error instanceof Error ? tokensQuery.error.message : "";
+  const useReasonsError = useReasonsQuery.error instanceof Error ? useReasonsQuery.error.message : "";
 
   const handleIssueToken = useCallback(() => {
     router.push("/user/tokens/issue");
@@ -25,40 +27,6 @@ export default function TokenListPage() {
   const handleManageToken = useCallback((id: string) => {
     router.push(`/user/tokens/${id}`);
   }, [router]);
-
-  useEffect(() => {
-    const loadTokens = async () => {
-      try {
-        setErrorMessage("");
-        setIsLoading(true);
-        const data = await tokenApi.getList();
-        setTokens(data.values);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "토큰 목록을 불러오지 못했습니다.";
-        setErrorMessage(message);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    void loadTokens();
-  }, []);
-
-  useEffect(() => {
-    const loadMyUseReasons = async () => {
-      try {
-        setIsUseReasonsLoading(true);
-        setUseReasonsError("");
-        const response = await apiUseReasonApi.getMine(undefined, 50);
-        setMyUseReasons(response.data.values);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "사용 신청 내역을 불러오지 못했습니다.";
-        setUseReasonsError(message);
-      } finally {
-        setIsUseReasonsLoading(false);
-      }
-    };
-    void loadMyUseReasons();
-  }, []);
 
   const tokenListItems = useMemo(() => {
     return tokens.map((token) => (

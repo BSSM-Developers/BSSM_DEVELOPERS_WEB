@@ -1,6 +1,7 @@
 import { DocsLayout } from "@/components/layout/DocsLayout";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { loadNoticeSummaries } from "./data";
+import { unstable_noStore as noStore } from "next/cache";
 
 interface AnnouncementsLayoutProps {
   children: React.ReactNode;
@@ -18,6 +19,7 @@ const toSidebarItems = (items: Awaited<ReturnType<typeof loadNoticeSummaries>>):
 };
 
 export default async function AnnouncementsLayout({ children }: AnnouncementsLayoutProps) {
+  noStore();
   const notices = await loadNoticeSummaries();
 
   return (

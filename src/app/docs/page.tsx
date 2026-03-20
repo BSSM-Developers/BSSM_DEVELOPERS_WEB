@@ -126,6 +126,21 @@ export default function DocsEditPage() {
     ? (apiData[selected] ? [{ id: 'api-spec-block', module: 'api', apiData: apiData[selected] }] : [])
     : (docsData[selected] || []);
 
+  const focusBlockById = (blockId: string) => {
+    const selector = `[data-block-id='${blockId}']`;
+    const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      `input${selector}, textarea${selector}`
+    );
+    if (directInput) {
+      directInput.focus();
+      const valueLength = directInput.value?.length ?? 0;
+      directInput.setSelectionRange?.(valueLength, valueLength);
+      return;
+    }
+    const codeMirrorContent = document.querySelector<HTMLElement>(`${selector} .cm-content`);
+    codeMirrorContent?.focus();
+  };
+
   const handleBlockChange = (index: number, updated: DocsBlock) => {
     if (isApiDoc && updated.apiData) {
       updateApiData(selected, updated.apiData);
@@ -150,8 +165,7 @@ export default function DocsEditPage() {
     updateDocsData(selected, copy);
 
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockId}']`);
-      el?.focus();
+      focusBlockById(blockId);
     }, 0);
   };
 
@@ -171,8 +185,7 @@ export default function DocsEditPage() {
 
     if (focusTargetId) {
       setTimeout(() => {
-        const el = document.querySelector<HTMLInputElement>(`[data-block-id='${focusTargetId}']`);
-        el?.focus();
+        focusBlockById(String(focusTargetId));
       }, 0);
     }
   };
@@ -195,8 +208,7 @@ export default function DocsEditPage() {
     const targetId = (blocks[target] as BlockWithId)?.id;
     if (!targetId) return;
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${targetId}']`);
-      el?.focus();
+      focusBlockById(String(targetId));
     }, 0);
   };
 

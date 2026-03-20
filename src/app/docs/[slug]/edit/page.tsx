@@ -223,15 +223,39 @@ export default function DocsEditPage() {
 
   const focusBlockById = useCallback((blockId: string) => {
     const selector = `[data-block-id='${blockId}']`;
-    const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-      `input${selector}, textarea${selector}`
-    );
-    if (directInput) {
-      directInput.focus();
+    const tryFocus = () => {
+      const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `input${selector}, textarea${selector}`
+      );
+      if (directInput) {
+        directInput.focus();
+        const valueLength = directInput.value?.length ?? 0;
+        directInput.setSelectionRange?.(valueLength, valueLength);
+        return true;
+      }
+      const codeMirrorContent = document.querySelector<HTMLElement>(`${selector} .cm-content`);
+      if (codeMirrorContent) {
+        codeMirrorContent.focus();
+        return true;
+      }
+      return false;
+    };
+
+    if (tryFocus()) {
       return;
     }
-    const codeMirrorContent = document.querySelector<HTMLElement>(`${selector} .cm-content`);
-    codeMirrorContent?.focus();
+
+    let retryCount = 0;
+    const retryFocus = () => {
+      if (tryFocus()) {
+        return;
+      }
+      retryCount += 1;
+      if (retryCount < 6) {
+        requestAnimationFrame(retryFocus);
+      }
+    };
+    requestAnimationFrame(retryFocus);
   }, []);
 
   const {

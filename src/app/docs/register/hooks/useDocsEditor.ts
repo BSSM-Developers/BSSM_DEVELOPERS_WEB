@@ -18,6 +18,43 @@ export const useDocsEditor = (step: Step, title: string) => {
   const contentMapRef = useRef<Record<string, DocsBlock[]>>({});
   const sidebarUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const focusBlockById = useCallback((blockId: string) => {
+    const selector = `[data-block-id='${blockId}']`;
+    const tryFocus = () => {
+      const directInput = document.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+        `input${selector}, textarea${selector}`
+      );
+      if (directInput) {
+        directInput.focus();
+        const valueLength = directInput.value?.length ?? 0;
+        directInput.setSelectionRange?.(valueLength, valueLength);
+        return true;
+      }
+      const codeMirrorContent = document.querySelector<HTMLElement>(`${selector} .cm-content`);
+      if (codeMirrorContent) {
+        codeMirrorContent.focus();
+        return true;
+      }
+      return false;
+    };
+
+    if (tryFocus()) {
+      return;
+    }
+
+    let retryCount = 0;
+    const retryFocus = () => {
+      if (tryFocus()) {
+        return;
+      }
+      retryCount += 1;
+      if (retryCount < 6) {
+        requestAnimationFrame(retryFocus);
+      }
+    };
+    requestAnimationFrame(retryFocus);
+  }, []);
+
   useEffect(() => {
     docsBlocksRef.current = docsBlocks;
   }, [docsBlocks]);
@@ -196,8 +233,7 @@ export const useDocsEditor = (step: Step, title: string) => {
     });
 
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${blockId}']`);
-      el?.focus();
+      focusBlockById(blockId);
     }, 0);
   };
 
@@ -229,8 +265,7 @@ export const useDocsEditor = (step: Step, title: string) => {
 
       if (focusTargetId) {
         setTimeout(() => {
-          const el = document.querySelector<HTMLInputElement>(`[data-block-id='${focusTargetId}']`);
-          el?.focus();
+          focusBlockById(String(focusTargetId));
         }, 0);
       }
 
@@ -243,8 +278,7 @@ export const useDocsEditor = (step: Step, title: string) => {
     const targetId = docsBlocks[target]?.id;
     if (!targetId) return;
     setTimeout(() => {
-      const el = document.querySelector<HTMLInputElement>(`[data-block-id='${targetId}']`);
-      el?.focus();
+      focusBlockById(String(targetId));
     }, 0);
   };
 

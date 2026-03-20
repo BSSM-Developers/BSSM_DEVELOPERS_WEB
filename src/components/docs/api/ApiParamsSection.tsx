@@ -216,6 +216,23 @@ const jsonObjectToParams = (jsonObject: Record<string, unknown>, existingParams:
   return Object.entries(jsonObject).map(([key, value]) => jsonValueToParam(key, value, existingByName.get(key.trim())));
 };
 
+const jsonRootToParams = (jsonRoot: unknown, existingParams: ApiParam[]): ApiParam[] | null => {
+  if (isRecord(jsonRoot)) {
+    return jsonObjectToParams(jsonRoot, existingParams);
+  }
+
+  if (Array.isArray(jsonRoot)) {
+    const existingRootArrayParam =
+      existingParams.find((param) => param.type === "array" && param.name.trim() === "items") ??
+      existingParams.find((param) => param.type === "array" && param.name.trim().length === 0) ??
+      existingParams.find((param) => param.type === "array");
+
+    return [jsonValueToParam(existingRootArrayParam?.name ?? "items", jsonRoot, existingRootArrayParam)];
+  }
+
+  return null;
+};
+
 const strictJsonParseOptions: ParseOptions = {
   disallowComments: true,
   allowTrailingComma: false,
@@ -381,13 +398,12 @@ export function ApiParamsSection({
       return;
     }
 
-    const parsed = parseResult.parsedValue;
-    if (!isRecord(parsed)) {
-      setJsonError("최상위는 JSON 객체({}) 형식이어야 합니다.");
+    const nextParams = jsonRootToParams(parseResult.parsedValue, params);
+    if (!nextParams) {
+      setJsonError("최상위는 JSON 객체({}) 또는 배열([]) 형식이어야 합니다.");
       return;
     }
 
-    const nextParams = jsonObjectToParams(parsed, params);
     onParamsChange(nextParams);
     if (!isOpen) {
       setIsOpen(true);

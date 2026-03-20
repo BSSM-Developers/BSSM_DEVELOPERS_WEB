@@ -32,6 +32,20 @@ const isNotFoundError = (message: string): boolean => {
   return message.includes("404") || message.includes("API를 찾을 수 없습니다");
 };
 
+const isLikelyApiId = (value: string): boolean => {
+  const candidate = value.trim();
+  if (!candidate) {
+    return false;
+  }
+  if (/^[0-9a-f]{24}$/i.test(candidate)) {
+    return true;
+  }
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)) {
+    return true;
+  }
+  return false;
+};
+
 const collectApiTargets = (docs: DocsItem, blocks: SidebarBlock[]): OwnedApiTarget[] => {
   const targets: OwnedApiTarget[] = [];
 
@@ -119,17 +133,20 @@ const extractApiCandidatesFromDocsPage = async (
     }) ?? pageResponse.data.docsBlocks.find((block) => block.module === "api");
 
   if (apiBlock?.content) {
-    const parsed = JSON.parse(apiBlock.content) as { id?: unknown };
-    if (typeof parsed.id === "string") {
-      const normalized = parsed.id.trim();
-      if (normalized.length > 0) {
-        candidates.push(normalized);
+    try {
+      const parsed = JSON.parse(apiBlock.content) as { id?: unknown };
+      if (typeof parsed.id === "string") {
+        const normalized = parsed.id.trim();
+        if (isLikelyApiId(normalized)) {
+          candidates.push(normalized);
+        }
       }
+    } catch {
     }
   }
 
   const pageId = String(pageResponse.data.id ?? "").trim();
-  if (pageId.length > 0) {
+  if (isLikelyApiId(pageId)) {
     candidates.push(pageId);
   }
 
@@ -142,14 +159,15 @@ async function getUsageForTarget(
   pageCache: Map<string, Promise<DocsPageCacheValue>>,
   candidateCache: Map<string, string[]>
 ): Promise<ManagedUsageItem[]> {
-  const candidates = [
-    target.apiBlockId,
-    target.mappedId,
-    target.docsId,
-    ...(await extractApiCandidatesFromDocsPage(target, pageCache, candidateCache)),
-  ].filter((value, index, array): value is string => {
+  const candidates = (await extractApiCandidatesFromDocsPage(target, pageCache, candidateCache)).filter(
+    (value, index, array): value is string => {
     return Boolean(value) && array.indexOf(value) === index;
-  });
+    }
+  );
+
+  if (candidates.length === 0) {
+    return [];
+  }
 
   for (const apiId of candidates) {
     try {

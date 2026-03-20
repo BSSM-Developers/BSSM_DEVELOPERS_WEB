@@ -163,6 +163,7 @@ export function ApiDocModule({
             editable={editable}
             onParamsChange={onResponseParamsChange}
           />
+          <BottomGap />
         </DocumentationContent>
       </ContentWrapper>
       {ConfirmDialog}
@@ -214,4 +215,9 @@ const DocumentationContent = styled.div`
   flex-direction: column;
   gap: 20px;
   width: 100%;
+`;
+
+const BottomGap = styled.div`
+  height: 80px;
+  flex-shrink: 0;
 `;

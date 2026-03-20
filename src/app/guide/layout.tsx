@@ -1,6 +1,7 @@
 import { DocsLayout } from "@/components/layout/DocsLayout";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
 import { loadGuideSummaries } from "./data";
+import { unstable_noStore as noStore } from "next/cache";
 
 interface GuideLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ const toSidebarItems = (items: Awaited<ReturnType<typeof loadGuideSummaries>>): 
   }));
 
 export default async function GuideLayout({ children }: GuideLayoutProps) {
+  noStore();
   const guides = await loadGuideSummaries();
 
   return (

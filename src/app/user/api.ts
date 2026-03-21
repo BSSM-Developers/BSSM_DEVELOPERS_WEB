@@ -1,4 +1,4 @@
-import { fetchClinet } from "@/utils/fetcher";
+import { fetchClient } from "@/utils/fetcher";
 
 export interface User {
   id: number;
@@ -14,7 +14,7 @@ interface UserResponse {
 
 export const userApi = {
   getUser: async () => {
-    const response = await fetchClinet.get<UserResponse>("/user");
+    const response = await fetchClient.get<UserResponse>("/user");
     return response.data;
   },
 };

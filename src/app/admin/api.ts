@@ -1,4 +1,4 @@
-import { fetchClinet } from "@/utils/fetcher";
+import { fetchClient } from "@/utils/fetcher";
 
 interface RequestItem {
   signupFormId: number;
@@ -20,16 +20,16 @@ interface RequestListResponse {
 
 export const adminApi = {
   approve: async (id: number) => {
-    return fetchClinet.patch<void>(`/signup/${id}/approve`, {});
+    return fetchClient.patch<void>(`/signup/${id}/approve`, {});
   },
   reject: async (id: number) => {
-    return fetchClinet.patch<void>(`/signup/${id}/reject`, {});
+    return fetchClient.patch<void>(`/signup/${id}/reject`, {});
   },
   getRequests: async (cursorId?: number, size: number = 10) => {
     const params: Record<string, string> = { size: size.toString() };
     if (cursorId) {
       params.cursorId = cursorId.toString();
     }
-    return fetchClinet.get<RequestListResponse>("/signup", { params });
+    return fetchClient.get<RequestListResponse>("/signup", { params });
   },
 };

@@ -539,7 +539,7 @@ const request = async <T>(
   return text ? JSON.parse(text) : ({} as T);
 };
 
-export const fetchClinet = {
+export const fetchClient = {
   get: async <T>(endpoint: string, options: ApiRequestOptions = {}): Promise<T> => {
     return request<T>("GET", endpoint, undefined, options);
   },

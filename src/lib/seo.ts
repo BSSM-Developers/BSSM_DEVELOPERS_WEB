@@ -1,20 +1,6 @@
 import type { Metadata } from "next";
 
-const rawSiteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.NEXT_PUBLIC_WEB_URL ||
-  process.env.SITE_URL ||
-  "https://dev.bssm-dev.com";
-
-const normalizeSiteUrl = (value: string) => {
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return "https://dev.bssm-dev.com";
-  }
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-};
-
-export const siteUrl = new URL(normalizeSiteUrl(rawSiteUrl));
+export const siteUrl = new URL("https://bssm-dev.com");
 export const siteName = "BSSM Developers";
 export const siteDescription =
   "BSSM Developers는 학생 개발자를 위한 API 공유 및 문서 협업 플랫폼입니다.";

@@ -1,4 +1,4 @@
-import { fetchClinet, tokenManager } from "@/utils/fetcher";
+import { fetchClient, tokenManager } from "@/utils/fetcher";
 
 interface LoginResponse {
   message: string;
@@ -27,7 +27,7 @@ interface RefreshResult {
 
 export const authApi = {
   loginWithGoogle: async (code: string, codeVerifier: string) => {
-    const response = await fetchClinet.post<LoginResponse>(
+    const response = await fetchClient.post<LoginResponse>(
       "/auth/google/token",
       { code, codeVerifier },
       { skipAuth: true }
@@ -36,14 +36,14 @@ export const authApi = {
   },
   logout: async () => {
     try {
-      await fetchClinet.post<void>("/auth/logout", {});
+      await fetchClient.post<void>("/auth/logout", {});
     } catch (e) {
       console.error(e);
     }
     tokenManager.clearTokens();
   },
   refreshAccessToken: async (): Promise<RefreshResult> => {
-    const response = await fetchClinet.post<RefreshResponse>("/auth/refresh", {}, {
+    const response = await fetchClient.post<RefreshResponse>("/auth/refresh", {}, {
       skipAuth: true,
       suppressLogout: true,
     });

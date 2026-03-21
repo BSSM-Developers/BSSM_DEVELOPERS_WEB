@@ -1,4 +1,4 @@
-import { fetchClinet } from "@/utils/fetcher";
+import { fetchClient } from "@/utils/fetcher";
 
 interface ApiResponse<T> {
   message: string;
@@ -69,19 +69,19 @@ export const tokenApi = {
     if (cursor !== undefined) {
       params.cursor = String(cursor);
     }
-    const response = await fetchClinet.get<ApiResponse<ApiTokenListData>>("/api/token", { params });
+    const response = await fetchClient.get<ApiResponse<ApiTokenListData>>("/api/token", { params });
     return response.data;
   },
 
   getDetail: async (apiTokenId: number) => {
-    const response = await fetchClinet.get<ApiResponse<ApiTokenDetailRaw>>(`/api/token/${apiTokenId}`);
+    const response = await fetchClient.get<ApiResponse<ApiTokenDetailRaw>>(`/api/token/${apiTokenId}`);
     const raw = response.data;
     const origins = normalizeOrigins(raw.origins, raw.domains);
     return { ...raw, origins, domains: origins };
   },
 
   create: async (apiTokenName: string, origins: string[] = []) => {
-    const response = await fetchClinet.post<ApiResponse<ApiTokenWithSecretRaw>>("/api/token", {
+    const response = await fetchClient.post<ApiResponse<ApiTokenWithSecretRaw>>("/api/token", {
       apiTokenName,
       origins,
     });
@@ -91,20 +91,20 @@ export const tokenApi = {
   },
 
   reissueSecret: async (apiTokenId: number) => {
-    const response = await fetchClinet.patch<ApiResponse<ApiTokenWithSecret>>(`/api/token/${apiTokenId}/secret`, {});
+    const response = await fetchClient.patch<ApiResponse<ApiTokenWithSecret>>(`/api/token/${apiTokenId}/secret`, {});
     return response.data;
   },
 
   updateName: async (apiTokenId: number, apiTokenName: string) => {
-    await fetchClinet.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/name`, { apiTokenName }, { suppressLogout: true });
+    await fetchClient.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/name`, { apiTokenName }, { suppressLogout: true });
   },
   updateOrigins: async (apiTokenId: number, origins: string[]) => {
-    await fetchClinet.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/origins`, { origins }, { suppressLogout: true });
+    await fetchClient.patch<ApiResponse<null>>(`/api/token/${apiTokenId}/origins`, { origins }, { suppressLogout: true });
   },
   updateUsageName: async (apiId: string, apiTokenId: number, name: string) => {
-    await fetchClinet.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/name`, { name }, { suppressLogout: true });
+    await fetchClient.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/name`, { name }, { suppressLogout: true });
   },
   updateUsageEndpoint: async (apiId: string, apiTokenId: number, endpoint: string) => {
-    await fetchClinet.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/endpoint`, { endpoint }, { suppressLogout: true });
+    await fetchClient.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/endpoint`, { endpoint }, { suppressLogout: true });
   },
 };

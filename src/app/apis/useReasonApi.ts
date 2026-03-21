@@ -1,4 +1,4 @@
-import { fetchClinet } from "@/utils/fetcher";
+import { fetchClient } from "@/utils/fetcher";
 
 interface ApiResponse<T> {
   message: string;
@@ -36,7 +36,7 @@ export interface ApiUsageByApiItem {
 
 export const apiUseReasonApi = {
   create: async (apiTokenId: number, apiId: string, apiUseReason: string) => {
-    return fetchClinet.post<ApiResponse<null>>(`/api/${apiTokenId}/use-reason`, {
+    return fetchClient.post<ApiResponse<null>>(`/api/${apiTokenId}/use-reason`, {
       apiId,
       apiUseReason,
     });
@@ -46,14 +46,14 @@ export const apiUseReasonApi = {
     if (cursor !== undefined) {
       params.cursor = String(cursor);
     }
-    return fetchClinet.get<ApiResponse<CursorPage<ApiUseReasonMineItem>>>("/api/use-reason/me", { params });
+    return fetchClient.get<ApiResponse<CursorPage<ApiUseReasonMineItem>>>("/api/use-reason/me", { params });
   },
   getUsageByApi: async (apiId: string, cursor?: number, size: number = 20) => {
     const params: Record<string, string> = { size: String(size) };
     if (cursor !== undefined) {
       params.cursor = String(cursor);
     }
-    return fetchClinet.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>(`/api/use-reason/by-api/${apiId}`, { params });
+    return fetchClient.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>(`/api/use-reason/by-api/${apiId}`, { params });
   },
   getAll: async (state?: ApiUseStateFilter, cursor?: number, size: number = 20) => {
     const params: Record<string, string> = { size: String(size) };
@@ -63,12 +63,12 @@ export const apiUseReasonApi = {
     if (state) {
       params.state = state;
     }
-    return fetchClinet.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>("/api/use-reason", { params });
+    return fetchClient.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>("/api/use-reason", { params });
   },
   approve: async (apiTokenId: string | number, apiUseReasonId: string | number) => {
-    return fetchClinet.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/approve`, {});
+    return fetchClient.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/approve`, {});
   },
   reject: async (apiTokenId: string | number, apiUseReasonId: string | number) => {
-    return fetchClinet.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/reject`, {});
+    return fetchClient.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/reject`, {});
   },
 };

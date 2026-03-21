@@ -1,4 +1,4 @@
-import { fetchClinet } from "@/utils/fetcher";
+import { fetchClient } from "@/utils/fetcher";
 
 interface ApiTokenResponse {
   message: string;
@@ -22,7 +22,7 @@ interface SecretResponse {
 
 export const apiTokenApi = {
   create: async (name: string, domains: string[] = []) => {
-    return fetchClinet.post<ApiTokenResponse>("/api/token", {
+    return fetchClient.post<ApiTokenResponse>("/api/token", {
       apiTokenName: name,
       domains,
     });
@@ -32,25 +32,25 @@ export const apiTokenApi = {
     if (cursor) {
       params.cursor = cursor.toString();
     }
-    return fetchClinet.get<ApiTokenListResponse>("/api/token", { params });
+    return fetchClient.get<ApiTokenListResponse>("/api/token", { params });
   },
   getDetail: async (apiTokenId: number) => {
-    return fetchClinet.get<ApiTokenResponse>(`/api/token/${apiTokenId}`);
+    return fetchClient.get<ApiTokenResponse>(`/api/token/${apiTokenId}`);
   },
   registerApi: async (apiTokenId: number, apiId: string, apiUseReason: string) => {
-    return fetchClinet.post<void>(`/api/${apiTokenId}/use-reason`, {
+    return fetchClient.post<void>(`/api/${apiTokenId}/use-reason`, {
       apiId,
       apiUseReason,
     });
   },
   reissueSecret: async (apiTokenId: number) => {
-    return fetchClinet.patch<SecretResponse>(`/api/token/${apiTokenId}/secret`, {});
+    return fetchClient.patch<SecretResponse>(`/api/token/${apiTokenId}/secret`, {});
   },
   updateName: async (apiTokenId: number, name: string) => {
-    return fetchClinet.patch<void>(`/api/token/${apiTokenId}/name`, { name });
+    return fetchClient.patch<void>(`/api/token/${apiTokenId}/name`, { name });
   },
   updateUsageEndpoint: async (apiUsageId: number, endpoint: string) => {
-    return fetchClinet.patch<void>(`/api/usage/${apiUsageId}/endpoint`, {
+    return fetchClient.patch<void>(`/api/usage/${apiUsageId}/endpoint`, {
       endpoint,
     });
   },

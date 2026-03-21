@@ -1,4 +1,4 @@
-import { fetchClinet } from "@/utils/fetcher";
+import { fetchClient } from "@/utils/fetcher";
 
 export type SignUpRequestState = "PENDING" | "APPROVED" | "REJECTED" | string;
 
@@ -32,12 +32,12 @@ export const signUpRequestApi = {
       params.cursor = String(cursor);
     }
 
-    return fetchClinet.get<ApiResponse<CursorPage<SignUpRequestItem>>>("/signup", { params });
+    return fetchClient.get<ApiResponse<CursorPage<SignUpRequestItem>>>("/signup", { params });
   },
   approve: async (signupRequestId: number) => {
-    return fetchClinet.patch<ApiResponse<null>>(`/signup/${signupRequestId}/approve`, {});
+    return fetchClient.patch<ApiResponse<null>>(`/signup/${signupRequestId}/approve`, {});
   },
   reject: async (signupRequestId: number) => {
-    return fetchClinet.patch<ApiResponse<null>>(`/signup/${signupRequestId}/reject`, {});
+    return fetchClient.patch<ApiResponse<null>>(`/signup/${signupRequestId}/reject`, {});
   },
 };

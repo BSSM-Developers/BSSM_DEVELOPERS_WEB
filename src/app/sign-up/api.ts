@@ -1,4 +1,4 @@
-import { fetchClinet, ApiRequestOptions } from "@/utils/fetcher";
+import { fetchClient, ApiRequestOptions } from "@/utils/fetcher";
 
 interface UserProfile {
   signupFormId: number;
@@ -17,7 +17,7 @@ interface UserProfileResponse {
 
 export const signUpApi = {
   getMy: async (options: ApiRequestOptions = {}) => {
-    const response = await fetchClinet.get<UserProfileResponse>("/signup/me", {
+    const response = await fetchClient.get<UserProfileResponse>("/signup/me", {
       ...options,
       skipAuth: true,
       suppressLogout: true,
@@ -25,7 +25,7 @@ export const signUpApi = {
     return response.data;
   },
   updatePurpose: async (signupRequestId: number, purpose: string) => {
-    return fetchClinet.patch<void>(`/signup/${signupRequestId}/purpose`, { purpose }, {
+    return fetchClient.patch<void>(`/signup/${signupRequestId}/purpose`, { purpose }, {
       skipAuth: true,
       suppressLogout: true,
     });

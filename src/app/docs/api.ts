@@ -1,4 +1,4 @@
-import { fetchClinet } from "@/utils/fetcher";
+import { fetchClient } from "@/utils/fetcher";
 
 export interface DocsBlock {
   id: string;
@@ -146,7 +146,7 @@ interface DocsPopularQueryParams extends DocsCursorQueryParams {
 
 export const docsApi = {
   getList: async () => {
-    return fetchClinet.get<DocsListResponse>("/docs", { skipAuth: true });
+    return fetchClient.get<DocsListResponse>("/docs", { skipAuth: true });
   },
   getMyList: async ({ type, cursor, size = 20 }: DocsCursorQueryParams = {}) => {
     const params: Record<string, string> = {};
@@ -157,7 +157,7 @@ export const docsApi = {
       params.cursor = cursor;
     }
     params.size = String(size);
-    return fetchClinet.get<DocsListResponse>("/docs/my", { params });
+    return fetchClient.get<DocsListResponse>("/docs/my", { params });
   },
   getPopularList: async ({ type, cursor, size = 20, tokenCount }: DocsPopularQueryParams = {}) => {
     const params: Record<string, string> = {};
@@ -171,7 +171,7 @@ export const docsApi = {
       params.tokenCount = String(tokenCount);
     }
     params.size = String(size);
-    return fetchClinet.get<DocsListResponse>("/docs/popular", { params, skipAuth: true });
+    return fetchClient.get<DocsListResponse>("/docs/popular", { params, skipAuth: true });
   },
   getMyPopularList: async ({ type, cursor, size = 20, tokenCount }: DocsPopularQueryParams = {}) => {
     const params: Record<string, string> = {};
@@ -185,61 +185,61 @@ export const docsApi = {
       params.tokenCount = String(tokenCount);
     }
     params.size = String(size);
-    return fetchClinet.get<DocsListResponse>("/docs/my/popular", { params });
+    return fetchClient.get<DocsListResponse>("/docs/my/popular", { params });
   },
   getSidebar: async (docsId: string, usePublic: boolean = true) => {
     if (usePublic) {
-      return fetchClinet.get<SidebarResponse>(`/docs/${docsId}/sidebar`, {
+      return fetchClient.get<SidebarResponse>(`/docs/${docsId}/sidebar`, {
         skipAuth: true,
         omitCredentials: true,
       });
     }
-    return fetchClinet.get<SidebarResponse>(`/docs/${docsId}/sidebar`, {
+    return fetchClient.get<SidebarResponse>(`/docs/${docsId}/sidebar`, {
       suppressLogout: true,
     });
   },
   getDetail: async (docsId: string) => {
-    return fetchClinet.get<DocsDetailResponse>(`/docs/${docsId}`, { skipAuth: true });
+    return fetchClient.get<DocsDetailResponse>(`/docs/${docsId}`, { skipAuth: true });
   },
   createOriginal: async (data: CreateOriginalData) => {
-    return fetchClinet.post<{ id: number }>("/docs/original", data);
+    return fetchClient.post<{ id: number }>("/docs/original", data);
   },
   createCustom: async (data: CreateCustomData) => {
-    return fetchClinet.post<void>("/docs/custom", data);
+    return fetchClient.post<void>("/docs/custom", data);
   },
   delete: async (docsId: string | number) => {
-    return fetchClinet.delete<void>(`/docs/${docsId}`);
+    return fetchClient.delete<void>(`/docs/${docsId}`);
   },
   update: async (docsId: string | number, data: UpdateDocsData) => {
-    return fetchClinet.patch<void>(`/docs/${docsId}`, data);
+    return fetchClient.patch<void>(`/docs/${docsId}`, data);
   },
   toggleAutoApproval: async (docsId: string | number, autoApproval: boolean) => {
-    return fetchClinet.patch<void>(`/docs/${docsId}/auto-approval`, {
+    return fetchClient.patch<void>(`/docs/${docsId}/auto-approval`, {
       auto_approval: autoApproval,
     });
   },
   getPage: async (docsId: string | number, mappedId: string) => {
-    return fetchClinet.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, {
+    return fetchClient.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, {
       suppressLogout: true,
     });
   },
   getPublicPage: async (docsId: string | number, mappedId: string) => {
-    return fetchClinet.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, {
+    return fetchClient.get<DocsPageResponse>(`/docs/${docsId}/page/${mappedId}`, {
       skipAuth: true,
       suppressLogout: true,
       omitCredentials: true,
     });
   },
   updatePage: async (docsId: string | number, mappedId: string | number, docsBlocks: unknown[]) => {
-    return fetchClinet.put<void>(`/docs/${docsId}/page/${mappedId}`, { docsBlocks });
+    return fetchClient.put<void>(`/docs/${docsId}/page/${mappedId}`, { docsBlocks });
   },
   updateSidebar: async (docsId: string | number, blocks: unknown[]) => {
-    return fetchClinet.put<void>(`/docs/${docsId}/sidebar`, {
+    return fetchClient.put<void>(`/docs/${docsId}/sidebar`, {
       blocks,
       sideBarBlocks: blocks,
     });
   },
   replace: async (docsId: string | number, data: ReplaceDocsData) => {
-    return fetchClinet.put<void>(`/docs/${docsId}`, data);
+    return fetchClient.put<void>(`/docs/${docsId}`, data);
   },
 };

@@ -24,7 +24,7 @@ export function CopyToLLMButton({ blocks, projectTitle, pageTitle, breadcrumb }:
 
   return (
     <Button type="button" onClick={handleCopy} copied={copied}>
-      {copied ? "Copied" : "Copy to LLM"}
+      {copied ? "✓ Copied" : "Copy to LLM"}
     </Button>
   );
 }

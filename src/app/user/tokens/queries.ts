@@ -29,3 +29,19 @@ export function useMyUseReasonsQuery(cursor?: number, size: number = 50) {
     refetchOnWindowFocus: true,
   });
 }
+
+export const unblockRequestKeys = {
+  all: ["unblock-request-page"] as const,
+  unblockRequestList: (cursor?: number, size: number = 20) =>
+    [...unblockRequestKeys.all, "unblock-requests", cursor, size] as const,
+};
+
+export function useUnblockRequestsQuery(cursor?: number, size: number = 20) {
+  return useQuery({
+    queryKey: unblockRequestKeys.unblockRequestList(cursor, size),
+    queryFn: () => tokenApi.getUnblockRequests(cursor, size),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
+}

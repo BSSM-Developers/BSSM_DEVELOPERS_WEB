@@ -6,6 +6,7 @@ import styled from "@emotion/styled";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
+import { usePrompt } from "@/hooks/usePrompt";
 import { tokenApi, type ApiTokenDetail, type ApiTokenState } from "../api";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 
@@ -22,11 +23,13 @@ export default function TokenDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { confirm, ConfirmDialog } = useConfirm();
+  const { prompt, PromptDialog: UnblockPromptDialog } = usePrompt();
   const tokenId = parseTokenId(id);
   const [tokenDetail, setTokenDetail] = useState<ApiTokenDetail | null>(null);
   const [reissuedSecretKey, setReissuedSecretKey] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [unblockRequestState, setUnblockRequestState] = useState<"IDLE" | "REQUESTING" | "REQUESTED" | "ALREADY_REQUESTED">("IDLE");
 
   useEffect(() => {
     const loadTokenDetail = async () => {
@@ -38,8 +41,18 @@ export default function TokenDetailPage() {
       try {
         setErrorMessage("");
         setIsLoading(true);
-        const detail = await tokenApi.getDetail(tokenId);
+        const [detail, unblockRequestsData] = await Promise.all([
+          tokenApi.getDetail(tokenId),
+          tokenApi.getUnblockRequests(undefined, 100),
+        ]);
         setTokenDetail(detail);
+
+        const hasPendingRequest = unblockRequestsData.values.some(
+          (req) => req.apiTokenId === tokenId && req.state === "PENDING"
+        );
+        if (hasPendingRequest) {
+          setUnblockRequestState("ALREADY_REQUESTED");
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : "토큰 상세 정보를 불러오지 못했습니다.";
         setErrorMessage(message);
@@ -95,6 +108,55 @@ export default function TokenDetailPage() {
       });
     }
   }, [confirm, tokenId]);
+
+  const handleUnblockRequest = useCallback(async () => {
+    if (tokenId === null) {
+      return;
+    }
+    const reason = await prompt({
+      title: "차단 해제 신청",
+      message: "차단 해제 요청 사유를 입력해주세요.",
+      placeholder: "사유를 입력하세요",
+      confirmText: "신청",
+      cancelText: "취소",
+    });
+
+    if (reason === null) {
+      return;
+    }
+
+    const trimmedReason = reason.trim();
+    if (!trimmedReason) {
+      await confirm({
+        title: "입력 필요",
+        message: "차단 해제 요청 사유를 입력해주세요.",
+        confirmText: "확인",
+        hideCancel: true,
+      });
+      return;
+    }
+
+    try {
+      setUnblockRequestState("REQUESTING");
+      await tokenApi.createUnblockRequest(tokenId, trimmedReason);
+      setUnblockRequestState("REQUESTED");
+      await confirm({
+        title: "신청 완료",
+        message: "차단 해제 신청이 완료되었습니다. 관리자의 승인을 기다려주세요.",
+        confirmText: "확인",
+        hideCancel: true,
+      });
+    } catch (error) {
+      setUnblockRequestState("IDLE");
+      const message = error instanceof Error ? error.message : "차단 해제 신청에 실패했습니다.";
+      await confirm({
+        title: "신청 실패",
+        message,
+        confirmText: "확인",
+        hideCancel: true,
+      });
+    }
+  }, [confirm, prompt, tokenId]);
 
   const permissionItems = useMemo(() => {
     if (!tokenDetail) {
@@ -157,6 +219,18 @@ export default function TokenDetailPage() {
             <HeaderButton primary onClick={() => void handleReissue()} disabled={tokenId === null || isLoading || !!errorMessage}>
               시크릿 키 재발급
             </HeaderButton>
+            {tokenDetail?.state === "BLOCKED" && unblockRequestState === "IDLE" ? (
+              <HeaderButton
+                danger
+                onClick={() => void handleUnblockRequest()}
+                disabled={tokenId === null || isLoading || !!errorMessage || unblockRequestState !== "IDLE"}
+              >
+                차단 해제 신청
+              </HeaderButton>
+            ) : null}
+            {unblockRequestState === "REQUESTED" || unblockRequestState === "ALREADY_REQUESTED" ? (
+              <HeaderButton disabled>차단 해제 신청 완료</HeaderButton>
+            ) : null}
           </HeaderActions>
         </HeaderRow>
 
@@ -194,6 +268,11 @@ export default function TokenDetailPage() {
               <TinyButton onClick={() => void handleCopy(reissuedSecretKey)}>복사</TinyButton>
             </TokenRow>
           ) : null}
+          {tokenDetail?.state === "BLOCKED" && unblockRequestState === "REQUESTED" ? (
+            <UnblockRequestNotice>
+              차단 해제 신청이 완료되었습니다. 관리자의 승인을 기다려주세요.
+            </UnblockRequestNotice>
+          ) : null}
         </Section>
 
         {!isLoading && !errorMessage ? (
@@ -203,6 +282,7 @@ export default function TokenDetailPage() {
         ) : null}
       </ContentWrapper>
       {ConfirmDialog}
+      {UnblockPromptDialog}
     </Container>
   );
 }
@@ -242,14 +322,14 @@ const HeaderActions = styled.div`
     gap: 12px;
 `;
 
-const HeaderButton = styled.button<{ primary?: boolean }>`
+const HeaderButton = styled.button<{ primary?: boolean; danger?: boolean }>`
     padding: 12px 32px;
     border-radius: 4px;
     ${({ theme }) => applyTypography(theme, "Body_4")};
     cursor: pointer;
-    border: 1px solid ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : theme.colors.grey[200]};
-    background: ${({ theme, primary }) => primary ? theme.colors.bssmDarkBlue : "white"};
-    color: ${({ theme, primary }) => primary ? "white" : theme.colors.grey[900]};
+    border: 1px solid ${({ theme, primary, danger }) => danger ? "#d32f2f" : primary ? theme.colors.bssmDarkBlue : theme.colors.grey[200]};
+    background: ${({ theme, primary, danger }) => danger ? "#d32f2f" : primary ? theme.colors.bssmDarkBlue : "white"};
+    color: ${({ theme, primary, danger }) => danger ? "white" : primary ? "white" : theme.colors.grey[900]};
     transition: filter 0.2s;
 
     &:hover {
@@ -396,6 +476,16 @@ const SecretKeyNotice = styled.div`
     padding: 12px 14px;
     ${({ theme }) => applyTypography(theme, "Body_4")};
     color: ${({ theme }) => theme.colors.grey[700]};
+`;
+
+const UnblockRequestNotice = styled.div`
+    border: 1px solid #d32f2f;
+    background: #FEE2E2;
+    border-radius: 8px;
+    padding: 12px 14px;
+    ${({ theme }) => applyTypography(theme, "Body_4")};
+    color: #B91C1C;
+    margin-top: 12px;
 `;
 
 const ApiItem = styled.div`

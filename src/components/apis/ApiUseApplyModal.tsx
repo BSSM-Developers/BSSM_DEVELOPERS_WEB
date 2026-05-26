@@ -79,7 +79,7 @@ export function ApiUseApplyModal({
       return response.values;
     },
     enabled: isOpen,
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   const apiTargetsQuery = useQuery({

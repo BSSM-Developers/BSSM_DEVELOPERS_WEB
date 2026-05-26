@@ -8,6 +8,7 @@ import { useMemo, useCallback } from "react";
 import { type ApiTokenState } from "./api";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useMyUseReasonsQuery, useTokenListQuery } from "./queries";
+import Link from "next/link";
 
 export default function TokenListPage() {
   const router = useRouter();
@@ -59,6 +60,10 @@ export default function TokenListPage() {
         {isLoading ? <BsdevLoader label="토큰 목록을 불러오는 중입니다..." size={52} minHeight="140px" /> : null}
         {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
         {!isLoading && !errorMessage ? <TokenList>{tokenListItems}</TokenList> : null}
+
+        <UnblockRequestLinkSection>
+          <StyledLink href="/user/tokens/unblock-requests">차단 해제 요청 내역 보기</StyledLink>
+        </UnblockRequestLinkSection>
 
         <UseReasonSection>
           <UseReasonTitle>내 API 사용 신청 내역</UseReasonTitle>
@@ -224,6 +229,22 @@ const ManageButton = styled.button`
 
   &:hover {
     opacity: 0.9;
+  }
+`;
+
+const UnblockRequestLinkSection = styled.div`
+  margin-top: 16px;
+  padding: 0 24px;
+`;
+
+const StyledLink = styled(Link)`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.bssmDarkBlue};
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.8;
   }
 `;
 

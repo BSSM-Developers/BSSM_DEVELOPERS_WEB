@@ -553,10 +553,12 @@ const TypeText = styled.span`
 
 const DescriptionWrapper = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   padding: 0 0 0 3px;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 `;
 
 const Description = styled.div`
@@ -578,7 +580,9 @@ const ExampleText = styled.div`
   border-radius: 4px;
   margin-left: 8px;
   letter-spacing: -0.5px;
-  white-space: nowrap;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  min-width: 0;
 `;
 
 const RequiredText = styled.span`

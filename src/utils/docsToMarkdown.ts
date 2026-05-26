@@ -1,4 +1,4 @@
-import { DocsBlock, ApiParam } from "@/types/docs";
+import { DocsBlock, ApiDoc, ApiParam } from "@/types/docs";
 
 function renderParams(params: ApiParam[], depth = 0): string {
   if (!params || params.length === 0) return "";
@@ -7,8 +7,8 @@ function renderParams(params: ApiParam[], depth = 0): string {
   const lines: string[] = [];
 
   if (depth === 0) {
-    lines.push(`${indent}| Name | Type | Required | Description | Example |`);
-    lines.push(`${indent}|------|------|:--------:|-------------|---------|`);
+    lines.push(`| Name | Type | Required | Description | Example |`);
+    lines.push(`|------|------|:--------:|-------------|---------|`);
   }
 
   for (const p of params) {
@@ -24,15 +24,25 @@ function renderParams(params: ApiParam[], depth = 0): string {
   return lines.join("\n");
 }
 
-function apiBlockToMarkdown(block: DocsBlock): string {
-  const api = block.apiData;
-  if (!api) return "";
+function resolveApiData(block: DocsBlock): ApiDoc | null {
+  if (block.apiData) return block.apiData;
+  if (block.content && block.content.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(block.content);
+      if (parsed.method && parsed.endpoint) return parsed as ApiDoc;
+    } catch {
+      // not valid JSON
+    }
+  }
+  return null;
+}
 
-  const sections: string[] = [];
+function apiToMarkdown(api: ApiDoc): string {
+  const parts: string[] = [];
 
-  sections.push(`## ${api.name}`);
-  if (api.description) sections.push(`\n${api.description}`);
-  sections.push(`\n**\`${api.method} ${api.endpoint}\`**`);
+  parts.push(`## ${api.name}`);
+  if (api.description) parts.push(api.description);
+  parts.push(`**\`${api.method} ${api.endpoint}\`**`);
 
   const paramGroups: { label: string; params?: ApiParam[] }[] = [
     { label: "Header Params", params: api.headerParams },
@@ -44,98 +54,89 @@ function apiBlockToMarkdown(block: DocsBlock): string {
 
   const hasRequest = paramGroups.some((g) => g.params && g.params.length > 0);
   if (hasRequest) {
-    sections.push("\n### Request");
+    parts.push("### Request");
     for (const { label, params } of paramGroups) {
       if (params && params.length > 0) {
-        sections.push(`\n#### ${label}\n${renderParams(params)}`);
+        parts.push(`#### ${label}\n${renderParams(params)}`);
       }
     }
   }
 
   if (api.responseParams && api.responseParams.length > 0) {
-    sections.push("\n### Response\n\n#### Response Body");
-    sections.push(renderParams(api.responseParams));
+    parts.push("### Response\n\n#### Response Body\n" + renderParams(api.responseParams));
   }
 
   if (api.sampleCode) {
-    sections.push(`\n### Sample Request\n\n\`\`\`\n${api.sampleCode}\n\`\`\``);
+    parts.push(`### Sample Request\n\n\`\`\`\n${api.sampleCode}\n\`\`\``);
   }
 
   if (api.responseCode || api.responseData) {
-    const responseBody = api.responseCode
+    const body = api.responseCode
       ? api.responseCode
       : typeof api.responseData === "string"
         ? api.responseData
         : JSON.stringify(api.responseData, null, 2);
-    sections.push(`\n### Sample Response\n\n\`\`\`json\n${responseBody}\n\`\`\``);
+    parts.push(`### Sample Response\n\n\`\`\`json\n${body}\n\`\`\``);
   }
 
-  return sections.join("\n");
+  return parts.join("\n\n");
 }
 
-function parseMarkdownCodeFence(content?: string): { language: string; code: string } | null {
+function parseCodeFence(content?: string): { language: string; code: string } | null {
   if (!content) return null;
   const match = content.match(/^```([a-zA-Z0-9_-]*)\n([\s\S]*?)\n```$/);
   if (!match) return null;
   return { language: match[1] || "", code: match[2] };
 }
 
+function blockToMarkdown(block: DocsBlock): string | null {
+  switch (block.module) {
+    case "headline_1":
+      return block.content ? `# ${block.content}` : null;
+    case "headline_2":
+      return block.content ? `## ${block.content}` : null;
+    case "api":
+    case "docs_1": {
+      const api = resolveApiData(block);
+      if (api) return apiToMarkdown(api);
+      if (block.module === "docs_1") {
+        const fence = parseCodeFence(block.content);
+        if (fence) return `\`\`\`${fence.language}\n${fence.code}\n\`\`\``;
+        return block.content ?? null;
+      }
+      return null;
+    }
+    case "code":
+      return `\`\`\`${block.language ?? ""}\n${block.content ?? ""}\n\`\`\``;
+    case "list":
+      return block.content ? `- ${block.content}` : null;
+    case "image": {
+      const src = block.imageSrc ?? block.content;
+      return src ? `![image](${src})` : null;
+    }
+    case "main":
+    case "main_title":
+      return block.content ? `# ${block.content}` : null;
+    case "big_space":
+    case "space":
+      return null;
+    default:
+      return block.content ?? null;
+  }
+}
+
 export function docsBlocksToMarkdown(
   blocks: DocsBlock[],
   meta: { projectTitle: string; pageTitle: string; breadcrumb: string[] }
 ): string {
-  const lines: string[] = [];
-
-  // Document header
   const fullPath = [...meta.breadcrumb, meta.pageTitle].join(" / ");
-  lines.push(`# ${meta.projectTitle}`);
-  lines.push(`\n> ${fullPath}`);
-  lines.push("\n---\n");
 
-  for (const block of blocks) {
-    switch (block.module) {
-      case "headline_1":
-        lines.push(`\n# ${block.content}`);
-        break;
-      case "headline_2":
-        lines.push(`\n## ${block.content}`);
-        break;
-      case "docs_1": {
-        const parsed = parseMarkdownCodeFence(block.content);
-        if (parsed) {
-          lines.push(`\n\`\`\`${parsed.language}\n${parsed.code}\n\`\`\``);
-        } else if (block.apiData || (block.content && block.content.startsWith("{"))) {
-          // api data embedded in docs_1
-          const apiBlock = { ...block, module: "api" as const };
-          lines.push(`\n${apiBlockToMarkdown(apiBlock)}`);
-        } else {
-          lines.push(`\n${block.content ?? ""}`);
-        }
-        break;
-      }
-      case "api":
-        lines.push(`\n${apiBlockToMarkdown(block)}`);
-        break;
-      case "code":
-        lines.push(`\n\`\`\`${block.language ?? ""}\n${block.content ?? ""}\n\`\`\``);
-        break;
-      case "list":
-        lines.push(`- ${block.content}`);
-        break;
-      case "image":
-        if (block.imageSrc || block.content) {
-          lines.push(`\n![image](${block.imageSrc ?? block.content})`);
-        }
-        break;
-      case "main":
-      case "main_title":
-        if (block.content) lines.push(`\n# ${block.content}`);
-        break;
-      default:
-        if (block.content) lines.push(`\n${block.content}`);
-        break;
-    }
-  }
+  const header = [`# ${meta.projectTitle}`, `> ${fullPath}`, "---"].join("\n\n");
 
-  return lines.join("\n").trim();
+  const body = blocks
+    .map(blockToMarkdown)
+    .filter((s): s is string => s !== null && s.trim() !== "")
+    .join("\n\n");
+
+  return [header, body].filter(Boolean).join("\n\n");
 }

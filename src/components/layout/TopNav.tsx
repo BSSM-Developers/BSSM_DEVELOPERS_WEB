@@ -109,6 +109,7 @@ export function TopNav() {
     if (path === "/apis" && pathname.startsWith("/apis")) return true;
     if (path === "/announcements" && pathname.startsWith("/announcements")) return true;
     if (path === "/guide" && pathname.startsWith("/guide")) return true;
+    if (path === "/docs/register" && pathname.startsWith("/docs")) return true;
     return false;
   };
 

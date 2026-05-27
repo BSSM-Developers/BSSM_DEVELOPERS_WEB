@@ -113,17 +113,15 @@ export const InputStep = ({ formData, updateFormData, handleNext, userName }: In
       </LeftPanel>
 
       <RightPanel>
-        {(formData.title || formData.description) && (
-          <PreviewCardWrapper>
-            <ApiCard
-              id="preview"
-              title={formData.title}
-              description={formData.description || ''}
-              tags={[userName]}
-              onExplore={() => { }}
-            />
-          </PreviewCardWrapper>
-        )}
+        <PreviewCardWrapper>
+          <ApiCard
+            id="preview"
+            title={formData.title || (isCustom ? '커스텀 문서 제목' : 'API 이름')}
+            description={formData.description || (isCustom ? '커스텀 문서 소개를 입력해주세요' : 'API 소개를 입력해주세요')}
+            tags={[userName]}
+            onExplore={() => { }}
+          />
+        </PreviewCardWrapper>
       </RightPanel>
     </StepContainer>
   );

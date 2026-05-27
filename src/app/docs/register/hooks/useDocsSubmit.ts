@@ -138,7 +138,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
       console.error(error);
       await confirm({
         title: "등록 실패",
-        message: "문서 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        message: error instanceof Error ? error.message : "문서 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         hideCancel: true
       });
     } finally {
@@ -166,7 +166,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
       console.error(error);
       await confirm({
         title: "생성 실패",
-        message: "커스텀 문서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        message: error instanceof Error ? error.message : "커스텀 문서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         hideCancel: true,
       });
     } finally {

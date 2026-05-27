@@ -21,18 +21,23 @@ interface ApiCodeSectionProps {
   responseMessage?: string;
 }
 
+const PROXY_BASE_URL = process.env.NODE_ENV === "production"
+  ? "https://proxy.bssm-dev.com"
+  : "https://stg-proxy.bssm-dev.com";
+
 export function ApiCodeSection({
   apiDoc,
   sampleCode,
   responseCode,
   languages = ["Shell", "JavaScript", "Python"],
-  baseUrl = "",
+  baseUrl,
   includeAuth = false,
   authType = 'bearer',
   responseData = null,
   responseStatus = 200,
   responseMessage = "성공"
 }: ApiCodeSectionProps) {
+  const resolvedBaseUrl = baseUrl || PROXY_BASE_URL;
   const [currentLanguage, setCurrentLanguage] = useState<Language>('shell');
   const [currentLibrary, setCurrentLibrary] = useState<Library>(defaultLibraryMap['shell']);
   const [generatedCode, setGeneratedCode] = useState<string>('');
@@ -50,7 +55,7 @@ export function ApiCodeSection({
         const code = generateRequestCode(apiDoc, {
           language: currentLanguage,
           library: currentLibrary,
-          baseUrl,
+          baseUrl: resolvedBaseUrl,
           includeAuth,
           authType
         });
@@ -70,7 +75,7 @@ export function ApiCodeSection({
 
     const response = generateResponseTemplate(responseStatus, responseMessage, apiDoc?.responseParams);
     setGeneratedResponse(responseCode || response);
-  }, [apiDoc, currentLanguage, currentLibrary, baseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage, responseData]);
+  }, [apiDoc, currentLanguage, currentLibrary, resolvedBaseUrl, includeAuth, authType, sampleCode, responseCode, responseStatus, responseMessage, responseData]);
 
   useEffect(() => {
     const availableLibraries = getAvailableLibraries(currentLanguage);

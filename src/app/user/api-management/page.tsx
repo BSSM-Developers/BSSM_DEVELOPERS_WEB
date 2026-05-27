@@ -367,12 +367,12 @@ export default function MyApiManagementPage() {
 
   return (
     <Container>
-      <DocsHeader title="내 API 관리" breadcrumb={["마이페이지"]} />
+      <DocsHeader title="사용 신청 관리" breadcrumb={["마이페이지"]} />
 
       <ContentWrapper>
         <HeaderRow>
           <TitleSection>
-            <Title>내 API 관리</Title>
+            <Title>사용 신청 관리</Title>
             <Subtitle>내 API 문서의 사용 신청을 확인하고 승인/거절할 수 있어요</Subtitle>
           </TitleSection>
           <RefreshButton type="button" onClick={() => void loadItems()} disabled={isLoading}>

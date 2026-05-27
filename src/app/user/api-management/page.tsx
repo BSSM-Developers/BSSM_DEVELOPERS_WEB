@@ -359,10 +359,10 @@ export default function MyApiManagementPage() {
 
   const selectedDocsLabel = useMemo(() => {
     if (!selectedDocsId) {
-      return "전체 ORIGINAL 문서";
+      return "전체 API 문서";
     }
     const selectedDocs = ownedOriginalDocs.find((docs) => String(docs.docsId ?? "") === selectedDocsId);
-    return selectedDocs?.title || "전체 ORIGINAL 문서";
+    return selectedDocs?.title || "전체 API 문서";
   }, [ownedOriginalDocs, selectedDocsId]);
 
   return (
@@ -373,7 +373,7 @@ export default function MyApiManagementPage() {
         <HeaderRow>
           <TitleSection>
             <Title>내 API 관리</Title>
-            <Subtitle>내 ORIGINAL API 문서의 사용 신청을 확인하고 승인/거절할 수 있어요</Subtitle>
+            <Subtitle>내 API 문서의 사용 신청을 확인하고 승인/거절할 수 있어요</Subtitle>
           </TitleSection>
           <RefreshButton type="button" onClick={() => void loadItems()} disabled={isLoading}>
             새로고침
@@ -403,7 +403,7 @@ export default function MyApiManagementPage() {
                     setIsDocsMenuOpen(false);
                   }}
                 >
-                  전체 ORIGINAL 문서
+                  전체 API 문서
                 </DocsOptionButton>
                 {ownedOriginalDocs.map((docs) => {
                   const docsId = String(docs.docsId ?? "");

@@ -78,13 +78,13 @@ export function SearchBar({
                   active={activeFilter === "ORIGINAL"}
                   onClick={() => handleFilterClick("ORIGINAL")}
                 >
-                  Original API
+                  API 문서
                 </ToggleButton>
                 <ToggleButton
                   active={activeFilter === "CUSTOM"}
                   onClick={() => handleFilterClick("CUSTOM")}
                 >
-                  Custom API
+                  API 폴더집
                 </ToggleButton>
               </ToggleGroup>
             </PopupSection>

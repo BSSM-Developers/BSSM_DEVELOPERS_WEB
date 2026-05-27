@@ -85,7 +85,7 @@ export function MyDocsCard({
       <CardHeader>
         <TypeIndicator>
           <Dot type={type} />
-          {type}
+          {type === "ORIGINAL" ? "API 문서" : "API 폴더집"}
         </TypeIndicator>
         <Title>{title}</Title>
         <Description>{description}</Description>

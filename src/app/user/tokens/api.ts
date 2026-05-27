@@ -137,4 +137,8 @@ export const tokenApi = {
     const response = await fetchClient.get<ApiResponse<UnblockRequest>>(`/api/token/unblock-requests/${requestId}`);
     return response.data;
   },
+  getTryItToken: async (apiId: string) => {
+    const response = await fetchClient.get<ApiResponse<{ tokenUUID: string }>>(`/apis/${apiId}/try-it-token`);
+    return response.data;
+  },
 };

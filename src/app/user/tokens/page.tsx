@@ -9,6 +9,7 @@ import { type ApiTokenState } from "./api";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useMyUseReasonsQuery, useTokenListQuery } from "./queries";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default function TokenListPage() {
   const router = useRouter();
@@ -62,7 +63,10 @@ export default function TokenListPage() {
         {!isLoading && !errorMessage ? <TokenList>{tokenListItems}</TokenList> : null}
 
         <UnblockRequestLinkSection>
-          <StyledLink href="/user/tokens/unblock-requests">차단 해제 요청 내역 보기</StyledLink>
+          <StyledLink href="/user/tokens/unblock-requests">
+            차단 해제 요청 내역 보기
+            <ArrowRight size={16} />
+          </StyledLink>
         </UnblockRequestLinkSection>
 
         <UseReasonSection>
@@ -238,13 +242,21 @@ const UnblockRequestLinkSection = styled.div`
 `;
 
 const StyledLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.bssmDarkBlue};
+  background: ${({ theme }) => theme.colors.bssmDarkBlue};
+  color: white;
   ${({ theme }) => applyTypography(theme, "Body_4")};
-  color: ${({ theme }) => theme.colors.bssmDarkBlue};
-  text-decoration: underline;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
 
   &:hover {
-    opacity: 0.8;
+    filter: brightness(1.1);
   }
 `;
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import styled from '@emotion/styled';
 import { useRouter } from 'next/navigation';
 import { FloatingInput } from "@/components/ui/FloatingInput";
 import { ApiCard } from "@/components/apis/ApiCard";
@@ -19,6 +20,14 @@ import {
   NextButton,
   PreviewCardWrapper
 } from '../styles';
+
+const OriginalOnlyFields = styled.div<{ hidden: boolean }>`
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  opacity: ${({ hidden }) => hidden ? 0 : 1};
+  pointer-events: ${({ hidden }) => hidden ? 'none' : 'auto'};
+`;
 
 import type { FormData } from '../hooks/useDocsForm';
 
@@ -71,23 +80,17 @@ export const InputStep = ({ formData, updateFormData, handleNext, userName }: In
             onChange={e => updateFormData('description', e.target.value)}
           />
 
-          {!isCustom && (
+          <OriginalOnlyFields hidden={isCustom}>
             <FloatingInput
               label="레포지토리 이름"
               value={formData.repository_url}
               onChange={e => updateFormData('repository_url', e.target.value)}
             />
-          )}
-
-          {!isCustom && (
             <FloatingInput
               label="도메인 주소"
               value={formData.domain}
               onChange={e => updateFormData('domain', e.target.value)}
             />
-          )}
-
-          {!isCustom && (
             <InputGroup style={{ flexDirection: 'row', alignItems: 'center', gap: '12px', padding: '0 4px' }}>
               <CheckboxWrapper>
                 <Checkbox
@@ -101,7 +104,7 @@ export const InputStep = ({ formData, updateFormData, handleNext, userName }: In
                 자동 승인 활성화
               </label>
             </InputGroup>
-          )}
+          </OriginalOnlyFields>
         </Form>
         <Footer>
           <PrevButton onClick={() => router.back()}>이전으로</PrevButton>
@@ -110,17 +113,15 @@ export const InputStep = ({ formData, updateFormData, handleNext, userName }: In
       </LeftPanel>
 
       <RightPanel>
-        {(formData.title || formData.description) && (
-          <PreviewCardWrapper>
-            <ApiCard
-              id="preview"
-              title={formData.title}
-              description={formData.description || ''}
-              tags={[userName]}
-              onExplore={() => { }}
-            />
-          </PreviewCardWrapper>
-        )}
+        <PreviewCardWrapper>
+          <ApiCard
+            id="preview"
+            title={formData.title || (isCustom ? '커스텀 문서 제목' : 'API 이름')}
+            description={formData.description || (isCustom ? '커스텀 문서 소개를 입력해주세요' : 'API 소개를 입력해주세요')}
+            tags={[userName]}
+            onExplore={() => { }}
+          />
+        </PreviewCardWrapper>
       </RightPanel>
     </StepContainer>
   );

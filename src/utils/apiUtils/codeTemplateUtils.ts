@@ -90,58 +90,67 @@ function generateJavaScriptCode(
   const authHeaders = generateAuthHeader(options);
   const headers = { ...authHeaders, ...examples.header };
   const hasBody = Object.keys(examples.body).length > 0;
+  const hasHeaders = Object.keys(headers).length > 0;
+  const baseUrl = options.baseUrl || '';
+  const path = baseUrl ? url.slice(baseUrl.length) : url;
+  const fullUrlExpr = baseUrl ? `\`\${BASE_URL}${path}\`` : `'${path}'`;
+  const baseUrlDecl = baseUrl
+    ? `${wrapColor('const', 'keyword')} BASE_URL = ${wrapColor(`'${baseUrl}'`, 'string')};\n\n`
+    : '';
 
   switch (library) {
     case 'axios':
       return `${wrapColor('const', 'keyword')} axios = ${wrapColor('require', 'special')}(${wrapColor("'axios'", 'string')});
 
-${wrapColor('const', 'keyword')} response = ${wrapColor('await', 'keyword')} ${wrapColor('axios', 'function')}({
+${baseUrlDecl}${wrapColor('const', 'keyword')} response = ${wrapColor('await', 'keyword')} ${wrapColor('axios', 'function')}({
   ${wrapColor('method', 'key')}: ${wrapColor(`'${apiDoc.method.toLowerCase()}'`, 'string')},
-  ${wrapColor('url', 'key')}: ${wrapColor(`'${url}'`, 'string')},${Object.keys(headers).length > 0 ? `
-  ${wrapColor('headers', 'key')}: ${highlightJson(JSON.stringify(headers, null, 2))},` : ''}${hasBody && Object.keys(examples.body).length > 0 ? `
+  ${wrapColor('url', 'key')}: ${wrapColor(fullUrlExpr, 'string')},${hasHeaders ? `
+  ${wrapColor('headers', 'key')}: ${highlightJson(JSON.stringify(headers, null, 2))},` : ''}${hasBody ? `
   ${wrapColor('data', 'key')}: ${highlightJson(JSON.stringify(examples.body, null, 2))},` : ''}
 });
 
 ${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(response.data);`;
 
-    case 'fetch':
+    case 'fetch': {
       const fetchOptions: string[] = [`${wrapColor('method', 'key')}: ${wrapColor(`'${apiDoc.method}'`, 'string')}`];
 
-      if (Object.keys(headers).length > 0) {
+      if (hasHeaders) {
         fetchOptions.push(`${wrapColor('headers', 'key')}: ${highlightJson(JSON.stringify(headers, null, 2))}`);
       }
 
-      if (hasBody && Object.keys(examples.body).length > 0) {
+      if (hasBody) {
         fetchOptions.push(`${wrapColor('body', 'key')}: ${wrapColor('JSON.stringify', 'function')}(${highlightJson(JSON.stringify(examples.body, null, 2))})`);
       }
 
-      return `${wrapColor('const', 'keyword')} response = ${wrapColor('await', 'keyword')} ${wrapColor('fetch', 'function')}(${wrapColor(`'${url}'`, 'string')}, {
+      return `${baseUrlDecl}${wrapColor('const', 'keyword')} response = ${wrapColor('await', 'keyword')} ${wrapColor('fetch', 'function')}(${wrapColor(fullUrlExpr, 'string')}, {
   ${fetchOptions.join(',\n  ')}
 });
 
 ${wrapColor('const', 'keyword')} data = ${wrapColor('await', 'keyword')} response.${wrapColor('json', 'function')}();
 ${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(data);`;
+    }
 
-    case 'jquery':
+    case 'jquery': {
       const jqueryOptions: string[] = [
-        `${wrapColor('url', 'key')}: ${wrapColor(`'${url}'`, 'string')}`,
+        `${wrapColor('url', 'key')}: ${wrapColor(fullUrlExpr, 'string')}`,
         `${wrapColor('method', 'key')}: ${wrapColor(`'${apiDoc.method}'`, 'string')}`
       ];
 
-      if (Object.keys(headers).length > 0) {
+      if (hasHeaders) {
         jqueryOptions.push(`${wrapColor('headers', 'key')}: ${highlightJson(JSON.stringify(headers, null, 2))}`);
       }
 
-      if (hasBody && Object.keys(examples.body).length > 0) {
+      if (hasBody) {
         jqueryOptions.push(`${wrapColor('contentType', 'key')}: ${wrapColor("'application/json'", 'string')}`);
         jqueryOptions.push(`${wrapColor('data', 'key')}: ${wrapColor('JSON.stringify', 'function')}(${highlightJson(JSON.stringify(examples.body, null, 2))})`);
       }
 
-      return `${wrapColor('$', 'function')}.${wrapColor('ajax', 'function')}({
+      return `${baseUrlDecl}${wrapColor('$', 'function')}.${wrapColor('ajax', 'function')}({
   ${jqueryOptions.join(',\n  ')}
 }).${wrapColor('done', 'function')}(${wrapColor('function', 'keyword')}(response) {
   ${wrapColor('console', 'keyword')}.${wrapColor('log', 'function')}(response);
 });`;
+    }
 
     default:
       return generateJavaScriptCode(apiDoc, url, examples, 'axios', options);
@@ -159,14 +168,37 @@ function generatePythonCode(
   const headers = { ...authHeaders, ...examples.header };
   const hasBody = Object.keys(examples.body).length > 0;
 
-  return `${wrapColor('import', 'keyword')} ${wrapColor('requests', 'function')}
+  const hasHeaders = Object.keys(headers).length > 0;
+  const baseUrl = options.baseUrl || '';
+  const path = baseUrl ? url.slice(baseUrl.length) : url;
 
-${Object.keys(headers).length > 0 ? `${wrapColor('headers', 'variable')} = ${highlightJson(JSON.stringify(headers, null, 2))}` : ''}
-${hasBody && Object.keys(examples.body).length > 0 ? `${wrapColor('data', 'variable')} = ${highlightJson(JSON.stringify(examples.body, null, 2))}` : ''}
+  const lines: string[] = [
+    `${wrapColor('import', 'keyword')} ${wrapColor('requests', 'function')}`,
+    '',
+    `${wrapColor('BASE_URL', 'variable')} = ${wrapColor(`'${baseUrl}'`, 'string')}`,
+  ];
 
-${wrapColor('response', 'variable')} = ${wrapColor('requests', 'function')}.${wrapColor(apiDoc.method.toLowerCase(), 'function')}(${wrapColor(`'${url}'`, 'string')}${Object.keys(headers).length > 0 ? `, ${wrapColor('headers', 'key')}=${wrapColor('headers', 'variable')}` : ''}${hasBody && Object.keys(examples.body).length > 0 ? `, ${wrapColor('json', 'key')}=${wrapColor('data', 'variable')}` : ''})
+  if (hasHeaders) {
+    lines.push('');
+    lines.push(`${wrapColor('headers', 'variable')} = ${highlightJson(JSON.stringify(headers, null, 2))}`);
+  }
 
-${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColor('json', 'function')}())`;
+  if (hasBody) {
+    lines.push('');
+    lines.push(`${wrapColor('data', 'variable')} = ${highlightJson(JSON.stringify(examples.body, null, 2))}`);
+  }
+
+  const urlArg = wrapColor(`f'{BASE_URL}${path}'`, 'string');
+  const callArgs = [urlArg];
+  if (hasHeaders) callArgs.push(`${wrapColor('headers', 'key')}=${wrapColor('headers', 'variable')}`);
+  if (hasBody) callArgs.push(`${wrapColor('json', 'key')}=${wrapColor('data', 'variable')}`);
+
+  lines.push('');
+  lines.push(`${wrapColor('response', 'variable')} = ${wrapColor('requests', 'function')}.${wrapColor(apiDoc.method.toLowerCase(), 'function')}(${callArgs.join(', ')})`);
+  lines.push('');
+  lines.push(`${wrapColor('print', 'keyword')}(${wrapColor('response', 'variable')}.${wrapColor('json', 'function')}())`);
+
+  return lines.join('\n');
 }
 
 export function paramsToObject(params: ApiParam[]): Record<string, unknown> {

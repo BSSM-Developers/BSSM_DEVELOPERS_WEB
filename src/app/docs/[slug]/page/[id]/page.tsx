@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
+import { CopyToLLMButton } from "@/components/docs/CopyToLLMButton";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useDocsPageQuery, useDocsSidebarQuery } from "@/app/docs/queries";
 import { DocsBlock as DocsBlockType } from "@/types/docs";
@@ -74,14 +75,25 @@ export default function DocsPageDetail() {
   const displayTitle = selectedPathLabels.length > 0 ? selectedPathLabels[selectedPathLabels.length - 1] : "문서";
   const breadcrumb = selectedPathLabels.length > 1 ? selectedPathLabels.slice(0, -1) : [projectTitle];
   const blocks = pageData?.data?.docsBlocks || [];
+  const pageVersion = pageData?.data?.version;
 
   return (
     <>
-      <DocsHeader title={displayTitle} breadcrumb={breadcrumb} isApi={false} />
+      <PageHeader>
+        <DocsHeader title={displayTitle} breadcrumb={breadcrumb} isApi={false} />
+        <HeaderActions>
+          <CopyToLLMButton
+            blocks={blocks}
+            projectTitle={projectTitle}
+            pageTitle={displayTitle}
+            breadcrumb={breadcrumb}
+          />
+        </HeaderActions>
+      </PageHeader>
       <ContentArea>
         {blocks.length > 0 ? (
           blocks.map((block: DocsBlockType, index: number) => (
-            <DocsBlockViewer key={index} block={block} />
+            <DocsBlockViewer key={index} block={block} version={pageVersion} />
           ))
         ) : (
           <EmptyText>
@@ -106,6 +118,18 @@ export default function DocsPageDetail() {
     </>
   );
 }
+
+const PageHeader = styled.div`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding-right: 48px;
+`;
+
+const HeaderActions = styled.div`
+  padding-top: 2px;
+  flex-shrink: 0;
+`;
 
 const ErrorBox = styled.div`
   padding: 40px;

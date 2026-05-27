@@ -56,6 +56,7 @@ export interface DocsPageResponse {
     mappedId: string;
     docsId: string;
     endpoint: string;
+    version?: number;
     docsBlocks: DocsBlock[];
     sourceDocsId?: string;
     sourceMappedId?: string;

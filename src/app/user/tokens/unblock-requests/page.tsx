@@ -48,7 +48,9 @@ export default function UnblockRequestsPage() {
                   <RequestItem key={request.requestId}>
                     <RequestHeader>
                       <RequestId>요청 ID #{request.requestId}</RequestId>
-                      <RequestState state={request.state}>{request.state}</RequestState>
+                      <RequestState state={request.state}>
+                        {request.state === "APPROVED" ? "승인됨" : request.state === "REJECTED" ? "거절됨" : request.state === "PENDING" ? "대기중" : request.state}
+                      </RequestState>
                     </RequestHeader>
                     <RequestInfo>
                       <RequestTokenName>토큰: {request.apiTokenName}</RequestTokenName>

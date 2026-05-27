@@ -36,7 +36,9 @@ export default function TokenListPage() {
         <TokenInfoSection>
           <TokenHeader>
             <TokenName>{token.apiTokenName}</TokenName>
-            <TokenStateBadge state={token.state ?? "NORMAL"}>{token.state ?? "NORMAL"}</TokenStateBadge>
+            <TokenStateBadge state={token.state ?? "NORMAL"}>
+              {token.state === "BLOCKED" ? "차단됨" : token.state === "WARNING" ? "경고" : "활성"}
+            </TokenStateBadge>
           </TokenHeader>
           <TokenId>{token.apiTokenClientId}</TokenId>
         </TokenInfoSection>
@@ -83,7 +85,9 @@ export default function TokenListPage() {
                   <UseReasonItem key={item.apiUseReasonId}>
                     <UseReasonHeader>
                       <UseReasonId>신청 ID #{item.apiUseReasonId}</UseReasonId>
-                      <UseReasonState state={item.apiUseState}>{item.apiUseState}</UseReasonState>
+                      <UseReasonState state={item.apiUseState}>
+                        {item.apiUseState === "APPROVED" ? "승인됨" : item.apiUseState === "REJECTED" ? "거절됨" : item.apiUseState === "PENDING" ? "대기중" : item.apiUseState}
+                      </UseReasonState>
                     </UseReasonHeader>
                     <UseReasonText>{item.apiUseReason || "-"}</UseReasonText>
                   </UseReasonItem>

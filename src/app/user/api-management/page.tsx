@@ -457,7 +457,9 @@ export default function MyApiManagementPage() {
                   <RequestCard key={actionKey}>
                     <CardHeader>
                       <ApiName>{item.apiName || item.sourceApiLabel || "이름 없는 API"}</ApiName>
-                      <StateBadge state={state}>{state || "UNKNOWN"}</StateBadge>
+                      <StateBadge state={state}>
+                        {state === "APPROVED" ? "승인됨" : state === "REJECTED" ? "거절됨" : state === "PENDING" ? "대기중" : state || "알 수 없음"}
+                      </StateBadge>
                     </CardHeader>
 
                     <MetaGrid>

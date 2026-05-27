@@ -37,6 +37,7 @@ export interface ApiParam {
 export interface ApiDoc {
   id: string;
   name: string;
+  version?: string;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   endpoint: string;
   description: string;

@@ -10,6 +10,7 @@ import type { ApiDoc, ApiParam } from "@/types/docs";
 type ApiDocModuleProps = {
   apiId: string;
   apiName: string;
+  version?: string;
   domain?: string;
   method: HttpMethod;
   endpoint: string;
@@ -52,6 +53,7 @@ type ApiDocModuleProps = {
 export function ApiDocModule({
   apiId,
   apiName,
+  version,
   domain,
   method,
   endpoint,
@@ -135,6 +137,7 @@ export function ApiDocModule({
           <ApiHeader
             title={apiName}
             description={description}
+            version={version}
             domain={domain}
             method={method}
             endpoint={endpoint}

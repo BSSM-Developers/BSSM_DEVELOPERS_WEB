@@ -75,6 +75,7 @@ export default function DocsPageDetail() {
   const displayTitle = selectedPathLabels.length > 0 ? selectedPathLabels[selectedPathLabels.length - 1] : "문서";
   const breadcrumb = selectedPathLabels.length > 1 ? selectedPathLabels.slice(0, -1) : [projectTitle];
   const blocks = pageData?.data?.docsBlocks || [];
+  const pageVersion = pageData?.data?.version;
 
   return (
     <>
@@ -92,7 +93,7 @@ export default function DocsPageDetail() {
       <ContentArea>
         {blocks.length > 0 ? (
           blocks.map((block: DocsBlockType, index: number) => (
-            <DocsBlockViewer key={index} block={block} />
+            <DocsBlockViewer key={index} block={block} version={pageVersion} />
           ))
         ) : (
           <EmptyText>

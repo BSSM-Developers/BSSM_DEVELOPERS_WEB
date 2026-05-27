@@ -93,8 +93,8 @@ export function MyDocsCard({
 
       <MetaSection>
         <MetaRow>
-          <MetaLabel>Auto Approval</MetaLabel>
-          <MetaValue>{autoApproval === null ? "-" : String(autoApproval)}</MetaValue>
+          <MetaLabel>자동 승인</MetaLabel>
+          <MetaValue>{autoApproval === null ? "-" : autoApproval ? "활성화" : "비활성화"}</MetaValue>
         </MetaRow>
         <MetaRow>
           <MetaLabel>레포지토리</MetaLabel>

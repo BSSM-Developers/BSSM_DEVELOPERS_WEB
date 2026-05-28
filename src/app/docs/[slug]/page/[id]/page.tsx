@@ -31,6 +31,7 @@ export default function DocsPageDetail() {
 
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
 
   const { data: pageData, isLoading: isPageLoading, error: pageError } = useDocsPageQuery(slug || "", id || "");
   const { data: sidebarData } = useDocsSidebarQuery(slug || "");
@@ -129,16 +130,24 @@ export default function DocsPageDetail() {
         )}
       </ContentArea>
 
-      <FloatingActions>
-        {isApiPage && (
-          <FolderButton type="button" onClick={() => setIsFolderOpen(true)}>
-            폴더에 담기
-          </FolderButton>
-        )}
-        <ApplyButton type="button" onClick={() => setIsApplyOpen(true)}>
-          사용 신청
-        </ApplyButton>
-      </FloatingActions>
+      <SpeedDial>
+        {fabOpen && <FabBackdrop onClick={() => setFabOpen(false)} />}
+        <SpeedDialList>
+          {isApiPage && (
+            <SpeedDialRow $open={fabOpen} style={{ transitionDelay: fabOpen ? "60ms" : "0ms" }}>
+              <SpeedDialLabel onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}>폴더에 담기</SpeedDialLabel>
+              <SpeedDialDot type="button" onClick={() => { setFabOpen(false); setIsFolderOpen(true); }} />
+            </SpeedDialRow>
+          )}
+          <SpeedDialRow $open={fabOpen} style={{ transitionDelay: fabOpen ? "0ms" : "60ms" }}>
+            <SpeedDialLabel onClick={() => { setFabOpen(false); setIsApplyOpen(true); }}>사용 신청</SpeedDialLabel>
+            <SpeedDialDot type="button" $primary onClick={() => { setFabOpen(false); setIsApplyOpen(true); }} />
+          </SpeedDialRow>
+        </SpeedDialList>
+        <FabButton type="button" $open={fabOpen} onClick={() => setFabOpen(p => !p)}>
+          {fabOpen ? "✕" : "☰"}
+        </FabButton>
+      </SpeedDial>
 
       {isApplyOpen ? (
         <ApiUseApplyModal
@@ -193,14 +202,14 @@ const EmptyText = styled.div`
   color: #9ca3af;
 `;
 
-const FloatingActions = styled.div`
+const SpeedDial = styled.div`
   position: fixed;
   right: 32px;
   bottom: 32px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  align-items: stretch;
+  align-items: flex-end;
+  gap: 12px;
   z-index: 100;
 
   @media (max-width: 767px) {
@@ -209,40 +218,78 @@ const FloatingActions = styled.div`
   }
 `;
 
-const ApplyButton = styled.button`
-  height: 44px;
-  padding: 0 20px;
-  border-radius: 10px;
-  border: none;
-  background: #16335c;
-  color: white;
+const FabBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+`;
+
+const SpeedDialList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+`;
+
+const SpeedDialRow = styled.div<{ $open: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: ${({ $open }) => ($open ? 1 : 0)};
+  transform: ${({ $open }) => ($open ? "translateY(0)" : "translateY(10px)")};
+  pointer-events: ${({ $open }) => ($open ? "auto" : "none")};
+  transition: opacity 0.2s ease, transform 0.2s ease;
+`;
+
+const SpeedDialLabel = styled.span`
+  background: white;
+  color: #16335c;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(22, 51, 92, 0.22);
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+`;
+
+const SpeedDialDot = styled.button<{ $primary?: boolean }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: ${({ $primary }) => ($primary ? "#16335c" : "white")};
+  box-shadow: 0 4px 14px rgba(22, 51, 92, 0.24);
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     filter: brightness(1.08);
   }
 `;
 
-const FolderButton = styled.button`
-  height: 44px;
-  padding: 0 20px;
-  border-radius: 10px;
-  border: 1.5px solid #16335c;
-  background: white;
-  color: #16335c;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+const FabButton = styled.button<{ $open: boolean }>`
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: #16335c;
+  color: white;
+  font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(22, 51, 92, 0.1);
-  white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(22, 51, 92, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.22s ease;
+  transform: ${({ $open }) => ($open ? "rotate(90deg)" : "rotate(0deg)")};
 
   &:hover {
-    background: #f0f4fa;
+    filter: brightness(1.1);
   }
 `;

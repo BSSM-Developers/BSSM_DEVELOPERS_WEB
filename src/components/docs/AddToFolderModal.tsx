@@ -164,48 +164,51 @@ export function AddToFolderModal({
   if (!isOpen || typeof document === "undefined") return null;
 
   return createPortal(
-    <Overlay
-      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
+    <Overlay onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <Dialog onClick={(e) => e.stopPropagation()}>
-        <Header>
-          <Title>폴더에 담기</Title>
-          <CloseButton type="button" onClick={onClose}>닫기</CloseButton>
-        </Header>
-        <Desc>
-          <strong>{sourceLabel}</strong>을(를) 담을 폴더집을 선택하세요.
-        </Desc>
+        <ModalHeader>
+          <HeaderTop>
+            <FolderIcon>🗂</FolderIcon>
+            <HeaderText>
+              <Title>폴더에 담기</Title>
+              <Subtitle><em>{sourceLabel}</em>을(를) 담을 폴더집 선택</Subtitle>
+            </HeaderText>
+            <CloseBtn type="button" onClick={onClose} aria-label="닫기">✕</CloseBtn>
+          </HeaderTop>
+        </ModalHeader>
 
-        {isLoading && <StatusText>폴더 목록을 불러오는 중...</StatusText>}
-        {!isLoading && folders.length === 0 && (
-          <StatusText>등록된 폴더집이 없습니다.</StatusText>
-        )}
-
-        <List>
-          {folders.map((folder) => {
-            const fid = folder.docsId;
-            const isAdding = addingId === fid;
-            const isDone = doneIds.has(fid);
-            const isError = errorIds.has(fid);
-            return (
-              <Item key={fid}>
-                <ItemInfo>
-                  <ItemTitle>{folder.title}</ItemTitle>
-                  {folder.description && <ItemDesc>{folder.description}</ItemDesc>}
-                </ItemInfo>
-                <AddBtn
-                  type="button"
-                  $done={isDone}
-                  $error={isError}
-                  disabled={isAdding || !!addingId || isDone}
-                  onClick={() => handleAdd(fid)}
-                >
-                  {isAdding ? "담는 중..." : isDone ? "완료" : isError ? "재시도" : "담기"}
-                </AddBtn>
-              </Item>
-            );
-          })}
-        </List>
+        <Body>
+          {isLoading && <StatusText>폴더 목록을 불러오는 중...</StatusText>}
+          {!isLoading && folders.length === 0 && (
+            <StatusText>등록된 폴더집이 없습니다.</StatusText>
+          )}
+          <List>
+            {folders.map((folder) => {
+              const fid = folder.docsId;
+              const isAdding = addingId === fid;
+              const isDone = doneIds.has(fid);
+              const isError = errorIds.has(fid);
+              return (
+                <Item key={fid} $done={isDone}>
+                  <ItemAvatar>{folder.title.charAt(0).toUpperCase()}</ItemAvatar>
+                  <ItemInfo>
+                    <ItemTitle>{folder.title}</ItemTitle>
+                    {folder.description && <ItemDesc>{folder.description}</ItemDesc>}
+                  </ItemInfo>
+                  <AddBtn
+                    type="button"
+                    $done={isDone}
+                    $error={isError}
+                    disabled={isAdding || !!addingId || isDone}
+                    onClick={() => handleAdd(fid)}
+                  >
+                    {isAdding ? "담는 중…" : isDone ? "✓ 완료" : isError ? "재시도" : "담기"}
+                  </AddBtn>
+                </Item>
+              );
+            })}
+          </List>
+        </Body>
       </Dialog>
     </Overlay>,
     document.body
@@ -215,7 +218,8 @@ export function AddToFolderModal({
 const Overlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(17, 24, 39, 0.45);
+  background: rgba(8, 16, 33, 0.55);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,54 +228,89 @@ const Overlay = styled.div`
 `;
 
 const Dialog = styled.div`
-  width: min(520px, 100%);
-  max-height: min(640px, calc(100vh - 40px));
+  width: min(480px, 100%);
+  max-height: min(600px, calc(100vh - 40px));
   display: flex;
   flex-direction: column;
-  gap: 14px;
   background: #ffffff;
-  border-radius: 14px;
-  padding: 24px;
-  box-shadow: 0 24px 56px rgba(17, 24, 39, 0.24);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 32px 72px rgba(7, 18, 44, 0.28);
 `;
 
-const Header = styled.div`
+const ModalHeader = styled.div`
+  background: linear-gradient(135deg, #16335c 0%, #1e4a7a 100%);
+  padding: 22px 24px 20px;
+  flex-shrink: 0;
+`;
+
+const HeaderTop = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 14px;
+`;
+
+const FolderIcon = styled.span`
+  font-size: 28px;
+  line-height: 1;
+  margin-top: 2px;
+  flex-shrink: 0;
+`;
+
+const HeaderText = styled.div`
+  flex: 1;
+  min-width: 0;
 `;
 
 const Title = styled.h2`
-  margin: 0;
-  font-size: 20px;
+  margin: 0 0 3px;
+  font-size: 18px;
   font-weight: 700;
-  color: #111827;
+  color: #ffffff;
   font-family: "Spoqa Han Sans Neo", sans-serif;
+  letter-spacing: -0.4px;
 `;
 
-const CloseButton = styled.button`
-  height: 34px;
-  padding: 0 12px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  color: #374151;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-`;
-
-const Desc = styled.p`
+const Subtitle = styled.p`
   margin: 0;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  color: #6b7280;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
 
-  strong {
-    color: #111827;
-    font-weight: 700;
+  em {
+    font-style: normal;
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 600;
   }
+`;
+
+const CloseBtn = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+`;
+
+const Body = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 `;
 
 const StatusText = styled.p`
@@ -280,24 +319,44 @@ const StatusText = styled.p`
   font-size: 14px;
   color: #9ca3af;
   text-align: center;
-  padding: 16px 0;
+  padding: 24px 0;
 `;
 
 const List = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-  overflow-y: auto;
 `;
 
-const Item = styled.div`
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+const Item = styled.div<{ $done?: boolean }>`
+  border: 1.5px solid ${({ $done }) => ($done ? "#d1fae5" : "#f0f2f5")};
+  border-radius: 14px;
   padding: 12px 14px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+  background: ${({ $done }) => ($done ? "#f0fdf4" : "#fafafa")};
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: ${({ $done }) => ($done ? "#d1fae5" : "#d0d8e8")};
+    background: ${({ $done }) => ($done ? "#f0fdf4" : "#f4f6fb")};
+  }
+`;
+
+const ItemAvatar = styled.div`
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #16335c 0%, #2563a8 100%);
+  color: white;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 `;
 
 const ItemInfo = styled.div`
@@ -307,15 +366,18 @@ const ItemInfo = styled.div`
 
 const ItemTitle = styled.div`
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;
 
 const ItemDesc = styled.div`
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 13px;
-  color: #6b7280;
+  font-size: 12px;
+  color: #9ca3af;
   margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -323,20 +385,24 @@ const ItemDesc = styled.div`
 `;
 
 const AddBtn = styled.button<{ $done?: boolean; $error?: boolean }>`
-  height: 34px;
-  padding: 0 16px;
-  border-radius: 8px;
-  border: 1px solid ${({ $done, $error }) =>
-    $done ? "#0CA678" : $error ? "#FA5252" : "#16335C"};
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: none;
   background: ${({ $done, $error }) =>
-    $done ? "#0CA678" : $error ? "#FA5252" : "#16335C"};
-  color: white;
+    $done ? "#d1fae5" : $error ? "#fee2e2" : "#16335c"};
+  color: ${({ $done, $error }) =>
+    $done ? "#065f46" : $error ? "#991b1b" : "white"};
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
-  opacity: ${({ disabled }) => (disabled ? 0.7 : 1)};
+  opacity: ${({ disabled }) => (disabled ? 0.8 : 1)};
   flex-shrink: 0;
-  transition: background 0.15s;
   white-space: nowrap;
+  transition: filter 0.15s;
+
+  &:hover:not(:disabled) {
+    filter: brightness(0.95);
+  }
 `;

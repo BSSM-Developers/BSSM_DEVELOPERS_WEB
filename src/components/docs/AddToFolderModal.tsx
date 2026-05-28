@@ -167,14 +167,24 @@ export function AddToFolderModal({
     <Overlay onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <Dialog onClick={(e) => e.stopPropagation()}>
         <ModalHeader>
-          <HeaderTop>
-            <FolderIcon>🗂</FolderIcon>
+          <HeaderLeft>
+            <HeaderIcon>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16335c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                <line x1="12" y1="11" x2="12" y2="17"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
+              </svg>
+            </HeaderIcon>
             <HeaderText>
               <Title>폴더에 담기</Title>
               <Subtitle><em>{sourceLabel}</em>을(를) 담을 폴더집 선택</Subtitle>
             </HeaderText>
-            <CloseBtn type="button" onClick={onClose} aria-label="닫기">✕</CloseBtn>
-          </HeaderTop>
+          </HeaderLeft>
+          <CloseBtn type="button" onClick={onClose} aria-label="닫기">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </CloseBtn>
         </ModalHeader>
 
         <Body>
@@ -190,7 +200,6 @@ export function AddToFolderModal({
               const isError = errorIds.has(fid);
               return (
                 <Item key={fid} $done={isDone}>
-                  <ItemAvatar>{folder.title.charAt(0).toUpperCase()}</ItemAvatar>
                   <ItemInfo>
                     <ItemTitle>{folder.title}</ItemTitle>
                     {folder.description && <ItemDesc>{folder.description}</ItemDesc>}
@@ -243,47 +252,59 @@ const Dialog = styled.div`
 `;
 
 const ModalHeader = styled.div`
-  background: linear-gradient(135deg, #16335c 0%, #1e4a7a 100%);
-  padding: 22px 24px 20px;
+  background: #ffffff;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #f0f2f5;
   flex-shrink: 0;
-`;
-
-const HeaderTop = styled.div`
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 `;
 
-const FolderIcon = styled.span`
-  font-size: 28px;
-  line-height: 1;
-  margin-top: 2px;
+const HeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+`;
+
+const HeaderIcon = styled.div`
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f0f4fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 `;
 
 const HeaderText = styled.div`
-  flex: 1;
   min-width: 0;
 `;
 
 const Title = styled.h2`
-  margin: 0 0 3px;
-  font-size: 18px;
+  margin: 0 0 2px;
+  font-size: 16px;
   font-weight: 700;
-  color: #ffffff;
+  color: #16335c;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  letter-spacing: -0.4px;
+  letter-spacing: -0.3px;
 `;
 
 const Subtitle = styled.p`
   margin: 0;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   em {
     font-style: normal;
-    color: rgba(255, 255, 255, 0.95);
+    color: #4b5563;
     font-weight: 600;
   }
 `;
@@ -293,9 +314,8 @@ const CloseBtn = styled.button`
   height: 28px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-  font-size: 14px;
+  background: #f3f4f6;
+  color: #6b7280;
   cursor: pointer;
   flex-shrink: 0;
   display: flex;
@@ -304,7 +324,8 @@ const CloseBtn = styled.button`
   transition: background 0.15s;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: #e5e7eb;
+    color: #374151;
   }
 `;
 
@@ -333,34 +354,19 @@ const List = styled.div`
 `;
 
 const Item = styled.div<{ $done?: boolean }>`
-  border: 1.5px solid ${({ $done }) => ($done ? "#d1fae5" : "#f0f2f5")};
-  border-radius: 14px;
+  border: 1px solid ${({ $done }) => ($done ? "#bbf7d0" : "#e9ecf2")};
+  border-radius: 12px;
   padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: ${({ $done }) => ($done ? "#f0fdf4" : "#fafafa")};
-  transition: border-color 0.2s, background 0.2s;
+  background: ${({ $done }) => ($done ? "#f0fdf4" : "#ffffff")};
+  transition: border-color 0.15s, background 0.15s;
 
   &:hover {
-    border-color: ${({ $done }) => ($done ? "#d1fae5" : "#d0d8e8")};
-    background: ${({ $done }) => ($done ? "#f0fdf4" : "#f4f6fb")};
+    border-color: ${({ $done }) => ($done ? "#bbf7d0" : "#c8d3e8")};
+    background: ${({ $done }) => ($done ? "#f0fdf4" : "#f8f9fc")};
   }
-`;
-
-const ItemAvatar = styled.div`
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #16335c 0%, #2563a8 100%);
-  color: white;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
 `;
 
 const ItemInfo = styled.div`
@@ -372,7 +378,7 @@ const ItemTitle = styled.div`
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: #1f2937;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -389,24 +395,28 @@ const ItemDesc = styled.div`
 `;
 
 const AddBtn = styled.button<{ $done?: boolean; $error?: boolean }>`
-  height: 32px;
+  height: 30px;
   padding: 0 14px;
   border-radius: 999px;
-  border: none;
+  border: 1.5px solid ${({ $done, $error }) =>
+    $done ? "#16a34a" : $error ? "#dc2626" : "#16335c"};
   background: ${({ $done, $error }) =>
-    $done ? "#d1fae5" : $error ? "#fee2e2" : "#16335c"};
+    $done ? "#f0fdf4" : $error ? "#fef2f2" : "transparent"};
   color: ${({ $done, $error }) =>
-    $done ? "#065f46" : $error ? "#991b1b" : "white"};
+    $done ? "#16a34a" : $error ? "#dc2626" : "#16335c"};
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 12px;
   font-weight: 700;
   cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
-  opacity: ${({ disabled }) => (disabled ? 0.8 : 1)};
+  opacity: ${({ disabled }) => (disabled ? 0.6 : 1)};
   flex-shrink: 0;
   white-space: nowrap;
-  transition: filter 0.15s;
+  transition: background 0.15s, color 0.15s;
 
   &:hover:not(:disabled) {
-    filter: brightness(0.95);
+    background: ${({ $done, $error }) =>
+      $done ? "#dcfce7" : $error ? "#fee2e2" : "#16335c"};
+    color: ${({ $done, $error }) =>
+      $done ? "#16a34a" : $error ? "#dc2626" : "white"};
   }
 `;

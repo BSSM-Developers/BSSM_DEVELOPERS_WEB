@@ -136,16 +136,23 @@ export default function DocsPageDetail() {
           {isApiPage && (
             <SpeedDialRow $open={fabOpen} style={{ transitionDelay: fabOpen ? "60ms" : "0ms" }}>
               <SpeedDialLabel onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}>폴더에 담기</SpeedDialLabel>
-              <SpeedDialDot type="button" onClick={() => { setFabOpen(false); setIsFolderOpen(true); }} />
+              <SpeedDialDot type="button" onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16335c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+              </SpeedDialDot>
             </SpeedDialRow>
           )}
           <SpeedDialRow $open={fabOpen} style={{ transitionDelay: fabOpen ? "0ms" : "60ms" }}>
             <SpeedDialLabel onClick={() => { setFabOpen(false); setIsApplyOpen(true); }}>사용 신청</SpeedDialLabel>
-            <SpeedDialDot type="button" $primary onClick={() => { setFabOpen(false); setIsApplyOpen(true); }} />
+            <SpeedDialDot type="button" $primary onClick={() => { setFabOpen(false); setIsApplyOpen(true); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </SpeedDialDot>
           </SpeedDialRow>
         </SpeedDialList>
         <FabButton type="button" $open={fabOpen} onClick={() => setFabOpen(p => !p)}>
-          {fabOpen ? "✕" : "☰"}
+          {fabOpen
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          }
         </FabButton>
       </SpeedDial>
 
@@ -259,7 +266,7 @@ const SpeedDialDot = styled.button<{ $primary?: boolean }>`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: none;
+  border: ${({ $primary }) => ($primary ? "none" : "1.5px solid #d0d8ea")};
   background: ${({ $primary }) => ($primary ? "#16335c" : "white")};
   box-shadow: 0 4px 14px rgba(22, 51, 92, 0.24);
   cursor: pointer;
@@ -280,7 +287,6 @@ const FabButton = styled.button<{ $open: boolean }>`
   border: none;
   background: #16335c;
   color: white;
-  font-size: 18px;
   cursor: pointer;
   box-shadow: 0 6px 20px rgba(22, 51, 92, 0.32);
   display: flex;

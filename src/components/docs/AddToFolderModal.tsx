@@ -92,7 +92,7 @@ export function AddToFolderModal({
         saveDoneId(sourceDocsId, sourceMappedId, targetDocsId);
         setDoneIds((prev) => new Set([...prev, targetDocsId]));
       } catch (error) {
-        if (error instanceof Error && error.message.includes("(409")) {
+        if (error instanceof Error && (error.message.includes("[409]") || error.message.includes("(409"))) {
           saveDoneId(sourceDocsId, sourceMappedId, targetDocsId);
           setDoneIds((prev) => new Set([...prev, targetDocsId]));
         } else {

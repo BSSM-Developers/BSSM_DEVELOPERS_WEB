@@ -541,7 +541,7 @@ export function DocsSidebar({
               {groupedModuleOptions.apiOptions.length > 0 && (
                 <PickerItem
                   onMouseEnter={() => setApiMethodOpen(true)}
-                  onClick={() => setApiMethodOpen((prev) => !prev)}
+                  onClick={() => setApiMethodOpen(true)}
                 >
                   <PickerItemContent>
                     API

@@ -1,7 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
@@ -268,6 +268,7 @@ export function DocsSidebar({
     targetId: string | null;
   }>({ open: false, anchor: null, mode: "sibling", targetId: null });
   const [apiMethodOpen, setApiMethodOpen] = useState(false);
+  const apiPickerTouchRef = useRef(false);
 
   const groupedModuleOptions = useMemo(() => {
     const apiOptions = moduleOptions.filter((option) => option.module === "api" && option.method);
@@ -541,7 +542,15 @@ export function DocsSidebar({
               {groupedModuleOptions.apiOptions.length > 0 && (
                 <PickerItem
                   onMouseEnter={() => setApiMethodOpen(true)}
-                  onClick={() => setApiMethodOpen(true)}
+                  onTouchStart={() => { apiPickerTouchRef.current = true; }}
+                  onClick={() => {
+                    if (apiPickerTouchRef.current) {
+                      apiPickerTouchRef.current = false;
+                      setApiMethodOpen(true);
+                    } else {
+                      setApiMethodOpen((prev) => !prev);
+                    }
+                  }}
                 >
                   <PickerItemContent>
                     API

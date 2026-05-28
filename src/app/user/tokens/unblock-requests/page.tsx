@@ -44,8 +44,8 @@ export default function UnblockRequestsPage() {
           unblockRequests.length > 0 ? (
             <>
               <RequestList>
-                {unblockRequests.map((request) => (
-                  <RequestItem key={request.requestId}>
+                {unblockRequests.map((request, index) => (
+                  <RequestItem key={request.requestId ?? index}>
                     <RequestHeader>
                       <RequestId>요청 ID #{request.requestId}</RequestId>
                       <RequestState state={request.state}>
@@ -88,6 +88,10 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
+
+  @media (max-width: 600px) {
+    padding: 0 16px 16px 16px;
+  }
 `;
 
 const HeaderRow = styled.div`
@@ -95,6 +99,10 @@ const HeaderRow = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 40px;
+
+  @media (max-width: 600px) {
+    margin-bottom: 24px;
+  }
 `;
 
 const TitleSection = styled.div``;
@@ -113,20 +121,17 @@ const Subtitle = styled.p`
 const StatusText = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: ${({ theme }) => theme.colors.grey[500]};
-  padding: 0 24px;
 `;
 
 const ErrorText = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: #d32f2f;
-  padding: 0 24px;
 `;
 
 const RequestList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 24px;
 `;
 
 const RequestItem = styled.div`
@@ -201,11 +206,10 @@ const PaginationWrapper = styled.div`
   align-items: center;
   gap: 16px;
   margin-top: 32px;
-  padding: 0 24px;
 `;
 
 const PaginationButton = styled.button<{ disabled?: boolean }>`
-  padding: 10px 24px;
+  padding: 8px 20px;
   border-radius: 8px;
   border: 1px solid ${({ theme, disabled }) => disabled ? theme.colors.grey[200] : theme.colors.bssmDarkBlue};
   background: ${({ theme, disabled }) => disabled ? theme.colors.grey[100] : theme.colors.bssmDarkBlue};

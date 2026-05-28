@@ -399,6 +399,8 @@ const Content = styled.main<{ contentBottomPadding: number }>`
   display: flex;
   flex-direction: column;
   cursor: text;
+  position: relative;
+  z-index: 0;
 
   @media (max-width: 767px) {
     padding: ${({ contentBottomPadding }) => `16px 16px ${contentBottomPadding}px`};

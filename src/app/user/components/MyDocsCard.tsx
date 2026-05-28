@@ -277,7 +277,9 @@ const CardFooter = styled.div`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
 `;
 
 const ActionButton = styled.button<{ primary?: boolean; danger?: boolean }>`

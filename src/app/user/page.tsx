@@ -333,6 +333,10 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
+
+  @media (max-width: 600px) {
+    padding: 0 16px 16px 16px;
+  }
 `;
 
 const Title = styled.h2`

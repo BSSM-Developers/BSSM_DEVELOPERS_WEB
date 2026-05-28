@@ -264,6 +264,10 @@ export const DocsEditContentArea = styled.div`
   padding: 0 48px 120px;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 767px) {
+    padding: 0 8px 120px;
+  }
 `;
 
 export const DocsEditSaveButton = styled.button`
@@ -301,6 +305,12 @@ export const DocsEditFloatingActions = styled.div`
   @media (max-width: 1280px) {
     right: 20px;
     bottom: 20px;
+  }
+
+  @media (max-width: 767px) {
+    z-index: 150;
+    right: 16px;
+    bottom: 16px;
   }
 `;
 

@@ -256,6 +256,10 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px;
+
+  @media (max-width: 600px) {
+    padding: 0 16px 16px;
+  }
 `;
 
 const HeaderRow = styled.div`
@@ -264,6 +268,11 @@ const HeaderRow = styled.div`
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 24px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    margin-bottom: 16px;
+  }
 `;
 
 const TitleSection = styled.div``;
@@ -301,17 +310,27 @@ const FilterRow = styled.div`
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 `;
 
 const FilterLabel = styled.span`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: ${({ theme }) => theme.colors.grey[600]};
   font-weight: 700;
+  white-space: nowrap;
 `;
 
 const DocsSelectContainer = styled.div`
   position: relative;
-  min-width: 260px;
+  min-width: 200px;
+  flex: 1;
+  max-width: 320px;
+
+  @media (max-width: 480px) {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
 `;
 
 const DocsSelectTrigger = styled.button`

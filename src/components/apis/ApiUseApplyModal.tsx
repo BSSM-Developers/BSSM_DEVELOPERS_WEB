@@ -427,6 +427,10 @@ const ModalOverlay = styled.div`
   z-index: 1200;
   padding: 20px;
   animation: ${overlayFadeIn} 200ms ease-out;
+
+  @media (min-width: 768px) {
+    padding-left: 280px;
+  }
 `;
 
 const ModalCard = styled.div`

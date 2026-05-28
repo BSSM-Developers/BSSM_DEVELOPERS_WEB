@@ -225,6 +225,10 @@ const Overlay = styled.div`
   justify-content: center;
   z-index: 3500;
   padding: 20px;
+
+  @media (min-width: 768px) {
+    padding-left: 280px;
+  }
 `;
 
 const Dialog = styled.div`

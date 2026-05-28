@@ -6,197 +6,15 @@ import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useConfirm } from "@/hooks/useConfirm";
-import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
-import { apiUseReasonApi, type ApiUsageByApiItem } from "@/app/apis/useReasonApi";
+import { apiUseReasonApi, type ApiUseReasonMineItem } from "@/app/apis/useReasonApi";
+import { docsApi, type DocsItem } from "@/app/docs/api";
 import { useSearchParams } from "next/navigation";
-
-interface OwnedApiTarget {
-  docsId: string;
-  docsTitle: string;
-  apiBlockId: string;
-  mappedId: string;
-  pageMappedId: string;
-  apiLabel: string;
-}
-
-interface ManagedUsageItem extends ApiUsageByApiItem {
-  queryApiId: string;
-  sourceDocsId: string;
-  sourceDocsTitle: string;
-  sourceApiLabel: string;
-}
-
-type DocsPageCacheValue = Awaited<ReturnType<typeof docsApi.getPage>> | null;
-
-const isNotFoundError = (message: string): boolean => {
-  return message.includes("404") || message.includes("API를 찾을 수 없습니다");
-};
-
-const isLikelyApiId = (value: string): boolean => {
-  const candidate = value.trim();
-  if (!candidate) {
-    return false;
-  }
-  if (/^[0-9a-f]{24}$/i.test(candidate)) {
-    return true;
-  }
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(candidate)) {
-    return true;
-  }
-  return false;
-};
-
-const collectApiTargets = (docs: DocsItem, blocks: SidebarBlock[]): OwnedApiTarget[] => {
-  const targets: OwnedApiTarget[] = [];
-
-  const traverse = (items: SidebarBlock[], currentPageMappedId?: string) => {
-    for (const block of items) {
-      const mappedId = String(block.mappedId ?? block.id ?? "").trim();
-
-      if (block.module === "api") {
-        const pageMappedId = currentPageMappedId || mappedId;
-        if (!pageMappedId || !mappedId) {
-          continue;
-        }
-        targets.push({
-          docsId: String(docs.docsId ?? ""),
-          docsTitle: docs.title || "Untitled",
-          apiBlockId: String(block.id ?? ""),
-          mappedId,
-          pageMappedId,
-          apiLabel: block.label || "이름 없는 API",
-        });
-      }
-
-      if (block.childrenItems?.length) {
-        const nextPageMappedId = block.module === "collapse" ? mappedId : currentPageMappedId;
-        traverse(block.childrenItems, nextPageMappedId);
-      }
-    }
-  };
-
-  traverse(blocks);
-  return targets.filter(
-    (target) =>
-      Boolean(target.docsId) &&
-      Boolean(target.apiBlockId) &&
-      Boolean(target.mappedId) &&
-      Boolean(target.pageMappedId)
-  );
-};
-
-const getCachedPageResponse = async (
-  target: OwnedApiTarget,
-  pageCache: Map<string, Promise<DocsPageCacheValue>>
-): Promise<DocsPageCacheValue> => {
-  const pageKey = `${target.docsId}:${target.pageMappedId}`;
-  const cached = pageCache.get(pageKey);
-  if (cached) {
-    return cached;
-  }
-
-  const request = docsApi
-    .getPage(target.docsId, target.pageMappedId)
-    .then((response) => response)
-    .catch(() => null);
-
-  pageCache.set(pageKey, request);
-  return request;
-};
-
-const extractApiCandidatesFromDocsPage = async (
-  target: OwnedApiTarget,
-  pageCache: Map<string, Promise<DocsPageCacheValue>>,
-  candidateCache: Map<string, string[]>
-): Promise<string[]> => {
-  const cacheKey = `${target.docsId}:${target.pageMappedId}:${target.mappedId}`;
-  const cachedCandidates = candidateCache.get(cacheKey);
-  if (cachedCandidates) {
-    return cachedCandidates;
-  }
-
-  const candidates: string[] = [];
-  const pageResponse = await getCachedPageResponse(target, pageCache);
-
-  if (!pageResponse) {
-    candidateCache.set(cacheKey, candidates);
-    return candidates;
-  }
-
-  const apiBlock =
-    pageResponse.data.docsBlocks.find((block) => {
-      if (block.module !== "api") {
-        return false;
-      }
-      const candidate = block as { mappedId?: unknown };
-      return typeof candidate.mappedId === "string" && candidate.mappedId === target.mappedId;
-    }) ?? pageResponse.data.docsBlocks.find((block) => block.module === "api");
-
-  if (apiBlock?.content) {
-    try {
-      const parsed = JSON.parse(apiBlock.content) as { id?: unknown };
-      if (typeof parsed.id === "string") {
-        const normalized = parsed.id.trim();
-        if (isLikelyApiId(normalized)) {
-          candidates.push(normalized);
-        }
-      }
-    } catch {
-    }
-  }
-
-  const pageId = String(pageResponse.data.id ?? "").trim();
-  if (isLikelyApiId(pageId)) {
-    candidates.push(pageId);
-  }
-
-  candidateCache.set(cacheKey, candidates);
-  return candidates;
-};
-
-async function getUsageForTarget(
-  target: OwnedApiTarget,
-  pageCache: Map<string, Promise<DocsPageCacheValue>>,
-  candidateCache: Map<string, string[]>
-): Promise<ManagedUsageItem[]> {
-  const candidates = (await extractApiCandidatesFromDocsPage(target, pageCache, candidateCache)).filter(
-    (value, index, array): value is string => {
-    return Boolean(value) && array.indexOf(value) === index;
-    }
-  );
-
-  if (candidates.length === 0) {
-    return [];
-  }
-
-  for (const apiId of candidates) {
-    try {
-      const response = await apiUseReasonApi.getUsageByApi(apiId, undefined, 50);
-      const values = response.data.values ?? [];
-      return values.map((item) => ({
-        ...item,
-        queryApiId: apiId,
-        sourceDocsId: target.docsId,
-        sourceDocsTitle: target.docsTitle,
-        sourceApiLabel: target.apiLabel,
-      }));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (isNotFoundError(message)) {
-        continue;
-      }
-      throw error;
-    }
-  }
-
-  return [];
-}
 
 export default function MyApiManagementPage() {
   const searchParams = useSearchParams();
   const selectedDocsIdFromQuery = searchParams.get("docsId")?.trim() || "";
   const { confirm, ConfirmDialog } = useConfirm();
-  const [items, setItems] = useState<ManagedUsageItem[]>([]);
+  const [items, setItems] = useState<ApiUseReasonMineItem[]>([]);
   const [ownedOriginalDocs, setOwnedOriginalDocs] = useState<DocsItem[]>([]);
   const [selectedDocsId, setSelectedDocsId] = useState(selectedDocsIdFromQuery);
   const [isLoading, setIsLoading] = useState(true);
@@ -215,52 +33,11 @@ export default function MyApiManagementPage() {
       const originalDocs = docsValues.filter((docs) => docs.type === "ORIGINAL");
       setOwnedOriginalDocs(originalDocs);
 
-      const effectiveDocsId = selectedDocsIdFromQuery || selectedDocsId;
-      const filteredDocs = effectiveDocsId
-        ? originalDocs.filter((docs) => String(docs.docsId ?? "") === effectiveDocsId)
-        : originalDocs;
-
-      const sidebarResults = await Promise.all(
-        filteredDocs.map(async (docs) => {
-          const docsId = String(docs.docsId ?? "");
-          if (!docsId) {
-            return [] as OwnedApiTarget[];
-          }
-          try {
-            const sidebarResponse = await docsApi.getSidebar(docsId);
-            return collectApiTargets(docs, sidebarResponse.data.blocks ?? []);
-          } catch {
-            return [] as OwnedApiTarget[];
-          }
-        })
-      );
-
-      const allTargets = sidebarResults.flat();
-      const pageCache = new Map<string, Promise<DocsPageCacheValue>>();
-      const candidateCache = new Map<string, string[]>();
-
-      const usageResults = await Promise.allSettled(
-        allTargets.map((target) => getUsageForTarget(target, pageCache, candidateCache))
-      );
-
-      const merged = usageResults.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
-      const dedup = new Map<string, ManagedUsageItem>();
-
-      for (const item of merged) {
-        const key = `${item.apiTokenId}-${item.apiUseReasonId}`;
-        if (!dedup.has(key)) {
-          dedup.set(key, item);
-        }
-      }
-
-      const firstRejected = usageResults.find((result) => result.status === "rejected");
-      if (firstRejected && dedup.size === 0) {
-        throw firstRejected.reason;
-      }
-
-      setItems(Array.from(dedup.values()));
+      const effectiveDocsId = selectedDocsIdFromQuery || selectedDocsId || undefined;
+      const response = await apiUseReasonApi.getMyDocs(undefined, 50, effectiveDocsId);
+      setItems(response.data.values ?? []);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "API 사용 신청 목록을 불러오지 못했습니다.";
+      const message = error instanceof Error ? error.message : "사용 신청 목록을 불러오지 못했습니다.";
       setErrorMessage(message);
       setItems([]);
     } finally {
@@ -272,6 +49,65 @@ export default function MyApiManagementPage() {
     void loadItems();
   }, [loadItems]);
 
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => Number(b.apiUseReasonId) - Number(a.apiUseReasonId));
+  }, [items]);
+
+  const handleDecision = useCallback(
+    async (item: ApiUseReasonMineItem, action: "approve" | "reject") => {
+      const reasonId = String(item.apiUseReasonId ?? "").trim();
+      if (!reasonId) {
+        await confirm({
+          title: "처리 실패",
+          message: "요청 식별자 정보가 올바르지 않습니다.",
+          confirmText: "확인",
+          hideCancel: true,
+        });
+        return;
+      }
+
+      const shouldContinue = await confirm({
+        title: action === "approve" ? "사용 신청 승인" : "사용 신청 거절",
+        message: action === "approve" ? "선택한 요청을 승인할까요?" : "선택한 요청을 거절할까요?",
+        confirmText: action === "approve" ? "승인" : "거절",
+        cancelText: "취소",
+      });
+
+      if (!shouldContinue) {
+        return;
+      }
+
+      try {
+        setProcessingKey(reasonId);
+        if (action === "approve") {
+          await apiUseReasonApi.approveByReasonId(reasonId);
+        } else {
+          await apiUseReasonApi.rejectByReasonId(reasonId);
+        }
+
+        await confirm({
+          title: "처리 완료",
+          message: action === "approve" ? "요청이 승인되었습니다." : "요청이 거절되었습니다.",
+          confirmText: "확인",
+          hideCancel: true,
+        });
+
+        await loadItems();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "요청 처리에 실패했습니다.";
+        await confirm({
+          title: "처리 실패",
+          message,
+          confirmText: "확인",
+          hideCancel: true,
+        });
+      } finally {
+        setProcessingKey(null);
+      }
+    },
+    [confirm, loadItems]
+  );
+
   useEffect(() => {
     if (selectedDocsIdFromQuery) {
       setSelectedDocsId(selectedDocsIdFromQuery);
@@ -279,90 +115,21 @@ export default function MyApiManagementPage() {
   }, [selectedDocsIdFromQuery]);
 
   useEffect(() => {
-    if (!isDocsMenuOpen) {
-      return;
-    }
-
+    if (!isDocsMenuOpen) return;
     const handleOutsideClick = (event: MouseEvent) => {
-      const targetNode = event.target;
-      if (!(targetNode instanceof Node)) {
-        return;
-      }
-      if (!docsSelectRef.current?.contains(targetNode)) {
+      if (!(event.target instanceof Node)) return;
+      if (!docsSelectRef.current?.contains(event.target)) {
         setIsDocsMenuOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [isDocsMenuOpen]);
 
-  const handleDecision = useCallback(async (item: ManagedUsageItem, action: "approve" | "reject") => {
-    const apiTargetId = String(item.apiTokenId ?? item.queryApiId ?? item.apiId ?? "").trim();
-    const reasonId = String(item.apiUseReasonId ?? "").trim();
-
-    if (!apiTargetId || !reasonId) {
-      await confirm({
-        title: "처리 실패",
-        message: "요청 식별자 정보가 올바르지 않습니다.",
-        confirmText: "확인",
-        hideCancel: true,
-      });
-      return;
-    }
-
-    const shouldContinue = await confirm({
-      title: action === "approve" ? "사용 신청 승인" : "사용 신청 거절",
-      message: action === "approve" ? "선택한 요청을 승인할까요?" : "선택한 요청을 거절할까요?",
-      confirmText: action === "approve" ? "승인" : "거절",
-      cancelText: "취소",
-    });
-
-    if (!shouldContinue) {
-      return;
-    }
-
-    const processing = `${item.apiTokenId}-${item.apiUseReasonId}`;
-
-    try {
-      setProcessingKey(processing);
-      if (action === "approve") {
-        await apiUseReasonApi.approve(apiTargetId, reasonId);
-      } else {
-        await apiUseReasonApi.reject(apiTargetId, reasonId);
-      }
-
-      await confirm({
-        title: "처리 완료",
-        message: action === "approve" ? "요청이 승인되었습니다." : "요청이 거절되었습니다.",
-        confirmText: "확인",
-        hideCancel: true,
-      });
-
-      await loadItems();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "요청 처리에 실패했습니다.";
-      await confirm({
-        title: "처리 실패",
-        message,
-        confirmText: "확인",
-        hideCancel: true,
-      });
-    } finally {
-      setProcessingKey(null);
-    }
-  }, [confirm, loadItems]);
-
-  const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => Number(b.apiUseReasonId) - Number(a.apiUseReasonId));
-  }, [items]);
-
   const selectedDocsLabel = useMemo(() => {
-    if (!selectedDocsId) {
-      return "전체 API 문서";
-    }
-    const selectedDocs = ownedOriginalDocs.find((docs) => String(docs.docsId ?? "") === selectedDocsId);
-    return selectedDocs?.title || "전체 API 문서";
+    if (!selectedDocsId) return "전체 API 문서";
+    const found = ownedOriginalDocs.find((docs) => String(docs.docsId ?? "") === selectedDocsId);
+    return found?.title || "전체 API 문서";
   }, [ownedOriginalDocs, selectedDocsId]);
 
   return (
@@ -398,27 +165,20 @@ export default function MyApiManagementPage() {
                   role="option"
                   $selected={selectedDocsId === ""}
                   aria-selected={selectedDocsId === ""}
-                  onClick={() => {
-                    setSelectedDocsId("");
-                    setIsDocsMenuOpen(false);
-                  }}
+                  onClick={() => { setSelectedDocsId(""); setIsDocsMenuOpen(false); }}
                 >
                   전체 API 문서
                 </DocsOptionButton>
                 {ownedOriginalDocs.map((docs) => {
                   const docsId = String(docs.docsId ?? "");
-                  const isSelected = selectedDocsId === docsId;
                   return (
                     <DocsOptionButton
                       key={docsId}
                       type="button"
                       role="option"
-                      $selected={isSelected}
-                      aria-selected={isSelected}
-                      onClick={() => {
-                        setSelectedDocsId(docsId);
-                        setIsDocsMenuOpen(false);
-                      }}
+                      $selected={selectedDocsId === docsId}
+                      aria-selected={selectedDocsId === docsId}
+                      onClick={() => { setSelectedDocsId(docsId); setIsDocsMenuOpen(false); }}
                     >
                       {docs.title}
                     </DocsOptionButton>
@@ -437,26 +197,11 @@ export default function MyApiManagementPage() {
             <RequestList>
               {sortedItems.map((item) => {
                 const state = (item.apiUseState || "").toUpperCase();
-                const actionKey = `${item.apiTokenId}-${item.apiUseReasonId}`;
-                const requester = (() => {
-                  const writerName = item.writer?.trim();
-                  if (writerName) {
-                    return writerName;
-                  }
-                  const name = item.name?.trim();
-                  if (name) {
-                    return name;
-                  }
-                  const writerId = String(item.writerId ?? "").trim();
-                  if (writerId) {
-                    return `사용자 #${writerId}`;
-                  }
-                  return "-";
-                })();
+                const reasonId = String(item.apiUseReasonId ?? "");
                 return (
-                  <RequestCard key={actionKey}>
+                  <RequestCard key={reasonId}>
                     <CardHeader>
-                      <ApiName>{item.apiName || item.sourceApiLabel || "이름 없는 API"}</ApiName>
+                      <RequestLabel>신청 #{reasonId}</RequestLabel>
                       <StateBadge state={state}>
                         {state === "APPROVED" ? "승인됨" : state === "REJECTED" ? "거절됨" : state === "PENDING" ? "대기중" : state || "알 수 없음"}
                       </StateBadge>
@@ -464,13 +209,7 @@ export default function MyApiManagementPage() {
 
                     <MetaGrid>
                       <MetaLabel>요청자</MetaLabel>
-                      <MetaValue>{requester}</MetaValue>
-
-                      <MetaLabel>신청 API</MetaLabel>
-                      <MetaValue>{item.sourceApiLabel}</MetaValue>
-
-                      <MetaLabel>문서</MetaLabel>
-                      <MetaValue>{item.sourceDocsTitle}</MetaValue>
+                      <MetaValue>{item.writerId ? `사용자 #${item.writerId}` : "-"}</MetaValue>
 
                       <MetaLabel>신청 사유</MetaLabel>
                       <MetaValue>{item.apiUseReason || "-"}</MetaValue>
@@ -481,7 +220,7 @@ export default function MyApiManagementPage() {
                         <ActionButton
                           type="button"
                           onClick={() => void handleDecision(item, "reject")}
-                          disabled={processingKey === actionKey}
+                          disabled={processingKey === reasonId}
                         >
                           거절
                         </ActionButton>
@@ -489,7 +228,7 @@ export default function MyApiManagementPage() {
                           type="button"
                           primary
                           onClick={() => void handleDecision(item, "approve")}
-                          disabled={processingKey === actionKey}
+                          disabled={processingKey === reasonId}
                         >
                           승인
                         </ActionButton>
@@ -655,7 +394,7 @@ const CardHeader = styled.div`
   margin-bottom: 12px;
 `;
 
-const ApiName = styled.h3`
+const RequestLabel = styled.h3`
   ${({ theme }) => applyTypography(theme, "Headline_2")};
   margin: 0;
   color: ${({ theme }) => theme.colors.grey[900]};
@@ -668,21 +407,13 @@ const StateBadge = styled.span<{ state: string }>`
   font-size: 12px;
   font-weight: 700;
   background: ${({ state }) => {
-    if (state === "APPROVED") {
-      return "#dcfce7";
-    }
-    if (state === "REJECTED") {
-      return "#fee2e2";
-    }
+    if (state === "APPROVED") return "#dcfce7";
+    if (state === "REJECTED") return "#fee2e2";
     return "#e0e7ff";
   }};
   color: ${({ state }) => {
-    if (state === "APPROVED") {
-      return "#166534";
-    }
-    if (state === "REJECTED") {
-      return "#b91c1c";
-    }
+    if (state === "APPROVED") return "#166534";
+    if (state === "REJECTED") return "#b91c1c";
     return "#1d4ed8";
   }};
 `;

@@ -18,6 +18,11 @@ const ApiUseApplyModal = dynamic(
   { ssr: false }
 );
 
+const AddToFolderModal = dynamic(
+  () => import("@/components/docs/AddToFolderModal").then((module) => module.AddToFolderModal),
+  { ssr: false }
+);
+
 export default function DocsPageDetail() {
   const params = useParams();
   const slug = params?.slug as string;
@@ -25,12 +30,17 @@ export default function DocsPageDetail() {
   const setSelected = useDocsStore((state) => state.setSelected);
 
   const [isApplyOpen, setIsApplyOpen] = useState(false);
+  const [isFolderOpen, setIsFolderOpen] = useState(false);
 
   const { data: pageData, isLoading: isPageLoading, error: pageError } = useDocsPageQuery(slug || "", id || "");
   const { data: sidebarData } = useDocsSidebarQuery(slug || "");
 
   const closeApplyModal = useCallback(() => {
     setIsApplyOpen(false);
+  }, []);
+
+  const closeFolderModal = useCallback(() => {
+    setIsFolderOpen(false);
   }, []);
 
   useEffect(() => {
@@ -77,6 +87,23 @@ export default function DocsPageDetail() {
   const blocks = pageData?.data?.docsBlocks || [];
   const pageVersion = pageData?.data?.version;
 
+  const findSidebarNode = (sblocks: SidebarBlock[], targetId: string): SidebarBlock | null => {
+    for (const b of sblocks) {
+      if (b.mappedId === targetId || b.id === targetId) return b;
+      if (b.childrenItems?.length) {
+        const found = findSidebarNode(b.childrenItems, targetId);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const currentSidebarNode = sidebarData?.data?.blocks
+    ? findSidebarNode(sidebarData.data.blocks, id)
+    : null;
+  const currentPageEndpoint = pageData?.data?.endpoint;
+  const isApiPage = currentSidebarNode?.module === "api";
+
   return (
     <>
       <PageHeader>
@@ -102,9 +129,16 @@ export default function DocsPageDetail() {
         )}
       </ContentArea>
 
-      <ApplyButton type="button" onClick={() => setIsApplyOpen(true)}>
-        사용 신청
-      </ApplyButton>
+      <FloatingActions>
+        {isApiPage && (
+          <FolderButton type="button" onClick={() => setIsFolderOpen(true)}>
+            폴더에 담기
+          </FolderButton>
+        )}
+        <ApplyButton type="button" onClick={() => setIsApplyOpen(true)}>
+          사용 신청
+        </ApplyButton>
+      </FloatingActions>
 
       {isApplyOpen ? (
         <ApiUseApplyModal
@@ -113,6 +147,18 @@ export default function DocsPageDetail() {
           docsTitle={projectTitle}
           defaultMappedId={id}
           onClose={closeApplyModal}
+        />
+      ) : null}
+
+      {isFolderOpen ? (
+        <AddToFolderModal
+          isOpen={isFolderOpen}
+          sourceDocsId={slug || ""}
+          sourceMappedId={id || ""}
+          sourceLabel={displayTitle}
+          sourceMethod={currentSidebarNode?.method}
+          sourceEndpoint={currentPageEndpoint}
+          onClose={closeFolderModal}
         />
       ) : null}
     </>
@@ -147,10 +193,23 @@ const EmptyText = styled.div`
   color: #9ca3af;
 `;
 
-const ApplyButton = styled.button`
+const FloatingActions = styled.div`
   position: fixed;
   right: 32px;
   bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  z-index: 100;
+
+  @media (max-width: 767px) {
+    right: 16px;
+    bottom: 16px;
+  }
+`;
+
+const ApplyButton = styled.button`
   width: 132px;
   height: 48px;
   border-radius: 10px;
@@ -161,10 +220,27 @@ const ApplyButton = styled.button`
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  z-index: 100;
   box-shadow: 0 10px 24px rgba(22, 51, 92, 0.2);
 
   &:hover {
     filter: brightness(1.05);
+  }
+`;
+
+const FolderButton = styled.button`
+  width: 132px;
+  height: 44px;
+  border-radius: 10px;
+  border: 2px solid #16335c;
+  background: white;
+  color: #16335c;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(22, 51, 92, 0.12);
+
+  &:hover {
+    background: #f0f4fa;
   }
 `;

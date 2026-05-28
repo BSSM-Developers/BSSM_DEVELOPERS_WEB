@@ -279,9 +279,11 @@ export function DocsSidebar({
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const viewportPadding = 16;
     const pickerWidth = 140;
-    const menuCount = groupedModuleOptions.plainOptions.length + (groupedModuleOptions.apiOptions.length > 0 ? 1 : 0);
+    const hasApiOptions = groupedModuleOptions.apiOptions.length > 0;
+    const totalPickerWidth = hasApiOptions ? pickerWidth * 2 + 8 : pickerWidth;
+    const menuCount = groupedModuleOptions.plainOptions.length + (hasApiOptions ? 1 : 0);
     const estimatedPickerHeight = Math.min(320, menuCount * 34 + 16);
-    const nextX = Math.min(rect.right + 8, window.innerWidth - pickerWidth - viewportPadding);
+    const nextX = Math.min(rect.right + 8, window.innerWidth - totalPickerWidth - viewportPadding);
     const maxY = window.innerHeight - estimatedPickerHeight - viewportPadding;
     const nextY = Math.min(rect.top, maxY);
     setApiMethodOpen(false);

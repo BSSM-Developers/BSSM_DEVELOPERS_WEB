@@ -158,7 +158,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
 
       await confirm({
         title: "생성 완료",
-        message: "커스텀 문서가 생성되었습니다.",
+        message: "API 폴더집이 생성되었습니다.",
         hideCancel: true,
       });
       router.push("/user");

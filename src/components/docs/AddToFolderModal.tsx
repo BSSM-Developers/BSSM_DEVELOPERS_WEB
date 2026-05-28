@@ -57,7 +57,7 @@ export function AddToFolderModal({
 
   const { data: foldersData, isLoading } = useQuery({
     queryKey: ["my-custom-folders-for-add"],
-    queryFn: () => docsApi.getMyList({ type: "custom", size: 50 }),
+    queryFn: () => docsApi.getMyList({ type: "customize", size: 50 }),
     enabled: isOpen,
   });
 

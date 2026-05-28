@@ -116,6 +116,40 @@ export function TryItModal({ isOpen, onClose, apiDoc }: TryItModalProps) {
     startLeft: number;
   } | null>(null);
 
+  const handleMoveStart = useCallback(
+    (e: React.MouseEvent) => {
+      if ((e.target as HTMLElement).closest("button")) return;
+      e.preventDefault();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const startTop = modalRect.top;
+      const startLeft = modalRect.left;
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "grabbing";
+
+      const onMouseMove = (ev: MouseEvent) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        setModalRect((prev) => ({
+          ...prev,
+          top: Math.max(0, Math.min(startTop + dy, window.innerHeight - prev.height)),
+          left: Math.max(0, Math.min(startLeft + dx, window.innerWidth - prev.width)),
+        }));
+      };
+
+      const onMouseUp = () => {
+        document.body.style.userSelect = "";
+        document.body.style.cursor = "";
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
+    },
+    [modalRect]
+  );
+
   const handleResizeStart = useCallback(
     (e: React.MouseEvent, edge: ResizeEdge) => {
       e.preventDefault();
@@ -355,7 +389,7 @@ export function TryItModal({ isOpen, onClose, apiDoc }: TryItModalProps) {
         <ResizeCorner $cursor="nwse-resize" style={{ bottom: 0, right: 0 }} onMouseDown={(e) => handleResizeStart(e, "se")} />
 
         {/* ── 헤더 ── */}
-        <ModalHeader>
+        <ModalHeader onMouseDown={handleMoveStart}>
           <HeaderLeft>
             <ApiNameText title={apiDoc.name}>{apiDoc.name}</ApiNameText>
           </HeaderLeft>
@@ -659,6 +693,8 @@ const ModalHeader = styled.div`
   border-bottom: 1px solid #E5E8EB;
   background: white;
   flex-shrink: 0;
+  cursor: grab;
+  &:active { cursor: grabbing; }
 `;
 
 const HeaderLeft = styled.div`
@@ -683,7 +719,7 @@ const CloseBtn = styled.button`
   background: none;
   border: none;
   color: #B0B8C1;
-  cursor: pointer;
+  cursor: pointer !important;
   padding: 4px;
   border-radius: 6px;
   display: flex;

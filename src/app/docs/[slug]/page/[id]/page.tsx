@@ -133,14 +133,12 @@ export default function DocsPageDetail() {
       <SpeedDial>
         {fabOpen && <FabBackdrop onClick={() => setFabOpen(false)} />}
         <SpeedDialList>
-          {isApiPage && (
-            <SpeedDialRow $open={fabOpen} style={{ transitionDelay: fabOpen ? "60ms" : "0ms" }}>
-              <SpeedDialLabel onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}>폴더에 담기</SpeedDialLabel>
-              <SpeedDialDot type="button" onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16335c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
-              </SpeedDialDot>
-            </SpeedDialRow>
-          )}
+          <SpeedDialRow $open={fabOpen} style={{ transitionDelay: fabOpen ? "60ms" : "0ms" }}>
+            <SpeedDialLabel onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}>폴더에 담기</SpeedDialLabel>
+            <SpeedDialDot type="button" onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16335c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+            </SpeedDialDot>
+          </SpeedDialRow>
           <SpeedDialRow $open={fabOpen} style={{ transitionDelay: fabOpen ? "0ms" : "60ms" }}>
             <SpeedDialLabel onClick={() => { setFabOpen(false); setIsApplyOpen(true); }}>사용 신청</SpeedDialLabel>
             <SpeedDialDot type="button" $primary onClick={() => { setFabOpen(false); setIsApplyOpen(true); }}>

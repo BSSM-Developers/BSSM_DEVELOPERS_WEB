@@ -268,7 +268,7 @@ export function DocsSidebar({
     targetId: string | null;
   }>({ open: false, anchor: null, mode: "sibling", targetId: null });
   const [apiMethodOpen, setApiMethodOpen] = useState(false);
-  const apiPickerTouchRef = useRef(false);
+  const apiMouseEnterFiredRef = useRef(false);
 
   const groupedModuleOptions = useMemo(() => {
     const apiOptions = moduleOptions.filter((option) => option.module === "api" && option.method);
@@ -541,15 +541,16 @@ export function DocsSidebar({
               ))}
               {groupedModuleOptions.apiOptions.length > 0 && (
                 <PickerItem
-                  onMouseEnter={() => setApiMethodOpen(true)}
-                  onTouchStart={() => { apiPickerTouchRef.current = true; }}
+                  onMouseEnter={() => {
+                    apiMouseEnterFiredRef.current = true;
+                    setApiMethodOpen(true);
+                  }}
                   onClick={() => {
-                    if (apiPickerTouchRef.current) {
-                      apiPickerTouchRef.current = false;
-                      setApiMethodOpen(true);
-                    } else {
-                      setApiMethodOpen((prev) => !prev);
+                    if (apiMouseEnterFiredRef.current) {
+                      apiMouseEnterFiredRef.current = false;
+                      return;
                     }
+                    setApiMethodOpen((prev) => !prev);
                   }}
                 >
                   <PickerItemContent>

@@ -121,7 +121,7 @@ export function AddToFolderModal({
                     disabled={isAdding || !!addingId || isDone}
                     onClick={() => handleAdd(fid)}
                   >
-                    {isAdding ? "담는 중…" : isDone ? "✓ 완료" : isError ? "재시도" : "담기"}
+                    {isAdding ? "추가 중…" : isDone ? "추가됨" : isError ? "재시도" : "추가하기"}
                   </AddBtn>
                 </Item>
               );
@@ -264,18 +264,18 @@ const List = styled.div`
 `;
 
 const Item = styled.div<{ $done?: boolean }>`
-  border: 1px solid ${({ $done }) => ($done ? "#bbf7d0" : "#e9ecf2")};
+  border: 1px solid #e9ecf2;
   border-radius: 12px;
   padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
-  background: ${({ $done }) => ($done ? "#f0fdf4" : "#ffffff")};
+  background: #ffffff;
   transition: border-color 0.15s, background 0.15s;
 
   &:hover {
-    border-color: ${({ $done }) => ($done ? "#bbf7d0" : "#c8d3e8")};
-    background: ${({ $done }) => ($done ? "#f0fdf4" : "#f8f9fc")};
+    border-color: #c8d3e8;
+    background: #f8f9fc;
   }
 `;
 
@@ -309,11 +309,11 @@ const AddBtn = styled.button<{ $done?: boolean; $error?: boolean }>`
   padding: 0 14px;
   border-radius: 999px;
   border: 1.5px solid ${({ $done, $error }) =>
-    $done ? "#16a34a" : $error ? "#dc2626" : "#16335c"};
+    $done ? "#9ca3af" : $error ? "#dc2626" : "#16335c"};
   background: ${({ $done, $error }) =>
-    $done ? "#f0fdf4" : $error ? "#fef2f2" : "transparent"};
+    $done ? "transparent" : $error ? "#fef2f2" : "transparent"};
   color: ${({ $done, $error }) =>
-    $done ? "#16a34a" : $error ? "#dc2626" : "#16335c"};
+    $done ? "#9ca3af" : $error ? "#dc2626" : "#16335c"};
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -325,8 +325,8 @@ const AddBtn = styled.button<{ $done?: boolean; $error?: boolean }>`
 
   &:hover:not(:disabled) {
     background: ${({ $done, $error }) =>
-      $done ? "#dcfce7" : $error ? "#fee2e2" : "#16335c"};
+      $done ? "transparent" : $error ? "#fee2e2" : "#16335c"};
     color: ${({ $done, $error }) =>
-      $done ? "#16a34a" : $error ? "#dc2626" : "white"};
+      $done ? "#9ca3af" : $error ? "#dc2626" : "white"};
   }
 `;

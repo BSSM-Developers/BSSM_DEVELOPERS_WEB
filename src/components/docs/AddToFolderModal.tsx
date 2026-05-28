@@ -62,8 +62,12 @@ export function AddToFolderModal({
         });
         setDoneIds((prev) => new Set([...prev, targetDocsId]));
       } catch (error) {
-        console.error(error);
-        setErrorIds((prev) => new Set([...prev, targetDocsId]));
+        if (error instanceof Error && error.message.includes("(409")) {
+          setDoneIds((prev) => new Set([...prev, targetDocsId]));
+        } else {
+          console.error(error);
+          setErrorIds((prev) => new Set([...prev, targetDocsId]));
+        }
       } finally {
         setAddingId(null);
       }

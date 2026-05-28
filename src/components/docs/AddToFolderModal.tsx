@@ -3,7 +3,7 @@
 import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { docsApi } from "@/app/docs/api";
 
 interface AddToFolderModalProps {
@@ -13,6 +13,33 @@ interface AddToFolderModalProps {
   sourceLabel: string;
   sourceMethod?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   onClose: () => void;
+}
+
+const STORAGE_KEY = "folder-add-done";
+
+function loadDoneIds(sourceDocsId: string, sourceMappedId: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return new Set();
+    const map: Record<string, string[]> = JSON.parse(raw);
+    return new Set(map[`${sourceDocsId}:${sourceMappedId}`] ?? []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDoneId(sourceDocsId: string, sourceMappedId: string, targetDocsId: string) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const map: Record<string, string[]> = raw ? JSON.parse(raw) : {};
+    const key = `${sourceDocsId}:${sourceMappedId}`;
+    const existing = new Set(map[key] ?? []);
+    existing.add(targetDocsId);
+    map[key] = [...existing];
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
 }
 
 export function AddToFolderModal({
@@ -26,6 +53,13 @@ export function AddToFolderModal({
   const [addingId, setAddingId] = useState<string | null>(null);
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
   const [errorIds, setErrorIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (isOpen) {
+      setDoneIds(loadDoneIds(sourceDocsId, sourceMappedId));
+      setErrorIds(new Set());
+    }
+  }, [isOpen, sourceDocsId, sourceMappedId]);
 
   const { data: foldersData, isLoading } = useQuery({
     queryKey: ["my-custom-folders-for-add"],
@@ -60,9 +94,11 @@ export function AddToFolderModal({
             ...(sourceMethod ? { method: sourceMethod } : {}),
           },
         });
+        saveDoneId(sourceDocsId, sourceMappedId, targetDocsId);
         setDoneIds((prev) => new Set([...prev, targetDocsId]));
       } catch (error) {
         if (error instanceof Error && error.message.includes("(409")) {
+          saveDoneId(sourceDocsId, sourceMappedId, targetDocsId);
           setDoneIds((prev) => new Set([...prev, targetDocsId]));
         } else {
           console.error(error);

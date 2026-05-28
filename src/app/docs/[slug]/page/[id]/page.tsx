@@ -31,6 +31,7 @@ export default function DocsPageDetail() {
 
   const [isApplyOpen, setIsApplyOpen] = useState(false);
   const [isFolderOpen, setIsFolderOpen] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
 
   const { data: pageData, isLoading: isPageLoading, error: pageError } = useDocsPageQuery(slug || "", id || "");
   const { data: sidebarData } = useDocsSidebarQuery(slug || "");
@@ -129,16 +130,34 @@ export default function DocsPageDetail() {
         )}
       </ContentArea>
 
-      <FloatingActions>
-        {isApiPage && (
-          <FolderButton type="button" onClick={() => setIsFolderOpen(true)}>
-            폴더에 담기
-          </FolderButton>
+      <SpeedDial>
+        {fabOpen && (
+          <FabBackdrop onClick={() => setFabOpen(false)} />
         )}
-        <ApplyButton type="button" onClick={() => setIsApplyOpen(true)}>
-          사용 신청
-        </ApplyButton>
-      </FloatingActions>
+        <SpeedDialItems open={fabOpen}>
+          {isApiPage && (
+            <SpeedDialItem
+              type="button"
+              $open={fabOpen}
+              style={{ transitionDelay: fabOpen ? "60ms" : "0ms" }}
+              onClick={() => { setFabOpen(false); setIsFolderOpen(true); }}
+            >
+              폴더에 담기
+            </SpeedDialItem>
+          )}
+          <SpeedDialItem
+            type="button"
+            $open={fabOpen}
+            style={{ transitionDelay: fabOpen ? "0ms" : "60ms" }}
+            onClick={() => { setFabOpen(false); setIsApplyOpen(true); }}
+          >
+            사용 신청
+          </SpeedDialItem>
+        </SpeedDialItems>
+        <FabButton type="button" open={fabOpen} onClick={() => setFabOpen((p) => !p)}>
+          {fabOpen ? "✕" : "+"}
+        </FabButton>
+      </SpeedDial>
 
       {isApplyOpen ? (
         <ApiUseApplyModal
@@ -193,14 +212,14 @@ const EmptyText = styled.div`
   color: #9ca3af;
 `;
 
-const FloatingActions = styled.div`
+const SpeedDial = styled.div`
   position: fixed;
   right: 32px;
   bottom: 32px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  align-items: stretch;
+  align-items: center;
+  gap: 10px;
   z-index: 100;
 
   @media (max-width: 767px) {
@@ -209,38 +228,61 @@ const FloatingActions = styled.div`
   }
 `;
 
-const ApplyButton = styled.button`
-  width: 132px;
-  height: 48px;
-  border-radius: 10px;
+const FabBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+`;
+
+const SpeedDialItems = styled.div<{ open: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: ${({ open }) => (open ? "auto" : "none")};
+`;
+
+const SpeedDialItem = styled.button<{ $open: boolean }>`
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
   border: none;
   background: #16335c;
   color: white;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(22, 51, 92, 0.2);
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(22, 51, 92, 0.28);
+  opacity: ${({ $open }) => ($open ? 1 : 0)};
+  transform: ${({ $open }) => ($open ? "translateY(0) scale(1)" : "translateY(12px) scale(0.9)")};
+  transition: opacity 0.18s ease, transform 0.18s ease;
 
   &:hover {
-    filter: brightness(1.05);
+    filter: brightness(1.1);
   }
 `;
 
-const FolderButton = styled.button`
-  width: 132px;
-  height: 44px;
-  border-radius: 10px;
-  border: 2px solid #16335c;
-  background: white;
-  color: #16335c;
-  font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+const FabButton = styled.button<{ open: boolean }>`
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #16335c;
+  color: white;
+  font-size: ${({ open }) => (open ? "20px" : "28px")};
+  font-weight: 300;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(22, 51, 92, 0.12);
+  box-shadow: 0 8px 24px rgba(22, 51, 92, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background 0.2s ease;
+  transform: ${({ open }) => (open ? "rotate(45deg)" : "rotate(0deg)")};
+  line-height: 1;
 
   &:hover {
-    background: #f0f4fa;
+    background: #1a3a68;
   }
 `;

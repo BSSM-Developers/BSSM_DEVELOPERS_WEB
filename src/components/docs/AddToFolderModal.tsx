@@ -3,7 +3,7 @@
 import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { docsApi } from "@/app/docs/api";
 
 interface AddToFolderModalProps {
@@ -51,15 +51,10 @@ export function AddToFolderModal({
   onClose,
 }: AddToFolderModalProps) {
   const [addingId, setAddingId] = useState<string | null>(null);
-  const [doneIds, setDoneIds] = useState<Set<string>>(new Set());
+  const [doneIds, setDoneIds] = useState<Set<string>>(() =>
+    typeof window !== "undefined" ? loadDoneIds(sourceDocsId, sourceMappedId) : new Set()
+  );
   const [errorIds, setErrorIds] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    if (isOpen) {
-      setDoneIds(loadDoneIds(sourceDocsId, sourceMappedId));
-      setErrorIds(new Set());
-    }
-  }, [isOpen, sourceDocsId, sourceMappedId]);
 
   const { data: foldersData, isLoading } = useQuery({
     queryKey: ["my-custom-folders-for-add"],

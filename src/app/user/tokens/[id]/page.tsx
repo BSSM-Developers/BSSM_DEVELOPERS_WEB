@@ -251,7 +251,7 @@ export default function TokenDetailPage() {
           <TokenRow>
             <Label>상태</Label>
             <TokenStateBadge state={tokenDetail?.state ?? "NORMAL"}>
-              {tokenDetail?.state ?? "NORMAL"}
+              {tokenDetail?.state === "BLOCKED" ? "차단됨" : tokenDetail?.state === "WARNING" ? "경고" : "활성"}
             </TokenStateBadge>
           </TokenRow>
           <OriginSection>

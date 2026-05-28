@@ -183,8 +183,8 @@ export default function ApiExplorePageClient() {
           {isFilteredView ? (
             filteredList.length > 0 ? (
               <ApiSection
-                title={`${filterType} API`}
-                description={`${filterType} API 목록입니다`}
+                title={filterType === "ORIGINAL" ? "API 문서" : "API 폴더집"}
+                description={filterType === "ORIGINAL" ? "API 문서 목록입니다" : "API 폴더집 목록입니다"}
                 items={filteredList}
                 onPrefetch={handlePrefetch}
               />
@@ -206,7 +206,7 @@ export default function ApiExplorePageClient() {
 
               {displayOriginal.length > 0 ? (
                 <ApiSection
-                  title="ORIGINAL API"
+                  title="API 문서"
                   description="BSSM Developers에 등록된 최신 API를 확인해보세요"
                   items={displayOriginal}
                   onPrefetch={handlePrefetch}
@@ -215,7 +215,7 @@ export default function ApiExplorePageClient() {
 
               {displayCustom.length > 0 ? (
                 <ApiSection
-                  title="CUSTOM API"
+                  title="API 폴더집"
                   description="BSSM Developers에서 사용자가 커스텀한 최신 API를 확인해보세요"
                   items={displayCustom}
                   onPrefetch={handlePrefetch}

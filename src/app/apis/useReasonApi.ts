@@ -65,10 +65,26 @@ export const apiUseReasonApi = {
     }
     return fetchClient.get<ApiResponse<CursorPage<ApiUsageByApiItem>>>("/api/use-reason", { params });
   },
+  getMyDocs: async (cursor?: number, size: number = 20, docsId?: string) => {
+    const params: Record<string, string> = { size: String(size) };
+    if (cursor !== undefined) {
+      params.cursor = String(cursor);
+    }
+    if (docsId) {
+      params.docsId = docsId;
+    }
+    return fetchClient.get<ApiResponse<CursorPage<ApiUseReasonMineItem>>>("/api/use-reason/my-docs", { params });
+  },
   approve: async (apiTokenId: string | number, apiUseReasonId: string | number) => {
     return fetchClient.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/approve`, {});
   },
   reject: async (apiTokenId: string | number, apiUseReasonId: string | number) => {
     return fetchClient.patch<ApiResponse<null>>(`/api/${apiTokenId}/use-reason/${apiUseReasonId}/reject`, {});
+  },
+  approveByReasonId: async (apiUseReasonId: string | number) => {
+    return fetchClient.patch<ApiResponse<null>>(`/api/use-reason/${apiUseReasonId}/approve`, {});
+  },
+  rejectByReasonId: async (apiUseReasonId: string | number) => {
+    return fetchClient.patch<ApiResponse<null>>(`/api/use-reason/${apiUseReasonId}/reject`, {});
   },
 };

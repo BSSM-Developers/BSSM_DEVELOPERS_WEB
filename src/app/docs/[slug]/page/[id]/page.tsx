@@ -272,6 +272,7 @@ const SpeedDialDot = styled.button<{ $primary?: boolean }>`
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-right: 6px;
 
   &:hover {
     filter: brightness(1.08);

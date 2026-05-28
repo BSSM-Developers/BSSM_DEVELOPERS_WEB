@@ -102,7 +102,6 @@ export default function DocsPageDetail() {
   const currentSidebarNode = sidebarData?.data?.blocks
     ? findSidebarNode(sidebarData.data.blocks, id)
     : null;
-  const currentPageEndpoint = pageData?.data?.endpoint;
   const isApiPage = currentSidebarNode?.module === "api";
 
   return (
@@ -171,7 +170,6 @@ export default function DocsPageDetail() {
           sourceMappedId={id || ""}
           sourceLabel={displayTitle}
           sourceMethod={currentSidebarNode?.method}
-          sourceEndpoint={currentPageEndpoint}
           onClose={closeFolderModal}
         />
       ) : null}

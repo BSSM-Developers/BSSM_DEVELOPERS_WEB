@@ -4,7 +4,7 @@ import { createPortal } from "react-dom";
 import styled from "@emotion/styled";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import { docsApi, type SidebarBlock, type DocsSideBarBlockRequest } from "@/app/docs/api";
+import { docsApi } from "@/app/docs/api";
 
 interface AddToFolderModalProps {
   isOpen: boolean;
@@ -12,34 +12,7 @@ interface AddToFolderModalProps {
   sourceMappedId: string;
   sourceLabel: string;
   sourceMethod?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  sourceEndpoint?: string;
   onClose: () => void;
-}
-
-function toSidebarRequest(block: SidebarBlock): DocsSideBarBlockRequest {
-  const req: DocsSideBarBlockRequest = {
-    id: block.mappedId || block.id,
-    label: block.label,
-    module: block.module,
-  };
-  if (block.method) req.method = block.method;
-  if (block.childrenItems?.length) {
-    req.childrenItems = block.childrenItems.map(toSidebarRequest);
-  }
-  return req;
-}
-
-function collectLeafPages(blocks: SidebarBlock[]): Array<{ mappedId: string; module: string }> {
-  const result: Array<{ mappedId: string; module: string }> = [];
-  for (const block of blocks) {
-    if ((block.module === "api" || block.module === "default") && (block.mappedId || block.id)) {
-      result.push({ mappedId: block.mappedId || block.id, module: block.module });
-    }
-    if (block.childrenItems?.length) {
-      result.push(...collectLeafPages(block.childrenItems));
-    }
-  }
-  return result;
 }
 
 export function AddToFolderModal({
@@ -48,7 +21,6 @@ export function AddToFolderModal({
   sourceMappedId,
   sourceLabel,
   sourceMethod,
-  sourceEndpoint,
   onClose,
 }: AddToFolderModalProps) {
   const [addingId, setAddingId] = useState<string | null>(null);
@@ -74,82 +46,20 @@ export function AddToFolderModal({
       });
 
       try {
-        const [sidebarResp, detailResp] = await Promise.all([
-          docsApi.getSidebar(targetDocsId, false),
-          docsApi.getDetail(targetDocsId),
-        ]);
-
-        const existingBlocks = sidebarResp.data.blocks ?? [];
-        const meta = detailResp.data;
-        const leafPages = collectLeafPages(existingBlocks);
-
-        const existingPageData = await Promise.all(
-          leafPages.map(async ({ mappedId, module }) => {
-            try {
-              const resp = await docsApi.getPage(targetDocsId, mappedId);
-              return {
-                id: mappedId,
-                module,
-                endpoint: resp.data.endpoint,
-                sourceDocsId: resp.data.sourceDocsId,
-                sourceMappedId: resp.data.sourceMappedId,
-                docsBlocks: resp.data.docsBlocks,
-              };
-            } catch {
-              return { id: mappedId, module, endpoint: undefined, sourceDocsId: undefined, sourceMappedId: undefined, docsBlocks: [] };
-            }
-          })
-        );
-
         const newMappedId = crypto.randomUUID();
-        const newSidebarNode: DocsSideBarBlockRequest = {
-          id: newMappedId,
-          label: sourceLabel,
-          module: "api",
-          ...(sourceMethod ? { method: sourceMethod } : {}),
-        };
-
-        const newSidebarBlocks: DocsSideBarBlockRequest[] = [
-          ...existingBlocks.map(toSidebarRequest),
-          newSidebarNode,
-        ];
-
-        const existingPages = existingPageData.map((p) => {
-          if (p.module === "api" && p.sourceDocsId && p.sourceMappedId) {
-            return {
-              id: p.id,
-              ...(p.endpoint ? { endpoint: p.endpoint } : {}),
-              sourceDocsId: p.sourceDocsId,
-              sourceMappedId: p.sourceMappedId,
-            };
-          }
-          return {
-            id: p.id,
-            blocks: (p.docsBlocks ?? []).map((b) => ({
-              id: b.id,
-              module: b.module,
-              content: b.content ?? "",
-            })),
-          };
+        await docsApi.addPage(targetDocsId, {
+          page: {
+            id: newMappedId,
+            sourceDocsId,
+            sourceMappedId,
+          },
+          sidebarBlock: {
+            id: newMappedId,
+            label: sourceLabel,
+            module: "api",
+            ...(sourceMethod ? { method: sourceMethod } : {}),
+          },
         });
-
-        const newPage = {
-          id: newMappedId,
-          sourceDocsId,
-          sourceMappedId,
-          ...(sourceEndpoint ? { endpoint: sourceEndpoint } : {}),
-        };
-
-        await docsApi.replace(targetDocsId, {
-          title: meta.title,
-          description: meta.description ?? "",
-          domain: meta.domain ?? "",
-          repository_url: meta.repositoryUrl ?? meta.repository_url ?? "",
-          auto_approval: meta.autoApproval ?? meta.auto_approval ?? false,
-          sidebar: { blocks: newSidebarBlocks },
-          docs_pages: [...existingPages, newPage],
-        });
-
         setDoneIds((prev) => new Set([...prev, targetDocsId]));
       } catch (error) {
         console.error(error);
@@ -158,7 +68,7 @@ export function AddToFolderModal({
         setAddingId(null);
       }
     },
-    [addingId, doneIds, sourceDocsId, sourceEndpoint, sourceLabel, sourceMethod, sourceMappedId]
+    [addingId, doneIds, sourceDocsId, sourceLabel, sourceMethod, sourceMappedId]
   );
 
   if (!isOpen || typeof document === "undefined") return null;

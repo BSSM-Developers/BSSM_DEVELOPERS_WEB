@@ -23,7 +23,7 @@ const PROXY_BASE_URL =
 
 function initParamValues(params: ApiParam[] | undefined): ParamValues {
   if (!params) return {};
-  return Object.fromEntries(params.map((p) => [p.name, p.example ?? ""]));
+  return Object.fromEntries(params.map((p) => [p.name, p.mask ? "" : (p.example ?? "")]));
 }
 
 function initBodyText(bodyParams: ApiParam[] | undefined): string {
@@ -522,10 +522,12 @@ export function TryItModal({ isOpen, onClose, apiDoc }: TryItModalProps) {
                       <PName>{p.name}</PName>
                       {p.required && <ReqMark>*</ReqMark>}
                       <PType>{p.type}</PType>
+                      {p.mask && <MaskBadge>마스크</MaskBadge>}
                     </ParamNameCell>
                     <ParamInputCell>
                       <StyledInput
-                        placeholder={p.example ?? p.description ?? `Enter ${p.name}`}
+                        type={p.mask ? "password" : "text"}
+                        placeholder={p.mask ? "값을 직접 입력하세요" : (p.example ?? p.description ?? `Enter ${p.name}`)}
                         value={headerValues[p.name] ?? ""}
                         onChange={(e) => setHeaderValues((v) => ({ ...v, [p.name]: e.target.value }))}
                       />
@@ -941,6 +943,17 @@ const ReqMark = styled.span`
   color: #E6333F;
   font-size: 12px;
   line-height: 1;
+`;
+
+const MaskBadge = styled.span`
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: #7C3AED;
+  background: #EDE9FE;
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: -0.2px;
 `;
 
 const PType = styled.span`

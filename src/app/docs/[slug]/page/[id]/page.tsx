@@ -90,7 +90,7 @@ export default function DocsPageDetail() {
           />
         </HeaderActions>
       </PageHeader>
-      <ContentArea>
+      <ContentArea data-tour="api-request">
         {blocks.length > 0 ? (
           blocks.map((block: DocsBlockType, index: number) => (
             <DocsBlockViewer key={index} block={block} version={pageVersion} />
@@ -102,7 +102,7 @@ export default function DocsPageDetail() {
         )}
       </ContentArea>
 
-      <ApplyButton type="button" onClick={() => setIsApplyOpen(true)}>
+      <ApplyButton data-tour="api-apply" type="button" onClick={() => setIsApplyOpen(true)}>
         사용 신청
       </ApplyButton>
 

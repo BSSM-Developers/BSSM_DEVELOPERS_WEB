@@ -135,6 +135,7 @@ export function SidebarItem({
         onClick={handleClick}
         onContextMenu={handleContextMenu}
         onDoubleClick={() => { if (canRename) setRenaming(true); }}
+        data-tour={node.id === "github" ? "github-menu" : undefined}
       >
         {editable && (
           <DeleteButton

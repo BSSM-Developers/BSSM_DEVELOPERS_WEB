@@ -86,6 +86,7 @@ export const EditorStep = ({
       >
         <DocsHeader title={resolvedTitle} breadcrumb={breadcrumb} isApi={false} />
         <div
+          data-tour="docs-content"
           style={{
             minHeight: "500px",
             flex: 1,
@@ -151,7 +152,7 @@ export const EditorStep = ({
           zIndex: 1000
         }}>
           <PrevButton onClick={() => handleStepChange('INPUT')} style={{ background: 'white', border: '1px solid #E5E7EB' }}>이전으로</PrevButton>
-          <NextButton onClick={handleNext}>다음으로</NextButton>
+          <NextButton data-tour="docs-next" onClick={handleNext}>다음으로</NextButton>
         </div>
       </DocsLayout>
     </div>

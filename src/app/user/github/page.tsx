@@ -8,8 +8,12 @@ import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { githubApi } from "./api";
 import { useGitHubConnectionQuery } from "./queries";
 import { track } from "@/lib/analytics";
+import { useVariantValue } from "@mab-kit/react";
 
 const GITHUB_INSTALL_URL_KEY = "github_install_url";
+// MAB A/B 테스트: GitHub 연동 버튼 문구 (control vs test)
+// flagKey "github-connect-cta", 전환 이벤트 "github_connect_clicked"(handleConnect에서 track)
+const GITHUB_CTA_FLAG = "github-connect-cta";
 // GitHub App 설치 페이지 (고정). connect 콜백의 installUrl이 없을 때 폴백으로 사용.
 const GITHUB_APP_INSTALL_URL =
   "https://github.com/apps/bssm-developers-api-maker-dev/installations/select_target";
@@ -20,6 +24,16 @@ export default function GitHubPage() {
   const [installUrl, setInstallUrl] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // MAB 변형: 연동 버튼 문구 (control = 기존, test = 가치 강조). stickyLock으로 경계 이동 완화.
+  const ctaLabel = useVariantValue(
+    GITHUB_CTA_FLAG,
+    {
+      control: "GitHub 연동하기",
+      test: "1분 만에 내 API 문서 만들기",
+    },
+    { defaultVariant: "control", stickyLock: true }
+  );
 
   // 콜백에서 저장해둔 installUrl 읽기
   useEffect(() => {
@@ -94,7 +108,7 @@ export default function GitHubPage() {
               레포지토리 기반 API 문서 자동 관리가 가능해요
             </StatusDesc>
             <ConnectButton onClick={handleConnect} disabled={isConnecting}>
-              {isConnecting ? "이동 중..." : "GitHub 연동하기"}
+              {isConnecting ? "이동 중..." : ctaLabel}
             </ConnectButton>
           </StatusCard>
         </ContentWrapper>

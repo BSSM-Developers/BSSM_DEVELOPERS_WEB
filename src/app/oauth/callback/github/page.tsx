@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { tokenManager } from "@/utils/fetcher";
 import { githubApi } from "@/app/user/github/api";
+import { authApi } from "@/app/login/api";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { track } from "@/lib/analytics";
 
@@ -29,6 +30,16 @@ function GitHubCallbackContent() {
 
     const connect = async () => {
       try {
+        // GitHub 인증 동안 accessToken이 만료됐을 수 있으므로 connect 전에 선제 갱신
+        try {
+          const refreshed = await authApi.refreshAccessToken();
+          if (refreshed.accessToken) {
+            tokenManager.setTokens(refreshed.accessToken, refreshed.refreshToken);
+          }
+        } catch {
+          // refresh 실패해도 일단 connect 시도 (fetcher가 401 시 재차 refresh)
+        }
+
         const result = await githubApi.connect(code);
 
         // Role이 API_MAKER로 승격된 새 JWT 저장

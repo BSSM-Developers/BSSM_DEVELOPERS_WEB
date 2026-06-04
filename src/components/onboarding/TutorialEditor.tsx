@@ -11,6 +11,7 @@ import {
   resetPath,
   normalizePath,
 } from "@/lib/tutorialStore";
+import { getRegistrySteps } from "@/lib/tutorialRegistry";
 import { buildSelector, isUnique } from "@/lib/domSelector";
 
 type Mode = "list" | "picking" | "text";
@@ -34,7 +35,7 @@ export function TutorialEditor() {
 
   useEffect(() => setMounted(true), []);
   useEffect(() => {
-    setSteps(getStepsForPath(pathKey, []));
+    setSteps(getStepsForPath(pathKey, getRegistrySteps(pathKey)));
   }, [pathKey]);
 
   const persist = (next: TutorialStep[]) => {
@@ -110,7 +111,7 @@ export function TutorialEditor() {
   const resetAll = () => {
     if (!confirm("이 페이지 튜토리얼을 코드 기본값으로 되돌릴까요? (오버라이드 삭제)")) return;
     resetPath(pathKey);
-    setSteps(getStepsForPath(pathKey, []));
+    setSteps(getStepsForPath(pathKey, getRegistrySteps(pathKey)));
   };
 
   const copyJson = () => {
@@ -352,6 +353,9 @@ const Input = styled.input`
   padding: 9px 10px;
   font-size: 14px;
   font-family: ${FONT};
+  background: #ffffff;
+  color: #191f28;
+  &::placeholder { color: #b0b8c1; }
   &:focus { outline: none; border-color: ${NAVY}; }
 `;
 const Textarea = styled.textarea`
@@ -360,7 +364,10 @@ const Textarea = styled.textarea`
   padding: 9px 10px;
   font-size: 14px;
   font-family: ${FONT};
+  background: #ffffff;
+  color: #191f28;
   resize: vertical;
+  &::placeholder { color: #b0b8c1; }
   &:focus { outline: none; border-color: ${NAVY}; }
 `;
 

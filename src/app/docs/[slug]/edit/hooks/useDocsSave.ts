@@ -189,8 +189,9 @@ export const useDocsSave = ({
   const resolveMetaFields = useCallback((meta: DocsItem | null) => {
     const description = meta?.description || "";
     const domain = meta?.domain?.trim() || "";
-    const repositoryUrl = meta?.repositoryUrl || meta?.repository_url || "";
-    return { description, domain, repositoryUrl };
+    const repoFullName = meta?.repoFullName || meta?.repo_full_name || "";
+    const branch = meta?.branch || "";
+    return { description, domain, repoFullName, branch };
   }, []);
 
   const getInitialSourceRef = useCallback((mappedId: string): SourcePageMeta | null => {
@@ -491,12 +492,13 @@ export const useDocsSave = ({
 
         const docsPages = Array.from(docsPagesByPageMappedId.values());
 
-        const { description, domain, repositoryUrl } = resolveMetaFields(resolvedDocsMeta);
+        const { description, domain, repoFullName, branch } = resolveMetaFields(resolvedDocsMeta);
         await docsApi.replace(slug, {
           title: resolvedDocsTitle,
           description,
           domain,
-          repository_url: repositoryUrl,
+          repo_full_name: repoFullName,
+          branch,
           auto_approval: resolvedDocsMeta?.autoApproval ?? resolvedDocsMeta?.auto_approval ?? false,
           sidebar: {
             blocks: nodesToSidebarBlockRequests(sidebarItems),
@@ -530,12 +532,13 @@ export const useDocsSave = ({
             });
           }
 
-          const { description, domain, repositoryUrl } = resolveMetaFields(resolvedDocsMeta);
+          const { description, domain, repoFullName, branch } = resolveMetaFields(resolvedDocsMeta);
           await docsApi.replace(slug, {
             title: resolvedDocsTitle,
             description,
             domain,
-            repository_url: repositoryUrl,
+            repo_full_name: repoFullName,
+            branch,
             auto_approval: resolvedDocsMeta?.autoApproval ?? resolvedDocsMeta?.auto_approval ?? false,
             sidebar: {
               blocks: nodesToSidebarBlockRequests(sidebarItems),

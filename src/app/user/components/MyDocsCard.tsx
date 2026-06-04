@@ -9,7 +9,8 @@ interface MyDocsCardProps {
   description: string;
   type: "ORIGINAL" | "CUSTOM";
   autoApproval: boolean | null;
-  repositoryUrl: string;
+  repoFullName: string;
+  branch?: string;
   onExplore: () => void;
   onEditDocs: () => void;
   onEditInfo: () => void;
@@ -23,7 +24,8 @@ export function MyDocsCard({
   description,
   type,
   autoApproval,
-  repositoryUrl,
+  repoFullName,
+  branch,
   onExplore,
   onEditDocs,
   onEditInfo,
@@ -98,7 +100,7 @@ export function MyDocsCard({
         </MetaRow>
         <MetaRow>
           <MetaLabel>레포지토리</MetaLabel>
-          <MetaValue>{repositoryUrl || "-"}</MetaValue>
+          <MetaValue>{repoFullName || "-"}{branch ? ` (${branch})` : ""}</MetaValue>
         </MetaRow>
       </MetaSection>
 

@@ -27,8 +27,9 @@ export interface DocsItem {
   writerId?: number;
   autoApproval?: boolean;
   auto_approval?: boolean;
-  repositoryUrl?: string;
-  repository_url?: string;
+  repoFullName?: string;   // "owner/repo" 형식
+  repo_full_name?: string; // snake_case 호환
+  branch?: string;
   type?: string;
 }
 
@@ -72,7 +73,8 @@ export interface CreateOriginalData {
   title: string;
   description: string;
   domain: string;
-  repository_url: string;
+  repo_full_name: string; // "owner/repo" 형식
+  branch: string;
   auto_approval: boolean;
   writer_id?: number;
   sidebar: {
@@ -99,8 +101,8 @@ export interface UpdateDocsData {
   title?: string;
   description?: string;
   domain?: string;
-  repositoryUrl?: string;
-  repository_url?: string;
+  repoFullName?: string; // PATCH /docs/{docsId} 스펙: camelCase
+  branch?: string;
 }
 
 export interface DocsSideBarBlockRequest {
@@ -121,7 +123,8 @@ export interface ReplaceDocsData {
   title: string;
   description: string;
   domain: string;
-  repository_url: string;
+  repo_full_name: string; // "owner/repo" 형식
+  branch: string;
   auto_approval: boolean;
   sidebar: {
     blocks: DocsSideBarBlockRequest[];

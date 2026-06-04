@@ -3,14 +3,17 @@
 import { AppThemeProvider } from "@/providers/ThemeProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { InputLengthGuard } from "@/components/common/InputLengthGuard";
+import { PostHogProvider } from "@/providers/PostHogProvider";
 
 export function RootProvider({ children }: { children: React.ReactNode }) {
   return (
-    <QueryProvider>
-      <AppThemeProvider>
-        <InputLengthGuard />
-        {children}
-      </AppThemeProvider>
-    </QueryProvider>
+    <PostHogProvider>
+      <QueryProvider>
+        <AppThemeProvider>
+          <InputLengthGuard />
+          {children}
+        </AppThemeProvider>
+      </QueryProvider>
+    </PostHogProvider>
   );
 }

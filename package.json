@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --experimental-https",
+    "dev": "NODE_EXTRA_CA_CERTS=\"$(mkcert -CAROOT)/rootCA.pem\" next dev --turbopack --experimental-https --experimental-https-key ./certificates/localhost-key.pem --experimental-https-cert ./certificates/localhost.pem",
+    "dev:http": "next dev --turbopack -p 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

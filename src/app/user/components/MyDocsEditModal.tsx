@@ -8,7 +8,8 @@ export interface MyDocsEditFormValue {
   title: string;
   description: string;
   domain: string;
-  repositoryUrl: string;
+  repoFullName: string; // "owner/repo" 형식
+  branch: string;
 }
 
 interface MyDocsEditModalProps {
@@ -30,7 +31,8 @@ export function MyDocsEditModal({
     title: "",
     description: "",
     domain: "",
-    repositoryUrl: "",
+    repoFullName: "",
+    branch: "",
   });
 
   useEffect(() => {
@@ -57,7 +59,8 @@ export function MyDocsEditModal({
       title: formValue.title.trim(),
       description: formValue.description.trim(),
       domain: formValue.domain.trim(),
-      repositoryUrl: formValue.repositoryUrl.trim(),
+      repoFullName: formValue.repoFullName.trim(),
+      branch: formValue.branch.trim(),
     });
   };
 
@@ -66,7 +69,7 @@ export function MyDocsEditModal({
       <Backdrop onClick={isSubmitting ? undefined : onClose} />
       <ModalContainer>
         <Title>문서 정보 수정</Title>
-        <Description>제목, 설명, 도메인, 레포지토리 URL을 수정할 수 있어요.</Description>
+        <Description>제목, 설명, 도메인, 레포지토리 정보를 수정할 수 있어요.</Description>
 
         <Form onSubmit={handleSubmit}>
           <InputGroup>
@@ -100,12 +103,22 @@ export function MyDocsEditModal({
           </InputGroup>
 
           <InputGroup>
-            <Label>레포지토리 URL</Label>
+            <Label>레포지토리 (owner/repo)</Label>
             <TextInput
-              value={formValue.repositoryUrl}
-              onChange={(event) => handleChange("repositoryUrl", event.target.value)}
+              value={formValue.repoFullName}
+              onChange={(event) => handleChange("repoFullName", event.target.value)}
+              placeholder="BSSM-Developers/bssm-dev-be"
               disabled={isSubmitting}
-              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <Label>브랜치</Label>
+            <TextInput
+              value={formValue.branch}
+              onChange={(event) => handleChange("branch", event.target.value)}
+              placeholder="main"
+              disabled={isSubmitting}
             />
           </InputGroup>
 

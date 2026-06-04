@@ -2,11 +2,19 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useDocsStore } from "@/store/docsStore";
 import { DocsBlock } from "@/types/docs";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
+import type { GitHubParsedEndpoint } from "@/app/user/github/api";
 import { Step } from "./types";
 import { findNodeById, updateNode } from "@/components/layout/treeUtils";
 import { arrayMove } from "@dnd-kit/sortable";
 
-export const useDocsEditor = (step: Step, title: string) => {
+export interface DocsEditorSeed {
+  endpoints: GitHubParsedEndpoint[];
+  expectsEndpoints: boolean; // 레포/브랜치 선택돼 엔드포인트를 받아야 하는 상황인지
+  isSettled: boolean;        // parsed-endpoints 쿼리가 성공/에러로 확정됐는지
+  isError: boolean;
+}
+
+export const useDocsEditor = (step: Step, title: string, seed?: DocsEditorSeed) => {
   const selectedId = useDocsStore((state) => state.selected);
 
   const [docsBlocks, setDocsBlocks] = useState<DocsBlock[]>([]);
@@ -64,27 +72,82 @@ export const useDocsEditor = (step: Step, title: string) => {
   }, [contentMap]);
 
   useEffect(() => {
-    if (step === 'EDITOR' && sidebarItems.length === 0) {
-      const initialItems: SidebarNode[] = [{
-        id: 'draft-root',
-        label: title || '새 문서',
-        module: 'main_title',
-        childrenItems: [{
-          id: 'draft-doc',
-          label: '시작하기',
-          module: 'default',
-          childrenItems: []
-        }]
-      }];
-      setSidebarItems(initialItems);
-      useDocsStore.setState({ selected: 'draft-doc' });
-      const initialMap: Record<string, DocsBlock[]> = {
-        'draft-doc': [{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }]
-      };
-      setContentMap(initialMap);
-      contentMapRef.current = initialMap;
+    if (step !== 'EDITOR' || sidebarItems.length !== 0) return;
+
+    // 엔드포인트를 받아야 하는 상황(레포/브랜치 선택됨)인데 아직 결과가 확정 안 됐으면 보류.
+    // → 데이터 도착 전에 빈 에디터를 먼저 깔아버리는 레이스를 막는다.
+    if (seed?.expectsEndpoints && !seed?.isSettled) return;
+
+    const endpoints = seed?.endpoints ?? [];
+
+    // 엔드포인트가 있으면: 엔드포인트별 API 노드 + apiData 블록을 미리 구성
+    if (!seed?.isError && endpoints.length > 0) {
+      const children: SidebarNode[] = [];
+      const map: Record<string, DocsBlock[]> = {};
+      const seen = new Set<string>(); // method+endpoint 중복 제거 (제출 검증과 동일 키)
+
+      for (const ep of endpoints) {
+        const method = (ep.method || "GET").toUpperCase() as NonNullable<SidebarNode["method"]>;
+        const endpoint = (ep.endpoint || "").trim();
+        if (!endpoint) continue;
+        const key = `${method} ${endpoint}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        const nodeId = crypto.randomUUID();
+        // path를 넣으면 사이드바 클릭 시 router.push(path)로 라우팅돼 404가 난다.
+        // API 문서 노드는 라우팅 대상이 아니므로 path를 넣지 않는다.
+        children.push({ id: nodeId, label: endpoint, module: 'api', method });
+        map[nodeId] = [{
+          id: crypto.randomUUID(),
+          module: "api",
+          apiData: {
+            id: nodeId,
+            name: endpoint,
+            method,
+            endpoint,
+            description: "",
+            responseStatus: 200,
+            responseMessage: "OK",
+          },
+        }];
+      }
+
+      if (children.length > 0) {
+        const initialItems: SidebarNode[] = [{
+          id: 'draft-root',
+          label: title || '새 문서',
+          module: 'main_title',
+          childrenItems: children,
+        }];
+        setSidebarItems(initialItems);
+        useDocsStore.setState({ selected: children[0].id });
+        setContentMap(map);
+        contentMapRef.current = map;
+        return;
+      }
     }
-  }, [step, title, sidebarItems.length]);
+
+    // 폴백: 엔드포인트 없음 / 에러 → 기존 빈 에디터
+    const initialItems: SidebarNode[] = [{
+      id: 'draft-root',
+      label: title || '새 문서',
+      module: 'main_title',
+      childrenItems: [{
+        id: 'draft-doc',
+        label: '시작하기',
+        module: 'default',
+        childrenItems: []
+      }]
+    }];
+    setSidebarItems(initialItems);
+    useDocsStore.setState({ selected: 'draft-doc' });
+    const initialMap: Record<string, DocsBlock[]> = {
+      'draft-doc': [{ id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }]
+    };
+    setContentMap(initialMap);
+    contentMapRef.current = initialMap;
+  }, [step, title, sidebarItems.length, seed?.expectsEndpoints, seed?.isSettled, seed?.isError, seed?.endpoints]);
 
   useEffect(() => {
     if (step !== 'EDITOR') return;

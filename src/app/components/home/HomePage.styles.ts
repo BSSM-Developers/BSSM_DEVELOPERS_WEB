@@ -3,6 +3,7 @@
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import Link from "next/link";
+import { media } from "@/lib/themeHelper";
 
 export const Page = styled.main`
   width: 100%;
@@ -37,6 +38,10 @@ export const HeroSection = styled.div<{ active: boolean }>`
   @media (max-width: 900px) {
     width: calc(100% - 40px);
     padding-top: 0;
+  }
+
+  ${media.mobile} {
+    width: calc(100% - 24px);
   }
 `;
 

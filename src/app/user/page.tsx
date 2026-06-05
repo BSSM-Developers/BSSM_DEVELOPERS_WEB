@@ -2,7 +2,7 @@
 
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
-import { applyTypography } from "@/lib/themeHelper";
+import { applyTypography, media } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -335,6 +335,10 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
+
+  ${media.mobile} {
+    padding: 0 14px 16px 14px;
+  }
 `;
 
 const Title = styled.h2`

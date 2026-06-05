@@ -10,6 +10,7 @@ import { RequireLoginGate } from "@/components/auth/RequireLoginGate";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { type ApiItem } from "./mockData";
 import { docsKeys, useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
+import { media } from "@/lib/themeHelper";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
 
 const findFirstPageMappedId = (blocks: SidebarBlock[]): string | null => {
@@ -248,6 +249,13 @@ const ContentWrapper = styled.div`
   padding: 60px 20px 100px 20px;
   display: flex;
   flex-direction: column;
+
+  ${media.tablet} {
+    padding: 40px 16px 80px 16px;
+  }
+  ${media.mobile} {
+    padding: 28px 14px 60px 14px;
+  }
 `;
 
 const PageHeader = styled.div`

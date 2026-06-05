@@ -4,6 +4,7 @@ import styled from "@emotion/styled";
 import { DocsSidebar, type SidebarModuleOption } from "./DocsSidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
+import { media } from "@/lib/themeHelper";
 
 const testItems: SidebarNode[] = [
   { id: "perseus", label: "페르세우스", module: "main" },
@@ -345,6 +346,10 @@ const Content = styled.main<{ contentBottomPadding: number }>`
   display: flex;
   flex-direction: column;
   cursor: text;
+
+  ${media.mobile} {
+    padding: ${({ contentBottomPadding }) => `16px 8px ${contentBottomPadding}px`};
+  }
 `;
 
 const ProjectName = styled.span`

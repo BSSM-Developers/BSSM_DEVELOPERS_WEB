@@ -390,6 +390,7 @@ export default function DocsRegisterPage() {
             handleMoveBlock={handleMoveBlock}
             handleStepChange={setStep}
             handleNext={handleNextStep}
+            parsedEndpoints={parsedEndpointsQuery.data ?? []}
           />
         ) : (
           <Container>

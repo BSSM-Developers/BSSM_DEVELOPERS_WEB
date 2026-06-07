@@ -185,7 +185,7 @@ export const useDocsEditor = (step: Step, title: string, seed?: DocsEditorSeed) 
             id: node.id,
             name: node.label,
             method: node.method || "GET",
-            endpoint: "",
+            endpoint: node.endpoint || "",
             description: "",
             responseStatus: 200,
             responseMessage: "OK"

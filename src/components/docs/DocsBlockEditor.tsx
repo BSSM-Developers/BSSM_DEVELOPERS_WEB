@@ -73,7 +73,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
       ? `translate3d(${groupDragOffset?.x ?? 0}px, ${groupDragOffset?.y ?? 0}px, 0)`
       : sortableTranslate,
     transition: shouldRenderGroupGhost || isDragging ? "none" : transition,
-    zIndex: shouldRenderGroupGhost ? 1900 : isDragging ? 2000 : 1000 - index,
+    zIndex: shouldRenderGroupGhost ? 1900 : isDragging ? 2000 : undefined,
     opacity: isDragging ? 0.5 : 1,
   };
 

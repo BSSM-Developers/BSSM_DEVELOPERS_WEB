@@ -16,6 +16,7 @@ interface ApiParam {
   description: string;
   required?: boolean;
   example?: string;
+  mask?: boolean;
   children?: ApiParam[];
   paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
 }
@@ -483,6 +484,7 @@ export function ApiParamsSection({
                 description={param.description}
                 required={param.required}
                 example={param.example}
+                mask={param.mask}
                 childrenProps={param.children}
                 paramLocation={paramLocation === 'response' ? undefined : (paramLocation as 'header' | 'cookie' | 'path' | 'query' | 'body')}
                 editable={editable}

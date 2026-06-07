@@ -56,26 +56,26 @@ export const InputStep = ({ formData, updateFormData, handleNext, userName }: In
                 selected={formData.docsType === "ORIGINAL"}
                 onClick={() => updateFormData("docsType", "ORIGINAL")}
               >
-                Original API
+                API 문서
               </TypeButton>
               <TypeButton
                 type="button"
                 selected={formData.docsType === "CUSTOM"}
                 onClick={() => updateFormData("docsType", "CUSTOM")}
               >
-                Custom API
+                API 폴더집
               </TypeButton>
             </TypeSelector>
           </InputGroup>
 
           <FloatingInput
-            label={isCustom ? "커스텀 문서 제목" : "API 이름"}
+            label={isCustom ? "API 폴더집 제목" : "API 문서 제목"}
             value={formData.title}
             onChange={e => updateFormData('title', e.target.value)}
           />
 
           <FloatingInput
-            label={isCustom ? "커스텀 문서 소개" : "API 소개"}
+            label={isCustom ? "API 폴더집 소개" : "API 문서 소개"}
             value={formData.description}
             onChange={e => updateFormData('description', e.target.value)}
           />
@@ -116,8 +116,8 @@ export const InputStep = ({ formData, updateFormData, handleNext, userName }: In
         <PreviewCardWrapper>
           <ApiCard
             id="preview"
-            title={formData.title || (isCustom ? '커스텀 문서 제목' : 'API 이름')}
-            description={formData.description || (isCustom ? '커스텀 문서 소개를 입력해주세요' : 'API 소개를 입력해주세요')}
+            title={formData.title || (isCustom ? 'API 폴더집 제목' : 'API 문서 제목')}
+            description={formData.description || (isCustom ? 'API 폴더집 소개를 입력해주세요' : 'API 문서 소개를 입력해주세요')}
             tags={[userName]}
             onExplore={() => { }}
           />

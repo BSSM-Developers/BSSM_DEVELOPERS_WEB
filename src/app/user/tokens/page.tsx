@@ -9,6 +9,7 @@ import { type ApiTokenState } from "./api";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useMyUseReasonsQuery, useTokenListQuery } from "./queries";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default function TokenListPage() {
   const router = useRouter();
@@ -35,7 +36,9 @@ export default function TokenListPage() {
         <TokenInfoSection>
           <TokenHeader>
             <TokenName>{token.apiTokenName}</TokenName>
-            <TokenStateBadge state={token.state ?? "NORMAL"}>{token.state ?? "NORMAL"}</TokenStateBadge>
+            <TokenStateBadge state={token.state ?? "NORMAL"}>
+              {token.state === "BLOCKED" ? "차단됨" : token.state === "WARNING" ? "경고" : "활성"}
+            </TokenStateBadge>
           </TokenHeader>
           <TokenId>{token.apiTokenClientId}</TokenId>
         </TokenInfoSection>
@@ -62,7 +65,10 @@ export default function TokenListPage() {
         {!isLoading && !errorMessage ? <TokenList>{tokenListItems}</TokenList> : null}
 
         <UnblockRequestLinkSection>
-          <StyledLink href="/user/tokens/unblock-requests">차단 해제 요청 내역 보기</StyledLink>
+          <StyledLink href="/user/tokens/unblock-requests">
+            차단 해제 요청 내역 보기
+            <ArrowRight size={16} />
+          </StyledLink>
         </UnblockRequestLinkSection>
 
         <UseReasonSection>
@@ -79,7 +85,9 @@ export default function TokenListPage() {
                   <UseReasonItem key={item.apiUseReasonId}>
                     <UseReasonHeader>
                       <UseReasonId>신청 ID #{item.apiUseReasonId}</UseReasonId>
-                      <UseReasonState state={item.apiUseState}>{item.apiUseState}</UseReasonState>
+                      <UseReasonState state={item.apiUseState}>
+                        {item.apiUseState === "APPROVED" ? "승인됨" : item.apiUseState === "REJECTED" ? "거절됨" : item.apiUseState === "PENDING" ? "대기중" : item.apiUseState}
+                      </UseReasonState>
                     </UseReasonHeader>
                     <UseReasonText>{item.apiUseReason || "-"}</UseReasonText>
                   </UseReasonItem>
@@ -103,13 +111,23 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
+
+  @media (max-width: 600px) {
+    padding: 0 16px 16px 16px;
+  }
 `;
 
 const HeaderRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 16px;
   margin-bottom: 40px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    margin-bottom: 28px;
+  }
 `;
 
 const TitleSection = styled.div``;
@@ -126,13 +144,15 @@ const Subtitle = styled.p`
 `;
 
 const IssueButton = styled.button`
-  padding: 12px 24px;
+  padding: 8px 16px;
   background: ${({ theme }) => theme.colors.bssmDarkBlue};
   color: white;
   border-radius: 4px;
   ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-size: 13px;
   cursor: pointer;
   border: none;
+  white-space: nowrap;
   transition: filter 0.2s;
 
   &:hover {
@@ -144,26 +164,28 @@ const TokenList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 0 24px;
 `;
 
 const StatusText = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: ${({ theme }) => theme.colors.grey[500]};
-  padding: 0 24px;
 `;
 
 const ErrorText = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: #d32f2f;
-  padding: 0 24px;
 `;
 
 const TokenItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 8px 0;
+
+  @media (max-width: 480px) {
+    flex-wrap: wrap;
+  }
 `;
 
 const TokenInfoSection = styled.div`
@@ -217,7 +239,7 @@ const TokenStateBadge = styled.span<{ state: ApiTokenState }>`
 `;
 
 const ManageButton = styled.button`
-  padding: 8px 16px;
+  padding: 6px 14px;
   background: ${({ theme }) => theme.colors.grey[900]};
   color: white;
   border-radius: 4px;
@@ -225,6 +247,7 @@ const ManageButton = styled.button`
   font-size: 13px;
   cursor: pointer;
   border: none;
+  white-space: nowrap;
   transition: opacity 0.2s;
 
   &:hover {
@@ -234,23 +257,30 @@ const ManageButton = styled.button`
 
 const UnblockRequestLinkSection = styled.div`
   margin-top: 16px;
-  padding: 0 24px;
 `;
 
 const StyledLink = styled(Link)`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.bssmDarkBlue};
+  background: ${({ theme }) => theme.colors.bssmDarkBlue};
+  color: white;
   ${({ theme }) => applyTypography(theme, "Body_4")};
-  color: ${({ theme }) => theme.colors.bssmDarkBlue};
-  text-decoration: underline;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s;
 
   &:hover {
-    opacity: 0.8;
+    filter: brightness(1.1);
   }
 `;
 
 const UseReasonSection = styled.section`
   margin-top: 32px;
-  padding: 0 24px;
 `;
 
 const UseReasonTitle = styled.h3`

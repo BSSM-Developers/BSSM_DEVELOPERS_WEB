@@ -243,4 +243,14 @@ export const docsApi = {
   replace: async (docsId: string | number, data: ReplaceDocsData) => {
     return fetchClient.put<void>(`/docs/${docsId}`, data);
   },
+
+  addPage: async (
+    docsId: string,
+    data: {
+      page: { id: string; sourceDocsId: string; sourceMappedId: string };
+      sidebarBlock: { id: string; label: string; module: string; method?: string };
+    }
+  ) => {
+    return fetchClient.post<void>(`/docs/${docsId}/page`, data);
+  },
 };

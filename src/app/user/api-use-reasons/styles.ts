@@ -9,6 +9,10 @@ export const Container = styled.div`
 
 export const ContentWrapper = styled.div`
   padding: 0 24px 24px;
+
+  @media (max-width: 600px) {
+    padding: 0 16px 16px;
+  }
 `;
 
 export const HeaderRow = styled.div`
@@ -17,6 +21,11 @@ export const HeaderRow = styled.div`
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 20px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    margin-bottom: 14px;
+  }
 `;
 
 export const TitleGroup = styled.div``;

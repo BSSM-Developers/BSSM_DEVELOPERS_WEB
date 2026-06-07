@@ -251,7 +251,7 @@ export default function TokenDetailPage() {
           <TokenRow>
             <Label>상태</Label>
             <TokenStateBadge state={tokenDetail?.state ?? "NORMAL"}>
-              {tokenDetail?.state ?? "NORMAL"}
+              {tokenDetail?.state === "BLOCKED" ? "차단됨" : tokenDetail?.state === "WARNING" ? "경고" : "활성"}
             </TokenStateBadge>
           </TokenRow>
           <OriginSection>
@@ -295,13 +295,23 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
+
+  @media (max-width: 600px) {
+    padding: 0 16px 16px 16px;
+  }
 `;
 
 const HeaderRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 16px;
   margin-bottom: 48px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    margin-bottom: 32px;
+  }
 `;
 
 const TitleSection = styled.div``;
@@ -318,28 +328,31 @@ const Subtitle = styled.p`
 `;
 
 const HeaderActions = styled.div`
-    display: flex;
-    gap: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 `;
 
 const HeaderButton = styled.button<{ primary?: boolean; danger?: boolean }>`
-    padding: 12px 32px;
-    border-radius: 4px;
-    ${({ theme }) => applyTypography(theme, "Body_4")};
-    cursor: pointer;
-    border: 1px solid ${({ theme, primary, danger }) => danger ? "#d32f2f" : primary ? theme.colors.bssmDarkBlue : theme.colors.grey[200]};
-    background: ${({ theme, primary, danger }) => danger ? "#d32f2f" : primary ? theme.colors.bssmDarkBlue : "white"};
-    color: ${({ theme, primary, danger }) => danger ? "white" : primary ? "white" : theme.colors.grey[900]};
-    transition: filter 0.2s;
+  padding: 8px 16px;
+  border-radius: 4px;
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid ${({ theme, primary, danger }) => danger ? "#d32f2f" : primary ? theme.colors.bssmDarkBlue : theme.colors.grey[200]};
+  background: ${({ theme, primary, danger }) => danger ? "#d32f2f" : primary ? theme.colors.bssmDarkBlue : "white"};
+  color: ${({ theme, primary, danger }) => danger ? "white" : primary ? "white" : theme.colors.grey[900]};
+  transition: filter 0.2s;
+  white-space: nowrap;
 
-    &:hover {
-        filter: brightness(0.95);
-    }
+  &:hover {
+    filter: brightness(0.95);
+  }
 
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 `;
 
 const Section = styled.div`
@@ -360,17 +373,27 @@ const SectionSubtitle = styled.p`
 `;
 
 const TokenRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 60px;
-    margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 14px;
+
+  @media (max-width: 600px) {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 `;
 
 const OriginSection = styled.div`
-    display: flex;
-    align-items: flex-start;
-    gap: 60px;
-    margin-bottom: 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 14px;
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 8px;
+  }
 `;
 
 const OriginContent = styled.div`
@@ -489,16 +512,28 @@ const UnblockRequestNotice = styled.div`
 `;
 
 const ApiItem = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 `;
 
 const ApiInfo = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  width: 200px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const ApiName = styled.h4`
@@ -514,10 +549,15 @@ const ApiMethod = styled.span`
 `;
 
 const ApiEndpointSection = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 60px;
-    flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const EndpointValue = styled.span`

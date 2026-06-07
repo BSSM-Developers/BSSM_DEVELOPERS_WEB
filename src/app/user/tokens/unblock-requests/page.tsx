@@ -4,12 +4,27 @@ import { DocsHeader } from "@/components/docs/DocsHeader";
 import { applyTypography } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useUnblockRequestsQuery } from "../queries";
+import { useState } from "react";
 
 export default function UnblockRequestsPage() {
-  const unblockRequestsQuery = useUnblockRequestsQuery();
+  const [cursor, setCursor] = useState<number | undefined>(undefined);
+  const [size] = useState(20);
+  const unblockRequestsQuery = useUnblockRequestsQuery(cursor, size);
   const unblockRequests = unblockRequestsQuery.data?.values ?? [];
+  const hasNext = unblockRequestsQuery.data?.hasNext ?? false;
   const isLoading = unblockRequestsQuery.isLoading;
   const errorMessage = unblockRequestsQuery.error instanceof Error ? unblockRequestsQuery.error.message : "";
+
+  const handlePrev = () => {
+    setCursor(undefined);
+  };
+
+  const handleNext = () => {
+    if (unblockRequests.length > 0) {
+      const lastId = unblockRequests[unblockRequests.length - 1].requestId;
+      setCursor(lastId);
+    }
+  };
 
   return (
     <Container>
@@ -27,20 +42,33 @@ export default function UnblockRequestsPage() {
         {errorMessage ? <ErrorText>{errorMessage}</ErrorText> : null}
         {!isLoading && !errorMessage ? (
           unblockRequests.length > 0 ? (
-            <RequestList>
-              {unblockRequests.map((request) => (
-                <RequestItem key={request.requestId}>
-                  <RequestHeader>
-                    <RequestId>요청 ID #{request.requestId}</RequestId>
-                    <RequestState state={request.state}>{request.state}</RequestState>
-                  </RequestHeader>
-                  <RequestInfo>
-                    <RequestTokenName>토큰: {request.apiTokenName}</RequestTokenName>
-                    <RequestDate>신청일: {new Date(request.createdAt).toLocaleDateString()}</RequestDate>
-                  </RequestInfo>
-                </RequestItem>
-              ))}
-            </RequestList>
+            <>
+              <RequestList>
+                {unblockRequests.map((request, index) => (
+                  <RequestItem key={request.requestId ?? index}>
+                    <RequestHeader>
+                      <RequestId>요청 ID #{request.requestId}</RequestId>
+                      <RequestState state={request.state}>
+                        {request.state === "APPROVED" ? "승인됨" : request.state === "REJECTED" ? "거절됨" : request.state === "PENDING" ? "대기중" : request.state}
+                      </RequestState>
+                    </RequestHeader>
+                    <RequestInfo>
+                      <RequestTokenName>토큰: {request.apiTokenName}</RequestTokenName>
+                      <RequestDate>신청일: {new Date(request.createdAt).toLocaleDateString()}</RequestDate>
+                    </RequestInfo>
+                  </RequestItem>
+                ))}
+              </RequestList>
+              <PaginationWrapper>
+                <PaginationButton onClick={handlePrev} disabled={cursor === undefined}>
+                  이전
+                </PaginationButton>
+                <PaginationInfo>{cursor !== undefined ? "더보기" : "전체"}</PaginationInfo>
+                <PaginationButton onClick={handleNext} disabled={!hasNext}>
+                  다음
+                </PaginationButton>
+              </PaginationWrapper>
+            </>
           ) : (
             <StatusText>차단 해제 요청 내역이 없습니다.</StatusText>
           )
@@ -60,6 +88,10 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
+
+  @media (max-width: 600px) {
+    padding: 0 16px 16px 16px;
+  }
 `;
 
 const HeaderRow = styled.div`
@@ -67,6 +99,10 @@ const HeaderRow = styled.div`
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 40px;
+
+  @media (max-width: 600px) {
+    margin-bottom: 24px;
+  }
 `;
 
 const TitleSection = styled.div``;
@@ -85,20 +121,17 @@ const Subtitle = styled.p`
 const StatusText = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: ${({ theme }) => theme.colors.grey[500]};
-  padding: 0 24px;
 `;
 
 const ErrorText = styled.p`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   color: #d32f2f;
-  padding: 0 24px;
 `;
 
 const RequestList = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 24px;
 `;
 
 const RequestItem = styled.div`
@@ -165,4 +198,34 @@ const RequestDate = styled.span`
   ${({ theme }) => applyTypography(theme, "Body_4")};
   font-size: 12px;
   color: ${({ theme }) => theme.colors.grey[400]};
+`;
+
+const PaginationWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 32px;
+`;
+
+const PaginationButton = styled.button<{ disabled?: boolean }>`
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: 1px solid ${({ theme, disabled }) => disabled ? theme.colors.grey[200] : theme.colors.bssmDarkBlue};
+  background: ${({ theme, disabled }) => disabled ? theme.colors.grey[100] : theme.colors.bssmDarkBlue};
+  color: ${({ theme, disabled }) => disabled ? theme.colors.grey[400] : "white"};
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  font-weight: 600;
+  cursor: ${({ disabled }) => disabled ? "not-allowed" : "pointer"};
+  transition: all 0.2s;
+
+  &:hover {
+    filter: ${({ disabled }) => disabled ? "none" : "brightness(1.1)"};
+  }
+`;
+
+const PaginationInfo = styled.span`
+  ${({ theme }) => applyTypography(theme, "Body_4")};
+  color: ${({ theme }) => theme.colors.grey[500]};
+  font-weight: 500;
 `;

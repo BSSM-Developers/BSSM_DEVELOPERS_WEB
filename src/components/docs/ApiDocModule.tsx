@@ -1,8 +1,10 @@
+import { useState } from "react";
 import styled from "@emotion/styled";
 import { ApiHeader } from "./api/ApiHeader";
 import { ApiRequestSection } from "./api/ApiRequestSection";
 import { ApiResponseSection } from "./api/ApiResponseSection";
 import { ApiCodeSection } from "./api/ApiCodeSection";
+import { TryItModal } from "./api/TryItModal";
 import { useConfirm } from "@/hooks/useConfirm";
 import type { HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 import type { ApiDoc, ApiParam } from "@/types/docs";
@@ -86,6 +88,7 @@ export function ApiDocModule({
   onResponseParamsChange
 }: ApiDocModuleProps) {
   const { confirm, ConfirmDialog } = useConfirm();
+  const [isTryItOpen, setIsTryItOpen] = useState(false);
 
   const apiDoc: ApiDoc = {
     id: apiId,
@@ -105,16 +108,12 @@ export function ApiDocModule({
     isVerified
   };
 
-  const handleTryIt = async () => {
+  const handleTryIt = () => {
     if (onTryClick) {
       onTryClick();
       return;
     }
-    await confirm({
-      title: "공지사항",
-      message: "아직 준비중인 기능입니다! 조금만 기다려주세요!",
-      hideCancel: true,
-    });
+    setIsTryItOpen(true);
   };
 
   const checkMissing = () => {
@@ -170,6 +169,12 @@ export function ApiDocModule({
         </DocumentationContent>
       </ContentWrapper>
       {ConfirmDialog}
+
+      <TryItModal
+        isOpen={isTryItOpen}
+        onClose={() => setIsTryItOpen(false)}
+        apiDoc={apiDoc}
+      />
 
       <ApiCodeSection
         apiDoc={apiDoc}

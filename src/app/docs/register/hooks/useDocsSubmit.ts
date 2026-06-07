@@ -128,8 +128,8 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
       localStorage.removeItem(DRAFT_STORAGE_KEY);
 
       await confirm({
-        title: "등록 완료",
-        message: "문서가 성공적으로 등록되었습니다. 홈으로 이동합니다.",
+        title: "생성 완료",
+        message: "API 폴더집이 생성되었습니다.",
         hideCancel: true
       });
       router.push('/');
@@ -158,7 +158,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
 
       await confirm({
         title: "생성 완료",
-        message: "커스텀 문서가 생성되었습니다.",
+        message: "API 폴더집이 생성되었습니다.",
         hideCancel: true,
       });
       router.push("/user");

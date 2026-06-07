@@ -85,7 +85,7 @@ export function MyDocsCard({
       <CardHeader>
         <TypeIndicator>
           <Dot type={type} />
-          {type}
+          {type === "ORIGINAL" ? "API 문서" : "API 폴더집"}
         </TypeIndicator>
         <Title>{title}</Title>
         <Description>{description}</Description>
@@ -93,8 +93,8 @@ export function MyDocsCard({
 
       <MetaSection>
         <MetaRow>
-          <MetaLabel>Auto Approval</MetaLabel>
-          <MetaValue>{autoApproval === null ? "-" : String(autoApproval)}</MetaValue>
+          <MetaLabel>자동 승인</MetaLabel>
+          <MetaValue>{autoApproval === null ? "-" : autoApproval ? "활성화" : "비활성화"}</MetaValue>
         </MetaRow>
         <MetaRow>
           <MetaLabel>레포지토리</MetaLabel>
@@ -277,7 +277,9 @@ const CardFooter = styled.div`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
 `;
 
 const ActionButton = styled.button<{ primary?: boolean; danger?: boolean }>`

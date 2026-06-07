@@ -19,11 +19,10 @@ const GITHUB_APP_INSTALL_URL =
   "https://github.com/apps/bssm-developers-api-maker-dev/installations/select_target";
 
 export default function GitHubPage() {
-  const { data: connection, isLoading, refetch } = useGitHubConnectionQuery();
+  const { data: connection, isLoading } = useGitHubConnectionQuery();
 
   const [installUrl, setInstallUrl] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // MAB 변형: 연동 버튼 문구 (control = 기존, test = 가치 강조). stickyLock으로 경계 이동 완화.
   const ctaLabel = useVariantValue(
@@ -63,18 +62,6 @@ export default function GitHubPage() {
     window.open(target, "_blank", "noopener,noreferrer");
   };
 
-  const handleCheckInstall = async () => {
-    try {
-      setIsRefreshing(true);
-      const { data: fresh } = await refetch();
-      if (fresh?.appInstalled) {
-        sessionStorage.removeItem(GITHUB_INSTALL_URL_KEY);
-        setInstallUrl(null);
-      }
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -133,15 +120,12 @@ export default function GitHubPage() {
             <LoginText>@{connection.githubLogin}</LoginText>
             <StatusDesc>
               레포지토리를 등록하려면 GitHub App을 설치해야 해요.<br />
-              설치 후 아래 버튼을 눌러 설치 완료를 확인해주세요.
+              설치 화면에서 레포지토리를 추가하면 자동으로 반영됩니다.
             </StatusDesc>
             <ButtonRow>
               <ConnectButton onClick={handleInstallApp}>
                 GitHub App 설치하기
               </ConnectButton>
-              <OutlineButton onClick={handleCheckInstall} disabled={isRefreshing}>
-                {isRefreshing ? "확인 중..." : "설치 완료했어요"}
-              </OutlineButton>
             </ButtonRow>
           </StatusCard>
         </ContentWrapper>
@@ -164,8 +148,14 @@ export default function GitHubPage() {
           </BadgeRow>
           <LoginText>@{connection.githubLogin}</LoginText>
           <StatusDesc>
-            API 문서를 등록할 때 레포지토리와 브랜치를 선택할 수 있어요.
+            API 문서를 등록할 때 레포지토리와 브랜치를 선택할 수 있어요.<br />
+            새 레포지토리를 추가하려면 아래에서 App 설정을 열어 권한을 추가하세요.
           </StatusDesc>
+          <ButtonRow>
+            <OutlineButton onClick={handleInstallApp}>
+              레포지토리 추가 / 관리
+            </OutlineButton>
+          </ButtonRow>
         </StatusCard>
       </ContentWrapper>
     </Container>

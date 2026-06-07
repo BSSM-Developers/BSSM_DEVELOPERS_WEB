@@ -318,6 +318,11 @@ export const useDocsEditor = (step: Step, title: string, seed?: DocsEditorSeed) 
 
   const handleRemoveBlock = (index: number) => {
     setDocsBlocks(prev => {
+      // API 블럭은 삭제 불가 (문서의 핵심 구성 요소)
+      if (prev[index]?.module === "api") {
+        return prev;
+      }
+
       if (prev.length <= 1) {
         return [{ ...prev[0], id: Math.random().toString(36).substring(2, 11), module: "docs_1", content: "" }];
       }

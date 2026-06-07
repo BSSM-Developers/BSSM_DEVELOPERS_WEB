@@ -254,6 +254,8 @@ export const InputStep = ({
                   onChange={handleRepoChange}
                   options={repoOptions}
                   placeholder="저장소를 선택하세요"
+                  searchable
+                  searchPlaceholder="저장소 검색..."
                 />
                 {isBranchesLoading ? (
                   <BsdevLoader label="브랜치 목록을 불러오는 중..." size={28} minHeight="60px" />
@@ -264,6 +266,8 @@ export const InputStep = ({
                     onChange={(val) => updateFormData("selectedBranch", val)}
                     options={branchOptions}
                     disabled={!formData.selectedRepoFullName}
+                    searchable
+                    searchPlaceholder="브랜치 검색..."
                     placeholder={
                       formData.selectedRepoFullName
                         ? "브랜치를 선택하세요"

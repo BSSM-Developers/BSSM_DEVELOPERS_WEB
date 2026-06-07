@@ -17,6 +17,8 @@ interface BsdevSelectProps {
   placeholder?: string;
   disabled?: boolean;
   leftSlot?: React.ReactNode; // 좌측 고정 칩(예: 계정 아바타)
+  searchable?: boolean; // 옵션 검색창 표시 (기본: 옵션 8개 이상이면 자동)
+  searchPlaceholder?: string;
 }
 
 /**
@@ -32,14 +34,30 @@ export function BsdevSelect({
   placeholder = "선택해주세요",
   disabled,
   leftSlot,
+  searchable,
+  searchPlaceholder = "검색...",
 }: BsdevSelectProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
 
   const selected = options.find((o) => o.value === value);
   const hasValue = !!selected;
   // FloatingInput과 동일: focus(open) 또는 값이 있으면 라벨을 위로 띄우고 placeholder 노출
   const active = open || hasValue;
+
+  // 검색창 노출: searchable 명시 또는 옵션 8개 이상이면 자동
+  const showSearch = (searchable ?? options.length >= 8) && !disabled;
+  const filtered = query.trim()
+    ? options.filter((o) =>
+        o.label.toLowerCase().includes(query.trim().toLowerCase())
+      )
+    : options;
+
+  // 닫힐 때 검색어 초기화
+  useEffect(() => {
+    if (!open) setQuery("");
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -81,8 +99,21 @@ export function BsdevSelect({
 
       {open && !disabled && (
         <Popover role="listbox">
-          {options.length === 0 && <EmptyRow>항목이 없습니다</EmptyRow>}
-          {options.map((opt) => {
+          {showSearch && (
+            <SearchBox>
+              <SearchInput
+                autoFocus
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={searchPlaceholder}
+                onClick={(e) => e.stopPropagation()}
+              />
+            </SearchBox>
+          )}
+          {filtered.length === 0 && (
+            <EmptyRow>{query ? "검색 결과가 없습니다" : "항목이 없습니다"}</EmptyRow>
+          )}
+          {filtered.map((opt) => {
             const isSel = opt.value === value;
             return (
               <OptionRow
@@ -164,7 +195,13 @@ const Trigger = styled.button<{ open: boolean; active: boolean }>`
   }
   &:disabled {
     cursor: not-allowed;
-    opacity: 0.55;
+    background: #F2F4F6;
+    border: 1.5px dashed #D1D6DB;
+    box-shadow: none;
+  }
+  &:disabled:hover {
+    background: #F2F4F6;
+    border-color: #D1D6DB;
   }
 `;
 
@@ -216,6 +253,27 @@ const Popover = styled.div`
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
   }
+`;
+
+const SearchBox = styled.div`
+  position: sticky;
+  top: 0;
+  background: #fff;
+  padding: 4px 4px 8px;
+  z-index: 1;
+`;
+
+const SearchInput = styled.input`
+  width: 100%;
+  border: 1px solid #e5e8eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: ${FONT};
+  background: #f9fafb;
+  color: #191f28;
+  &::placeholder { color: #b0b8c1; }
+  &:focus { outline: none; border-color: ${NAVY}; background: #fff; }
 `;
 
 const OptionRow = styled.div<{ selected: boolean }>`

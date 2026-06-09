@@ -32,6 +32,32 @@ import {
   useBranchesQuery,
 } from "@/app/user/github/queries";
 
+const GITHUB_APP_INSTALL_URL =
+  process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL ??
+  "https://github.com/apps/bssm-developers-api-maker-dev/installations/select_target";
+
+const AddRepoRow = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #16335c;
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  text-align: left;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: #f0f4ff;
+  }
+`;
+
 const OriginalOnlyFields = styled.div<{ hidden: boolean }>`
   display: flex;
   flex-direction: column;
@@ -256,6 +282,13 @@ export const InputStep = ({
                   placeholder="저장소를 선택하세요"
                   searchable
                   searchPlaceholder="저장소 검색..."
+                  footer={
+                    <AddRepoRow
+                      onClick={() => window.open(GITHUB_APP_INSTALL_URL, "_blank")}
+                    >
+                      + 레포 추가하기
+                    </AddRepoRow>
+                  }
                 />
                 {isBranchesLoading ? (
                   <BsdevLoader label="브랜치 목록을 불러오는 중..." size={28} minHeight="60px" />

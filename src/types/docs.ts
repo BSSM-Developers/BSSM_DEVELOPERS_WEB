@@ -30,6 +30,7 @@ export interface ApiParam {
   description: string;
   required?: boolean;
   example?: string;
+  mask?: boolean;
   children?: ApiParam[];
   paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
 }

@@ -280,9 +280,9 @@ export default function MyDocsPage() {
         ) : null}
         {!isLoading && !activeError && filteredDocs.length > 0 ? (
           <Section>
-            <SectionTitle>{filter === "ALL" ? "전체 문서" : `${filter} API`}</SectionTitle>
+            <SectionTitle>{filter === "ALL" ? "전체 문서" : filter === "ORIGINAL" ? "API 문서" : "API 폴더집"}</SectionTitle>
             <SectionDescription>
-              {filter === "ALL" ? "회원님이 관리 중인 모든 API 문서입니다" : `${filter} API 문서 목록입니다`}
+              {filter === "ALL" ? "회원님이 관리 중인 모든 API 문서입니다" : filter === "ORIGINAL" ? "API 문서 목록입니다" : "API 폴더집 목록입니다"}
             </SectionDescription>
             <Grid>
               {filteredDocs.map((doc) => {

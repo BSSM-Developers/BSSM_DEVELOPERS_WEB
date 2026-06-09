@@ -62,7 +62,7 @@ export function DocsEditBlocksContent({
   return (
     <ContentArea onMouseDownCapture={onMouseDownCapture} onClick={onClick}>
       {isReadonlyImportedApi ? (
-        <ReadonlyNotice>가져온 API 문서는 참조 전용입니다. 내용 수정은 원본 문서에서 진행해주세요.</ReadonlyNotice>
+        <ReadonlyNotice>참조 전용 · 수정은 원본 문서에서</ReadonlyNotice>
       ) : null}
       {docsBlocks.length === 0 ? (
         <EmptyText>내용을 입력하려면 클릭하세요...</EmptyText>

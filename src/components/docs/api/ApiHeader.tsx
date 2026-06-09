@@ -389,7 +389,7 @@ const EndpointSection = styled.div`
     min-height: 42px;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 767px) {
     flex-direction: column;
     align-items: stretch;
     padding: 12px;
@@ -475,7 +475,7 @@ const VerifyButton = styled.button<{ state: VerificationState }>`
         state === 'fail' ? '#E03131' : '#1a3a68'};
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 767px) {
     width: 100%;
     height: 36px;
     font-size: 14px;

@@ -8,12 +8,22 @@ export const Container = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+
+  @media (max-width: 767px) {
+    padding: 32px 16px;
+    align-items: flex-start;
+  }
 `;
 
 export const StepContainer = styled.div`
   display: flex;
   width: 100%;
   gap: 80px;
+
+  @media (max-width: 767px) {
+    flex-direction: column;
+    gap: 32px;
+  }
 `;
 
 export const LeftPanel = styled.div`
@@ -26,6 +36,11 @@ export const RightPanel = styled.div`
   display: flex;
   align-items: flex-start;
   padding-top: 80px;
+
+  @media (max-width: 767px) {
+    width: 100%;
+    padding-top: 0;
+  }
 `;
 
 export const Header = styled.div`
@@ -90,6 +105,10 @@ export const Footer = styled.div`
   display: flex;
   gap: 12px;
   margin-top: 60px;
+
+  @media (max-width: 767px) {
+    margin-top: 32px;
+  }
 `;
 
 export const Button = styled.button`
@@ -100,6 +119,12 @@ export const Button = styled.button`
   cursor: pointer;
   font-family: "Spoqa Han Sans Neo", sans-serif;
   transition: all 0.2s;
+  white-space: nowrap;
+
+  @media (max-width: 767px) {
+    flex: 1;
+    padding: 14px 16px;
+  }
 `;
 
 export const PrevButton = styled(Button)`
@@ -144,6 +169,10 @@ export const ConfirmTitle = styled.h1`
 
 export const PreviewCardWrapper = styled.div`
   width: 400px;
+
+  @media (max-width: 767px) {
+    width: 100%;
+  }
 `;
 
 export const SuccessContainer = styled.div`

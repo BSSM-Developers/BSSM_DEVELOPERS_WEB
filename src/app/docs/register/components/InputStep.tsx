@@ -39,22 +39,21 @@ const GITHUB_APP_INSTALL_URL =
 const AddRepoRow = styled.button`
   display: flex;
   align-items: center;
-  gap: 8px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 10px 12px 10px 36px;
   border-radius: 10px;
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 500;
   color: #16335c;
   font-family: "Spoqa Han Sans Neo", sans-serif;
   text-align: left;
   transition: background 0.12s ease;
 
   &:hover {
-    background: #f0f4ff;
+    background: #f2f4f6;
   }
 `;
 

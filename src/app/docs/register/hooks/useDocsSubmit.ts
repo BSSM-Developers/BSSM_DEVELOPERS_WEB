@@ -115,7 +115,8 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
         title: formData.title,
         description: formData.description,
         domain: formData.domain,
-        repository_url: formData.repository_url,
+        repo_full_name: formData.selectedRepoFullName,
+        branch: formData.selectedBranch,
         auto_approval: formData.auto_approval,
         writer_id: user.id,
         sidebar: {

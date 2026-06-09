@@ -10,6 +10,7 @@ import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { useLoginMutation } from "@/app/login/queries";
 import { authApi } from "@/app/login/api";
 import { useUserStore } from "@/store/userStore";
+import { track } from "@/lib/analytics";
 
 function GoogleCallbackContent() {
   const router = useRouter();
@@ -82,6 +83,7 @@ function GoogleCallbackContent() {
               tokenManager.setUserName(user.name);
             }
 
+            track("login_succeeded", { method: "google" });
             router.push("/");
           } catch (error) {
             console.error(error);

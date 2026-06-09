@@ -495,7 +495,7 @@ export function DocsSidebar({
             ))}
           </SortableContext>
           {editable && (
-            <AddButton onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
+            <AddButton data-tour="docs-add" onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
               +
             </AddButton>
           )}

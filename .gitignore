@@ -42,3 +42,5 @@ next-env.d.ts
 
 certificates
 screenshots
+# MCP configuration (contains secrets)
+.mcp.json

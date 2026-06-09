@@ -1,6 +1,6 @@
 import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
-import { applyTypography } from "@/lib/themeHelper";
+import { applyTypography, media } from "@/lib/themeHelper";
 
 export const Container = styled.div`
   display: flex;
@@ -8,6 +8,13 @@ export const Container = styled.div`
   min-height: calc(100vh - 69px);
   background-color: white;
   padding: 48px 24px;
+
+  ${media.tablet} {
+    padding: 32px 16px;
+  }
+  ${media.mobile} {
+    padding: 24px 14px;
+  }
 `;
 
 export const Content = styled.div`

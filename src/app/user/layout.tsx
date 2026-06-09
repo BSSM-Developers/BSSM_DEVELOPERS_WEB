@@ -22,6 +22,7 @@ const BASE_USER_SIDEBAR_ITEMS: SidebarNode[] = [
     module: "main_title",
     childrenItems: [
       { id: "profile", label: "사용자 정보", module: "default", path: "/user/profile" },
+      { id: "github", label: "GitHub 연동", module: "default", path: "/user/github" },
     ],
   },
 ];

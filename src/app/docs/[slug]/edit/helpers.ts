@@ -29,7 +29,8 @@ export interface MetaFormValue {
   title: string;
   description: string;
   domain: string;
-  repositoryUrl: string;
+  repoFullName: string; // "owner/repo" 형식
+  branch: string;
   autoApproval: boolean;
 }
 
@@ -432,13 +433,15 @@ export const createMetaValue = (
   title: string,
   description: string,
   domain: string,
-  repositoryUrl: string,
+  repoFullName: string,
+  branch: string,
   autoApproval: boolean
 ): MetaFormValue => ({
   title: title.trim(),
   description: description.trim(),
   domain: domain.trim(),
-  repositoryUrl: repositoryUrl.trim(),
+  repoFullName: repoFullName.trim(),
+  branch: branch.trim(),
   autoApproval,
 });
 

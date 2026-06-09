@@ -117,7 +117,7 @@ export default function DocsPageDetail() {
           />
         </HeaderActions>
       </PageHeader>
-      <ContentArea>
+      <ContentArea data-tour="api-request">
         {blocks.length > 0 ? (
           blocks.map((block: DocsBlockType, index: number) => (
             <DocsBlockViewer key={index} block={block} version={pageVersion} />

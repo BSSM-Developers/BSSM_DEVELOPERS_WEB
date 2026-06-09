@@ -302,6 +302,7 @@ const SidebarShell = styled.div<{ width: number; mobileOpen?: boolean }>`
   width: ${({ width }) => `${width}px`};
   min-width: 48px;
   max-width: 70vw;
+  height: 100%;
   flex: 0 0 ${({ width }) => `${width}px`};
 
   @media (max-width: 767px) {
@@ -338,6 +339,7 @@ const SidebarBackdrop = styled.div<{ isVisible: boolean }>`
 
 const Sidebar = styled.aside<{ collapsed: boolean }>`
   width: 100%;
+  height: 100%;
   background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.grey[200]};
   overflow-y: auto;

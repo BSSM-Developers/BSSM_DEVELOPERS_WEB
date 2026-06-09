@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/mab/recompute",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

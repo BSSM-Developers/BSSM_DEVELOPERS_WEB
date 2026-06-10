@@ -79,7 +79,7 @@ export function ApiUseApplyModal({
       return response.values;
     },
     enabled: isOpen,
-    staleTime: 60 * 1000,
+    staleTime: 0,
   });
 
   const apiTargetsQuery = useQuery({
@@ -247,11 +247,26 @@ export function ApiUseApplyModal({
       }}
     >
       <ModalCard onClick={(event) => event.stopPropagation()}>
-        <ModalHeader>
-          <ModalTitle>API 사용 신청</ModalTitle>
-          <ModalDescription>문서 확인 후 필요한 API를 선택하고 신청 사유를 남겨주세요.</ModalDescription>
-        </ModalHeader>
+        <ModalBanner>
+          <BannerInner>
+            <BannerIcon>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16335c" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+            </BannerIcon>
+            <BannerText>
+              <ModalTitle>API 사용 신청</ModalTitle>
+              <ModalDescription>신청할 API와 사용 목적을 입력해주세요.</ModalDescription>
+            </BannerText>
+          </BannerInner>
+          <CloseBannerBtn type="button" onClick={onClose} aria-label="닫기">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </CloseBannerBtn>
+        </ModalBanner>
 
+        <ModalBody>
         <Field>
           <FieldLabel>문서</FieldLabel>
           <StaticValue>{docsTitle || "-"}</StaticValue>
@@ -375,12 +390,13 @@ export function ApiUseApplyModal({
 
         <ActionRow>
           <ModalButton type="button" onClick={onClose}>
-            완료
+            닫기
           </ModalButton>
           <ModalButton type="button" primary onClick={() => void handleSubmit()} disabled={isSubmitting}>
             {isSubmitting ? "신청 중..." : "신청하기"}
           </ModalButton>
         </ActionRow>
+        </ModalBody>
       </ModalCard>
       {ConfirmDialog}
     </ModalOverlay>,
@@ -411,73 +427,136 @@ const modalEntrance = keyframes`
 const ModalOverlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(8, 16, 33, 0.58);
-  backdrop-filter: blur(2px);
+  background: rgba(8, 16, 33, 0.55);
+  backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1200;
-  padding: 24px;
-  animation: ${overlayFadeIn} 240ms ease-out;
+  padding: 20px;
+  animation: ${overlayFadeIn} 200ms ease-out;
+
+  @media (min-width: 768px) {
+    padding-left: 280px;
+  }
 `;
 
 const ModalCard = styled.div`
-  position: relative;
-  overflow: hidden;
   width: 100%;
-  max-width: 620px;
+  max-width: 560px;
+  max-height: calc(100vh - 40px);
   background: white;
-  border-radius: 18px;
-  border: 1px solid #d4ddec;
-  box-shadow: 0 26px 62px rgba(7, 23, 55, 0.25);
-  padding: 28px;
-  animation: ${modalEntrance} 300ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 32px 72px rgba(7, 18, 44, 0.28);
+  display: flex;
+  flex-direction: column;
+  animation: ${modalEntrance} 260ms cubic-bezier(0.2, 0.9, 0.2, 1);
 `;
 
-const ModalHeader = styled.div`
-  margin-bottom: 20px;
+const ModalBanner = styled.div`
+  background: #ffffff;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+`;
+
+const BannerInner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+`;
+
+const BannerIcon = styled.div`
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #f0f4fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+
+const BannerText = styled.div`
+  min-width: 0;
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0 0 6px;
+  margin: 0 0 2px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 28px;
+  font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: #16335c;
+  letter-spacing: -0.3px;
 `;
 
 const ModalDescription = styled.p`
   margin: 0;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 15px;
-  color: #5f6b7f;
+  font-size: 12px;
+  color: #9ca3af;
+`;
+
+const CloseBannerBtn = styled.button`
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #e5e7eb;
+    color: #374151;
+  }
+`;
+
+const ModalBody = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 24px 20px;
 `;
 
 const Field = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 9px;
-  margin-bottom: 18px;
+  gap: 8px;
+  margin-bottom: 16px;
 `;
 
 const FieldLabel = styled.label`
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
-  color: #1f2a44;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const StaticValue = styled.div`
-  min-height: 46px;
+  min-height: 42px;
   border-radius: 10px;
-  border: 1px solid #cfd8ea;
-  background: #f7faff;
+  border: 1.5px solid #f0f2f5;
+  background: #fafafa;
   padding: 10px 14px;
   display: flex;
   align-items: center;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 15px;
-  color: #14233e;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
 `;
 
 const SelectContainer = styled.div`
@@ -486,9 +565,9 @@ const SelectContainer = styled.div`
 
 const SelectTrigger = styled.button`
   width: 100%;
-  min-height: 46px;
+  min-height: 42px;
   border-radius: 10px;
-  border: 1px solid #cfd8ea;
+  border: 1.5px solid #e9ecf0;
   padding: 10px 14px;
   background: white;
   display: flex;
@@ -496,136 +575,146 @@ const SelectTrigger = styled.button`
   justify-content: space-between;
   gap: 12px;
   cursor: pointer;
-  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 
   &:disabled {
-    background: #f5f7fb;
+    background: #f9fafb;
     cursor: not-allowed;
+  }
+
+  &:not(:disabled):hover {
+    border-color: #b8c4d8;
   }
 
   &:focus-visible {
     outline: none;
-    border-color: #274f86;
-    box-shadow: 0 0 0 3px rgba(39, 79, 134, 0.16);
+    border-color: #16335c;
+    box-shadow: 0 0 0 3px rgba(22, 51, 92, 0.12);
   }
 `;
 
 const TriggerText = styled.span<{ hasValue: boolean }>`
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 15px;
-  color: ${({ hasValue }) => (hasValue ? "#111827" : "#667085")};
+  font-size: 14px;
+  color: ${({ hasValue }) => (hasValue ? "#111827" : "#9ca3af")};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 `;
 
 const Arrow = styled.span<{ isOpen: boolean }>`
-  font-size: 12px;
-  color: #5f6b7f;
+  font-size: 11px;
+  color: #9ca3af;
   transform: ${({ isOpen }) => (isOpen ? "rotate(180deg)" : "rotate(0deg)")};
   transition: transform 180ms ease;
 `;
 
 const SelectMenu = styled.div`
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 6px);
   left: 0;
   right: 0;
   background: white;
-  border: 1px solid #ccd7eb;
-  border-radius: 10px;
-  box-shadow: 0 14px 30px rgba(8, 22, 50, 0.16);
+  border: 1.5px solid #e9ecf0;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(8, 22, 50, 0.14);
   z-index: 20;
-  max-height: 240px;
+  max-height: 220px;
   overflow: auto;
+  padding: 4px;
 `;
 
 const SelectOption = styled.button<{ selected: boolean }>`
   width: 100%;
   border: none;
-  background: ${({ selected }) => (selected ? "#eef4ff" : "white")};
-  padding: 11px 13px;
+  border-radius: 8px;
+  background: ${({ selected }) => (selected ? "#eef2fb" : "transparent")};
+  padding: 10px 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 15px;
-  color: #101828;
+  font-size: 14px;
+  color: ${({ selected }) => (selected ? "#16335c" : "#374151")};
+  font-weight: ${({ selected }) => (selected ? "700" : "400")};
   cursor: pointer;
+  text-align: left;
 
   &:hover {
-    background: #eef4ff;
+    background: #f5f7fc;
   }
 `;
 
 const SecondaryText = styled.span`
-  color: #667085;
+  color: #9ca3af;
   font-size: 12px;
   flex-shrink: 0;
 `;
 
 const ReasonInput = styled.textarea`
-  min-height: 124px;
+  min-height: 108px;
   border-radius: 10px;
-  border: 1px solid #cfd8ea;
+  border: 1.5px solid #e9ecf0;
   background: white;
   padding: 12px 14px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 15px;
-  color: #101828;
+  font-size: 14px;
+  color: #111827;
   outline: none;
   resize: vertical;
+  width: 100%;
+  box-sizing: border-box;
 
   &::placeholder {
-    color: #98a2b3;
+    color: #c0c7d1;
   }
 
   &:focus {
-    border-color: #274f86;
-    box-shadow: 0 0 0 3px rgba(39, 79, 134, 0.16);
+    border-color: #16335c;
+    box-shadow: 0 0 0 3px rgba(22, 51, 92, 0.1);
   }
 `;
 
 const InlineError = styled.p`
-  margin: 0;
+  margin: 0 0 12px;
   font-family: "Spoqa Han Sans Neo", sans-serif;
   font-size: 13px;
-  color: #c53333;
-  background: #fff3f2;
-  border: 1px solid #ffd2ce;
-  border-radius: 8px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 10px;
   padding: 10px 12px;
 `;
 
 const ActionRow = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f2f5;
 `;
 
 const ModalButton = styled.button<{ primary?: boolean }>`
-  min-width: 116px;
-  height: 44px;
+  height: 40px;
+  padding: 0 20px;
   border-radius: 10px;
-  padding: 0 16px;
-  border: 1px solid ${({ primary }) => (primary ? "#16335c" : "#cfd8ea")};
-  background: ${({ primary }) => (primary ? "#16335c" : "#f8fafe")};
-  color: ${({ primary }) => (primary ? "white" : "#1f2a44")};
+  border: 1.5px solid ${({ primary }) => (primary ? "#16335c" : "#e5e7eb")};
+  background: ${({ primary }) => (primary ? "#16335c" : "white")};
+  color: ${({ primary }) => (primary ? "white" : "#6b7280")};
   font-family: "Spoqa Han Sans Neo", sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  transition: filter 160ms ease, transform 160ms ease;
+  transition: filter 150ms ease;
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
     cursor: not-allowed;
   }
 
   &:hover:not(:disabled) {
-    filter: brightness(1.03);
-    transform: translateY(-1px);
+    filter: brightness(1.06);
   }
 `;

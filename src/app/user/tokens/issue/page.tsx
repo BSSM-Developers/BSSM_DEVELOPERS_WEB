@@ -253,10 +253,14 @@ const StepContent = styled.div`
 
 const InputTitle = styled.h2`
   ${({ theme }) => applyTypography(theme, "Headline_1")};
-  font-size: 32px;
   color: ${({ theme }) => theme.colors.grey[900]};
   margin-bottom: 32px;
   text-align: center;
+
+  @media (max-width: 480px) {
+    font-size: 22px;
+    margin-bottom: 20px;
+  }
 `;
 
 const DomainTextarea = styled.textarea`
@@ -310,19 +314,27 @@ const ButtonRow = styled.div`
   display: flex;
   justify-content: center;
   gap: 10px;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+    align-items: stretch;
+  }
 `;
 
 const IssueButton = styled.button`
-  width: 200px;
-  height: 56px;
+  width: 160px;
+  height: 44px;
   background: ${({ theme }) => theme.colors.bssmDarkBlue};
   color: white;
   border-radius: 4px;
-  ${({ theme }) => applyTypography(theme, "Headline_2")};
-  font-size: 20px;
+  ${({ theme }) => applyTypography(theme, "Body_2")};
   cursor: pointer;
   border: none;
   transition: opacity 0.2s;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 
   &:disabled {
     opacity: 0.5;
@@ -356,10 +368,13 @@ const BackButton = styled.button`
 
 const SuccessTitle = styled.h2`
   ${({ theme }) => applyTypography(theme, "Headline_1")};
-  font-size: 32px;
   color: ${({ theme }) => theme.colors.grey[900]};
   margin-bottom: 16px;
   text-align: center;
+
+  @media (max-width: 480px) {
+    font-size: 22px;
+  }
 `;
 
 const SecretNotice = styled.div`
@@ -459,16 +474,19 @@ const CheckIcon = styled.svg`
 `;
 
 const CompleteButton = styled.button`
-  width: 200px;
-  height: 56px;
+  width: 160px;
+  height: 44px;
   background: ${({ theme }) => theme.colors.bssmDarkBlue};
   color: white;
   border-radius: 4px;
-  ${({ theme }) => applyTypography(theme, "Headline_2")};
-  font-size: 20px;
+  ${({ theme }) => applyTypography(theme, "Body_2")};
   cursor: pointer;
   border: none;
   transition: opacity 0.2s;
+
+  @media (max-width: 480px) {
+    width: 100%;
+  }
 
   &:hover {
     opacity: 0.9;

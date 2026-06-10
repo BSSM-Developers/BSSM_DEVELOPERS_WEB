@@ -94,6 +94,7 @@ export function DocsLayout({
   contentBottomPadding?: number;
 }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [renamingProjectName, setRenamingProjectName] = useState(false);
   const [projectNameInput, setProjectNameInput] = useState(projectName ?? "");
   const [sidebarWidth, setSidebarWidth] = useState(sidebarDefaultWidth);
@@ -110,7 +111,13 @@ export function DocsLayout({
     setSidebarWidth(clampSidebarWidth(sidebarDefaultWidth));
   }, [clampSidebarWidth, sidebarDefaultWidth]);
 
-  const toggleSidebar = () => setSidebarCollapsed(prev => !prev);
+  const handleSidebarToggle = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setIsMobileSidebarOpen(false);
+    } else {
+      setSidebarCollapsed(prev => !prev);
+    }
+  }, []);
 
   const items = sidebarItems || testItems;
   const canRenameProjectName = editable && Boolean(onSidebarChange) && items.length > 0;
@@ -199,65 +206,78 @@ export function DocsLayout({
     <Wrapper>
       <Body>
         {showSidebar && (
-          <SidebarShell width={computedSidebarWidth}>
-          <Sidebar collapsed={sidebarCollapsed}>
-            <SidebarHeader collapsed={sidebarCollapsed}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', justifyContent: sidebarCollapsed ? 'center' : 'space-between' }}>
-                {!sidebarCollapsed && projectName && (
-                  renamingProjectName ? (
-                    <ProjectNameInput
-                      value={projectNameInput}
-                      onChange={(event) => setProjectNameInput(event.target.value)}
-                      onBlur={commitProjectName}
-                      onKeyDown={(event) => {
-                        if (event.nativeEvent.isComposing || event.keyCode === 229) {
-                          return;
-                        }
-                        if (event.key === "Enter") {
-                          commitProjectName();
-                        }
-                        if (event.key === "Escape") {
-                          setProjectNameInput(projectName ?? "");
-                          setRenamingProjectName(false);
-                        }
-                      }}
-                      autoFocus
-                    />
-                  ) : (
-                    <ProjectName
-                      role={canRenameProjectName ? "button" : undefined}
-                      onDoubleClick={() => {
-                        if (canRenameProjectName) {
-                          setRenamingProjectName(true);
-                        }
-                      }}
-                    >
-                      {projectName}
-                    </ProjectName>
-                  )
+          <>
+            <SidebarBackdrop isVisible={isMobileSidebarOpen} onClick={() => setIsMobileSidebarOpen(false)} />
+            <SidebarShell width={computedSidebarWidth} mobileOpen={isMobileSidebarOpen}>
+              <Sidebar collapsed={sidebarCollapsed}>
+                <SidebarHeader collapsed={sidebarCollapsed}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", width: "100%", justifyContent: sidebarCollapsed ? "center" : "space-between" }}>
+                    {!sidebarCollapsed && projectName && (
+                      renamingProjectName ? (
+                        <ProjectNameInput
+                          value={projectNameInput}
+                          onChange={(event) => setProjectNameInput(event.target.value)}
+                          onBlur={commitProjectName}
+                          onKeyDown={(event) => {
+                            if (event.nativeEvent.isComposing || event.keyCode === 229) {
+                              return;
+                            }
+                            if (event.key === "Enter") {
+                              commitProjectName();
+                            }
+                            if (event.key === "Escape") {
+                              setProjectNameInput(projectName ?? "");
+                              setRenamingProjectName(false);
+                            }
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <ProjectName
+                          role={canRenameProjectName ? "button" : undefined}
+                          onDoubleClick={() => {
+                            if (canRenameProjectName) {
+                              setRenamingProjectName(true);
+                            }
+                          }}
+                        >
+                          {projectName}
+                        </ProjectName>
+                      )
+                    )}
+                    <ToggleButton onClick={handleSidebarToggle}>
+                      {sidebarCollapsed ? "→" : "←"}
+                    </ToggleButton>
+                  </div>
+                </SidebarHeader>
+                {!sidebarCollapsed && (
+                  <DocsSidebar
+                    items={items}
+                    editable={editable}
+                    onChange={onSidebarChange}
+                    moduleOptions={sidebarModuleOptions}
+                    onRequestAddApi={onRequestAddApi}
+                    disableApiRename={disableApiRename}
+                  />
                 )}
-                <ToggleButton onClick={toggleSidebar}>
-                  {sidebarCollapsed ? "→" : "←"}
-                </ToggleButton>
-              </div>
-            </SidebarHeader>
-            {!sidebarCollapsed && (
-              <DocsSidebar
-                items={items}
-                editable={editable}
-                onChange={onSidebarChange}
-                moduleOptions={sidebarModuleOptions}
-                onRequestAddApi={onRequestAddApi}
-                disableApiRename={disableApiRename}
-              />
-            )}
-          </Sidebar>
-          {sidebarResizable && !sidebarCollapsed ? (
-            <ResizeHandle onMouseDown={handleResizeStart} />
-          ) : null}
-          </SidebarShell>
+              </Sidebar>
+              {sidebarResizable && !sidebarCollapsed ? (
+                <ResizeHandle onMouseDown={handleResizeStart} />
+              ) : null}
+            </SidebarShell>
+          </>
         )}
         <Content contentBottomPadding={contentBottomPadding}>
+          {showSidebar && (
+            <MobileSidebarBar>
+              <MobileSidebarToggleBtn onClick={() => setIsMobileSidebarOpen(true)}>
+                <MobileMenuLines>
+                  <span /><span /><span />
+                </MobileMenuLines>
+                메뉴
+              </MobileSidebarToggleBtn>
+            </MobileSidebarBar>
+          )}
           {children}
         </Content>
       </Body>
@@ -277,22 +297,60 @@ const Body = styled.div`
   overflow: hidden;
 `;
 
-const SidebarShell = styled.div<{ width: number }>`
+const SidebarShell = styled.div<{ width: number; mobileOpen?: boolean }>`
   position: relative;
   width: ${({ width }) => `${width}px`};
   min-width: 48px;
   max-width: 70vw;
+  height: 100%;
   flex: 0 0 ${({ width }) => `${width}px`};
+
+  @media (max-width: 767px) {
+    position: fixed;
+    top: 69px;
+    left: ${({ mobileOpen }) => mobileOpen ? "0" : "-280px"};
+    width: 280px;
+    height: calc(100vh - 69px);
+    z-index: 200;
+    flex: none;
+    min-width: unset;
+    max-width: none;
+    transition: left 0.3s ease;
+  }
+`;
+
+const SidebarBackdrop = styled.div<{ isVisible: boolean }>`
+  display: none;
+
+  @media (max-width: 767px) {
+    display: block;
+    position: fixed;
+    top: 69px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 199;
+    opacity: ${({ isVisible }) => isVisible ? 1 : 0};
+    pointer-events: ${({ isVisible }) => isVisible ? "auto" : "none"};
+    transition: opacity 0.3s ease;
+  }
 `;
 
 const Sidebar = styled.aside<{ collapsed: boolean }>`
   width: 100%;
+  height: 100%;
   background: ${({ theme }) => theme.colors.background};
   border-right: 1px solid ${({ theme }) => theme.colors.grey[200]};
   overflow-y: auto;
   transition: ${({ collapsed }) => (collapsed ? "width 0.3s ease" : "none")};
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 767px) {
+    height: 100%;
+    box-shadow: 4px 0 16px rgba(0, 0, 0, 0.12);
+  }
 `;
 
 const ResizeHandle = styled.div`
@@ -343,6 +401,61 @@ const Content = styled.main<{ contentBottomPadding: number }>`
   display: flex;
   flex-direction: column;
   cursor: text;
+  position: relative;
+  z-index: 0;
+
+  @media (max-width: 767px) {
+    padding: ${({ contentBottomPadding }) => `16px 16px ${contentBottomPadding}px`};
+    cursor: default;
+  }
+`;
+
+const MobileSidebarBar = styled.div`
+  display: none;
+
+  @media (max-width: 767px) {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid ${({ theme }) => theme.colors.grey[200]};
+    background: ${({ theme }) => theme.colors.background};
+    flex-shrink: 0;
+    margin: -16px -16px 16px;
+  }
+`;
+
+const MobileMenuLines = styled.span`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-right: 6px;
+
+  span {
+    display: block;
+    width: 16px;
+    height: 2px;
+    background: currentColor;
+    border-radius: 2px;
+  }
+`;
+
+const MobileSidebarToggleBtn = styled.button`
+  display: flex;
+  align-items: center;
+  background: none;
+  border: 1px solid ${({ theme }) => theme.colors.grey[200]};
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-left: 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: ${({ theme }) => theme.colors.grey[600]};
+  gap: 4px;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.grey[50]};
+  }
 `;
 
 const ProjectName = styled.span`

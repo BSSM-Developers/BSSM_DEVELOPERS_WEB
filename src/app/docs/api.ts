@@ -27,8 +27,9 @@ export interface DocsItem {
   writerId?: number;
   autoApproval?: boolean;
   auto_approval?: boolean;
-  repositoryUrl?: string;
-  repository_url?: string;
+  repoFullName?: string;   // "owner/repo" 형식
+  repo_full_name?: string; // snake_case 호환
+  branch?: string;
   type?: string;
 }
 
@@ -56,6 +57,7 @@ export interface DocsPageResponse {
     mappedId: string;
     docsId: string;
     endpoint: string;
+    version?: number;
     docsBlocks: DocsBlock[];
     sourceDocsId?: string;
     sourceMappedId?: string;
@@ -71,7 +73,8 @@ export interface CreateOriginalData {
   title: string;
   description: string;
   domain: string;
-  repository_url: string;
+  repo_full_name: string; // "owner/repo" 형식
+  branch: string;
   auto_approval: boolean;
   writer_id?: number;
   sidebar: {
@@ -98,8 +101,8 @@ export interface UpdateDocsData {
   title?: string;
   description?: string;
   domain?: string;
-  repositoryUrl?: string;
-  repository_url?: string;
+  repoFullName?: string; // PATCH /docs/{docsId} 스펙: camelCase
+  branch?: string;
 }
 
 export interface DocsSideBarBlockRequest {
@@ -120,7 +123,8 @@ export interface ReplaceDocsData {
   title: string;
   description: string;
   domain: string;
-  repository_url: string;
+  repo_full_name: string; // "owner/repo" 형식
+  branch: string;
   auto_approval: boolean;
   sidebar: {
     blocks: DocsSideBarBlockRequest[];
@@ -241,5 +245,15 @@ export const docsApi = {
   },
   replace: async (docsId: string | number, data: ReplaceDocsData) => {
     return fetchClient.put<void>(`/docs/${docsId}`, data);
+  },
+
+  addPage: async (
+    docsId: string,
+    data: {
+      page: { id: string; sourceDocsId: string; sourceMappedId: string };
+      sidebarBlock: { id: string; label: string; module: string; method?: string };
+    }
+  ) => {
+    return fetchClient.post<void>(`/docs/${docsId}/page`, data);
   },
 };

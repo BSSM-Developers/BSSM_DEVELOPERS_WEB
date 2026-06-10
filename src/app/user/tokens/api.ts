@@ -39,6 +39,20 @@ export interface ApiTokenDetail {
   registeredApis: RegisteredApiSummary[];
 }
 
+export interface UnblockRequest {
+  requestId: number;
+  apiTokenId: number;
+  apiTokenName: string;
+  state: "PENDING" | "APPROVED" | "REJECTED";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UnblockRequestListData {
+  values: UnblockRequest[];
+  hasNext: boolean;
+}
+
 export interface ApiTokenWithSecret {
   apiTokenId: number;
   apiTokenName: string;
@@ -106,5 +120,25 @@ export const tokenApi = {
   },
   updateUsageEndpoint: async (apiId: string, apiTokenId: number, endpoint: string) => {
     await fetchClient.patch<ApiResponse<null>>(`/api/${apiId}/${apiTokenId}/usage/endpoint`, { endpoint }, { suppressLogout: true });
+  },
+  createUnblockRequest: async (apiTokenId: number, reason: string) => {
+    const response = await fetchClient.post<ApiResponse<UnblockRequest>>(`/api/token/${apiTokenId}/unblock-requests`, { reason });
+    return response.data;
+  },
+  getUnblockRequests: async (cursor?: number, size: number = 20) => {
+    const params: Record<string, string> = { size: String(size) };
+    if (cursor !== undefined) {
+      params.cursor = String(cursor);
+    }
+    const response = await fetchClient.get<ApiResponse<UnblockRequestListData>>("/api/token/unblock-requests", { params });
+    return response.data;
+  },
+  getUnblockRequest: async (requestId: number) => {
+    const response = await fetchClient.get<ApiResponse<UnblockRequest>>(`/api/token/unblock-requests/${requestId}`);
+    return response.data;
+  },
+  getTryItToken: async (apiId: string) => {
+    const response = await fetchClient.get<ApiResponse<{ tokenUUID: string }>>(`/apis/${apiId}/try-it-token`);
+    return response.data;
   },
 };

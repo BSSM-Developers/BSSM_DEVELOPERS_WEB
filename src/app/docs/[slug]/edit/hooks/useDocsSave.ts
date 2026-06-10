@@ -189,8 +189,9 @@ export const useDocsSave = ({
   const resolveMetaFields = useCallback((meta: DocsItem | null) => {
     const description = meta?.description || "";
     const domain = meta?.domain?.trim() || "";
-    const repositoryUrl = meta?.repositoryUrl || meta?.repository_url || "";
-    return { description, domain, repositoryUrl };
+    const repoFullName = meta?.repoFullName || meta?.repo_full_name || "";
+    const branch = meta?.branch || "";
+    return { description, domain, repoFullName, branch };
   }, []);
 
   const getInitialSourceRef = useCallback((mappedId: string): SourcePageMeta | null => {
@@ -491,12 +492,13 @@ export const useDocsSave = ({
 
         const docsPages = Array.from(docsPagesByPageMappedId.values());
 
-        const { description, domain, repositoryUrl } = resolveMetaFields(resolvedDocsMeta);
+        const { description, domain, repoFullName, branch } = resolveMetaFields(resolvedDocsMeta);
         await docsApi.replace(slug, {
           title: resolvedDocsTitle,
           description,
           domain,
-          repository_url: repositoryUrl,
+          repo_full_name: repoFullName,
+          branch,
           auto_approval: resolvedDocsMeta?.autoApproval ?? resolvedDocsMeta?.auto_approval ?? false,
           sidebar: {
             blocks: nodesToSidebarBlockRequests(sidebarItems),
@@ -506,7 +508,11 @@ export const useDocsSave = ({
       } else {
         const resolvedDocsMeta = docsMeta || (await resolveDocsMetaForReplace());
         const shouldReplaceForTitle = Boolean(resolvedDocsMeta && resolvedDocsMeta.title !== resolvedDocsTitle);
-        if (shouldReplaceForTitle && resolvedDocsMeta) {
+        // 사이드바가 변경된 경우(새 API 블록 추가 포함)에도 replace를 사용해야 한다.
+        // updateSidebar는 사이드바 구조만 변경할 뿐 새 블록에 대응하는 페이지를 생성하지 않으므로,
+        // 이후 updatePage를 호출하면 해당 페이지가 존재하지 않아 404가 발생한다.
+        const shouldReplace = shouldReplaceForTitle || isSidebarChanged;
+        if (shouldReplace && resolvedDocsMeta) {
           const docsPagesByPageMappedId = new Map<string, {
             id: string;
             endpoint?: string;
@@ -526,24 +532,23 @@ export const useDocsSave = ({
             });
           }
 
-          const { description, domain, repositoryUrl } = resolveMetaFields(resolvedDocsMeta);
+          const { description, domain, repoFullName, branch } = resolveMetaFields(resolvedDocsMeta);
           await docsApi.replace(slug, {
             title: resolvedDocsTitle,
             description,
             domain,
-            repository_url: repositoryUrl,
+            repo_full_name: repoFullName,
+            branch,
             auto_approval: resolvedDocsMeta?.autoApproval ?? resolvedDocsMeta?.auto_approval ?? false,
             sidebar: {
               blocks: nodesToSidebarBlockRequests(sidebarItems),
             },
             docs_pages: Array.from(docsPagesByPageMappedId.values()),
           });
-          setDocsMeta({ ...resolvedDocsMeta, title: resolvedDocsTitle });
-        } else {
-          if (isSidebarChanged) {
-            await docsApi.updateSidebar(slug, nodesToSidebarBlockRequests(sidebarItems));
+          if (shouldReplaceForTitle) {
+            setDocsMeta({ ...resolvedDocsMeta, title: resolvedDocsTitle });
           }
-
+        } else {
           await Promise.all(
             changedPages.map((entry) =>
               docsApi.updatePage(slug, entry.target.pageMappedId, toDocsPageBlockRequests(entry.blocks))

@@ -2,7 +2,7 @@
 
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
-import { applyTypography } from "@/lib/themeHelper";
+import { applyTypography, media } from "@/lib/themeHelper";
 import styled from "@emotion/styled";
 import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -32,7 +32,8 @@ const toEditFormValue = (doc: DocsItem): MyDocsEditFormValue => ({
   title: doc.title || "",
   description: doc.description || "",
   domain: doc.domain || "",
-  repositoryUrl: doc.repositoryUrl || doc.repository_url || "",
+  repoFullName: doc.repoFullName || doc.repo_full_name || "",
+  branch: doc.branch || "",
 });
 
 export default function MyDocsPage() {
@@ -80,7 +81,7 @@ export default function MyDocsPage() {
           item.title.toLowerCase().includes(query) ||
           item.description.toLowerCase().includes(query) ||
           (item.domain || "").toLowerCase().includes(query) ||
-          (item.repositoryUrl || item.repository_url || "").toLowerCase().includes(query)
+          (item.repoFullName || item.repo_full_name || "").toLowerCase().includes(query)
         );
       });
     },
@@ -164,10 +165,10 @@ export default function MyDocsPage() {
         return;
       }
 
-      if (!value.title || !value.description || !value.domain || !value.repositoryUrl) {
+      if (!value.title || !value.description || !value.domain) {
         await confirm({
           title: "입력 필요",
-          message: "제목, 설명, 도메인, 레포지토리 URL을 모두 입력해주세요.",
+          message: "제목, 설명, 도메인을 모두 입력해주세요.",
           confirmText: "확인",
           hideCancel: true,
         });
@@ -279,9 +280,9 @@ export default function MyDocsPage() {
         ) : null}
         {!isLoading && !activeError && filteredDocs.length > 0 ? (
           <Section>
-            <SectionTitle>{filter === "ALL" ? "전체 문서" : `${filter} API`}</SectionTitle>
+            <SectionTitle>{filter === "ALL" ? "전체 문서" : filter === "ORIGINAL" ? "API 문서" : "API 폴더집"}</SectionTitle>
             <SectionDescription>
-              {filter === "ALL" ? "회원님이 관리 중인 모든 API 문서입니다" : `${filter} API 문서 목록입니다`}
+              {filter === "ALL" ? "회원님이 관리 중인 모든 API 문서입니다" : filter === "ORIGINAL" ? "API 문서 목록입니다" : "API 폴더집 목록입니다"}
             </SectionDescription>
             <Grid>
               {filteredDocs.map((doc) => {
@@ -296,7 +297,8 @@ export default function MyDocsPage() {
                     description={doc.description || "설명이 없습니다."}
                     type={normalizeDocType(doc.type)}
                     autoApproval={doc.autoApproval ?? doc.auto_approval ?? null}
-                    repositoryUrl={doc.repositoryUrl || doc.repository_url || ""}
+                    repoFullName={doc.repoFullName || doc.repo_full_name || ""}
+                    branch={doc.branch}
                     onExplore={() => handleExplore(doc)}
                     onEditDocs={() => handleOpenDocsEditor(doc)}
                     onEditInfo={() => handleOpenEdit(doc)}
@@ -333,6 +335,10 @@ const Container = styled.div`
 
 const ContentWrapper = styled.div`
   padding: 0 24px 24px 24px;
+
+  ${media.mobile} {
+    padding: 0 14px 16px 14px;
+  }
 `;
 
 const Title = styled.h2`

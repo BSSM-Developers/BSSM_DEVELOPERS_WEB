@@ -8,6 +8,7 @@ import type { HttpMethod } from "@/components/ui/httpMethod/HttpMethodTag";
 interface ApiBlockProps {
   apiData: ApiDoc;
   domain?: string;
+  version?: number;
   editable?: boolean;
   onChange?: (updated: ApiDoc) => void;
 }
@@ -63,7 +64,7 @@ const syncPathParamsByEndpoint = (
   return nextPathParams;
 };
 
-export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlockProps) {
+export function ApiBlock({ apiData, domain, version, editable = false, onChange }: ApiBlockProps) {
   const handleHeaderChange = (updated: { title: string; description: string; method: HttpMethod; endpoint: string; isVerified?: boolean }) => {
     const shouldSyncPathParams = updated.endpoint !== apiData.endpoint;
     const nextPathParams = shouldSyncPathParams
@@ -86,6 +87,7 @@ export function ApiBlock({ apiData, domain, editable = false, onChange }: ApiBlo
       <ApiDocModule
         apiId={apiData.id}
         apiName={apiData.name}
+        version={version !== undefined ? `v${version}` : undefined}
         domain={domain}
         method={apiData.method}
         endpoint={apiData.endpoint}

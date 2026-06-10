@@ -115,7 +115,8 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
         title: formData.title,
         description: formData.description,
         domain: formData.domain,
-        repository_url: formData.repository_url,
+        repo_full_name: formData.selectedRepoFullName,
+        branch: formData.selectedBranch,
         auto_approval: formData.auto_approval,
         writer_id: user.id,
         sidebar: {
@@ -128,8 +129,8 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
       localStorage.removeItem(DRAFT_STORAGE_KEY);
 
       await confirm({
-        title: "등록 완료",
-        message: "문서가 성공적으로 등록되었습니다. 홈으로 이동합니다.",
+        title: "생성 완료",
+        message: "API 폴더집이 생성되었습니다.",
         hideCancel: true
       });
       router.push('/');
@@ -138,7 +139,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
       console.error(error);
       await confirm({
         title: "등록 실패",
-        message: "문서 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        message: error instanceof Error ? error.message : "문서 등록 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         hideCancel: true
       });
     } finally {
@@ -158,7 +159,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
 
       await confirm({
         title: "생성 완료",
-        message: "커스텀 문서가 생성되었습니다.",
+        message: "API 폴더집이 생성되었습니다.",
         hideCancel: true,
       });
       router.push("/user");
@@ -166,7 +167,7 @@ export const useDocsSubmit = (confirm: (options: { title: string; message: strin
       console.error(error);
       await confirm({
         title: "생성 실패",
-        message: "커스텀 문서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
+        message: error instanceof Error ? error.message : "커스텀 문서 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
         hideCancel: true,
       });
     } finally {

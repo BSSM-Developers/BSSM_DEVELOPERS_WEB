@@ -10,6 +10,7 @@ import { RequireLoginGate } from "@/components/auth/RequireLoginGate";
 import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { type ApiItem } from "./mockData";
 import { docsKeys, useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
+import { media } from "@/lib/themeHelper";
 import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
 
 const findFirstPageMappedId = (blocks: SidebarBlock[]): string | null => {
@@ -183,8 +184,8 @@ export default function ApiExplorePageClient() {
           {isFilteredView ? (
             filteredList.length > 0 ? (
               <ApiSection
-                title={`${filterType} API`}
-                description={`${filterType} API 목록입니다`}
+                title={filterType === "ORIGINAL" ? "API 문서" : "API 폴더집"}
+                description={filterType === "ORIGINAL" ? "API 문서 목록입니다" : "API 폴더집 목록입니다"}
                 items={filteredList}
                 onPrefetch={handlePrefetch}
               />
@@ -206,7 +207,7 @@ export default function ApiExplorePageClient() {
 
               {displayOriginal.length > 0 ? (
                 <ApiSection
-                  title="ORIGINAL API"
+                  title="API 문서"
                   description="BSSM Developers에 등록된 최신 API를 확인해보세요"
                   items={displayOriginal}
                   onPrefetch={handlePrefetch}
@@ -215,7 +216,7 @@ export default function ApiExplorePageClient() {
 
               {displayCustom.length > 0 ? (
                 <ApiSection
-                  title="CUSTOM API"
+                  title="API 폴더집"
                   description="BSSM Developers에서 사용자가 커스텀한 최신 API를 확인해보세요"
                   items={displayCustom}
                   onPrefetch={handlePrefetch}
@@ -248,6 +249,13 @@ const ContentWrapper = styled.div`
   padding: 60px 20px 100px 20px;
   display: flex;
   flex-direction: column;
+
+  ${media.tablet} {
+    padding: 40px 16px 80px 16px;
+  }
+  ${media.mobile} {
+    padding: 28px 14px 60px 14px;
+  }
 `;
 
 const PageHeader = styled.div`
@@ -255,6 +263,10 @@ const PageHeader = styled.div`
   flex-direction: column;
   gap: 12px;
   margin-bottom: 32px;
+
+  @media (max-width: 767px) {
+    margin-bottom: 20px;
+  }
 `;
 
 const Title = styled.h1`
@@ -264,6 +276,11 @@ const Title = styled.h1`
   color: #191f28;
   margin: 0;
   letter-spacing: -1.8px;
+
+  @media (max-width: 767px) {
+    font-size: 24px;
+    letter-spacing: -1px;
+  }
 `;
 
 const Subtitle = styled.p`
@@ -273,10 +290,18 @@ const Subtitle = styled.p`
   color: #8b95a1;
   margin: 0;
   letter-spacing: -0.8px;
+
+  @media (max-width: 767px) {
+    font-size: 13px;
+  }
 `;
 
 const SearchSection = styled.div`
   margin-bottom: 60px;
+
+  @media (max-width: 767px) {
+    margin-bottom: 32px;
+  }
 `;
 
 const EmptyState = styled.div`

@@ -299,7 +299,7 @@ const extractApiErrorMessage = (errorBody: string): string | null => {
 const buildApiErrorMessage = (status: number, statusText: string, errorBody: string): string => {
   const parsedMessage = extractApiErrorMessage(errorBody);
   if (parsedMessage) {
-    return parsedMessage;
+    return `${parsedMessage} [${status}]`;
   }
 
   if (statusText) {

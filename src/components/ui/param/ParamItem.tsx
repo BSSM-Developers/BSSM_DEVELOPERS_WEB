@@ -21,13 +21,14 @@ type ParamItemProps = {
   description: string;
   required?: boolean;
   example?: string;
+  mask?: boolean;
   childrenProps?: ApiParam[];
   className?: string;
   editable?: boolean;
   paramLocation?: 'header' | 'cookie' | 'query' | 'path' | 'body';
   hideRequired?: boolean;
   parentType?: string;
-  onChange?: (updated: { name: string; type: string; description: string; required: boolean; example?: string; children?: ApiParam[] }) => void;
+  onChange?: (updated: { name: string; type: string; description: string; required: boolean; example?: string; mask?: boolean; children?: ApiParam[] }) => void;
   onDelete?: () => void;
 };
 
@@ -37,6 +38,7 @@ export function ParamItem({
   description,
   required = false,
   example = "",
+  mask = false,
   childrenProps = [],
   className,
   editable = false,
@@ -76,13 +78,13 @@ export function ParamItem({
                 <NameCombobox
                   value={name}
                   options={paramLocation === 'header' ? HEADER_OPTIONS : COOKIE_OPTIONS}
-                  onChange={(val) => onChange?.({ name: val, type, description, required, example, children: childrenProps })}
+                  onChange={(val) => onChange?.({ name: val, type, description, required, example, mask, children: childrenProps })}
                   placeholder="이름"
                 />
               ) : (
                 <EditInput
                   value={name}
-                  onChange={(e) => onChange?.({ name: e.target.value, type, description, required, example, children: childrenProps })}
+                  onChange={(e) => onChange?.({ name: e.target.value, type, description, required, example, mask, children: childrenProps })}
                   placeholder="이름"
                   style={{ width: '100px', color: '#58A6FF', fontWeight: 500 }}
                 />
@@ -93,7 +95,7 @@ export function ParamItem({
                 onChange={(newType) => {
                   let newExample = example;
                   if (newType === 'null') newExample = 'null';
-                  onChange?.({ name, type: newType, description, required, example: newExample, children: childrenProps });
+                  onChange?.({ name, type: newType, description, required, example: newExample, mask, children: childrenProps });
                 }}
               />
               {!hideRequired ? (
@@ -101,11 +103,19 @@ export function ParamItem({
                   <input
                     type="checkbox"
                     checked={required}
-                    onChange={(e) => onChange?.({ name, type, description, required: e.target.checked, example, children: childrenProps })}
+                    onChange={(e) => onChange?.({ name, type, description, required: e.target.checked, example, mask, children: childrenProps })}
                   />
                   필수
                 </label>
               ) : null}
+              <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#8B5CF6', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={mask}
+                  onChange={(e) => onChange?.({ name, type, description, required, example, mask: e.target.checked, children: childrenProps })}
+                />
+                마스크
+              </label>
             </ParamHeader>
             <DescriptionWrapper style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
               <EditInput
@@ -116,26 +126,29 @@ export function ParamItem({
               />
               {!isComplexType && type !== 'null' && type !== 'file' && (
                 <EditInput
+                  type={mask ? "password" : "text"}
                   value={example}
                   onChange={(e) => {
                     const val = e.target.value;
                     let inferredType = type;
-                    if (val === "true" || val === "false") {
-                      inferredType = "boolean";
-                    } else if (!isNaN(Number(val)) && val.trim() !== '') {
-                      inferredType = val.includes(".") ? "number" : "integer";
-                    } else if (val.startsWith("[") && val.endsWith("]")) {
-                      inferredType = "array";
-                    } else if (val === "null") {
-                      inferredType = "null";
-                    } else if (val.startsWith("{") && val.endsWith("}")) {
-                      inferredType = "object";
-                    } else if (val.length > 0) {
-                      inferredType = "string";
+                    if (!mask) {
+                      if (val === "true" || val === "false") {
+                        inferredType = "boolean";
+                      } else if (!isNaN(Number(val)) && val.trim() !== '') {
+                        inferredType = val.includes(".") ? "number" : "integer";
+                      } else if (val.startsWith("[") && val.endsWith("]")) {
+                        inferredType = "array";
+                      } else if (val === "null") {
+                        inferredType = "null";
+                      } else if (val.startsWith("{") && val.endsWith("}")) {
+                        inferredType = "object";
+                      } else if (val.length > 0) {
+                        inferredType = "string";
+                      }
                     }
-                    onChange?.({ name, type: inferredType, description, required, example: val, children: childrenProps });
+                    onChange?.({ name, type: inferredType, description, required, example: val, mask, children: childrenProps });
                   }}
-                  placeholder="예시 값"
+                  placeholder={mask ? "마스킹될 값 입력" : "예시 값"}
                   style={{ flex: 1, minWidth: '150px' }}
                 />
               )}
@@ -205,7 +218,7 @@ export function ParamItem({
           </ParamHeader>
           <DescriptionWrapper>
             <Description>{description}</Description>
-            {example && !isComplexType && <ExampleText>{example}</ExampleText>}
+            {!isComplexType && (mask ? <MaskedText>••••••</MaskedText> : example ? <ExampleText>{example}</ExampleText> : null)}
           </DescriptionWrapper>
         </ParamInfo>
         {!hideRequired && required ? (
@@ -553,10 +566,12 @@ const TypeText = styled.span`
 
 const DescriptionWrapper = styled.div`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   padding: 0 0 0 3px;
   width: 100%;
+  min-width: 0;
+  overflow: hidden;
 `;
 
 const Description = styled.div`
@@ -566,6 +581,17 @@ const Description = styled.div`
   font-size: 14px;
   color: #8B95A1;
   letter-spacing: -0.7px;
+`;
+
+const MaskedText = styled.div`
+  font-family: "SFMono-Regular", "Fira Code", monospace;
+  font-size: 13px;
+  color: #8B5CF6;
+  background: #F5F3FF;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+  letter-spacing: 2px;
 `;
 
 const ExampleText = styled.div`
@@ -578,7 +604,9 @@ const ExampleText = styled.div`
   border-radius: 4px;
   margin-left: 8px;
   letter-spacing: -0.5px;
-  white-space: nowrap;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  min-width: 0;
 `;
 
 const RequiredText = styled.span`

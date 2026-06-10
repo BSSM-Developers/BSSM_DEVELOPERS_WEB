@@ -9,6 +9,7 @@ import Image from "next/image";
 interface DocsBlockViewerProps {
   block: DocsBlockType;
   domain?: string;
+  version?: number;
 }
 
 const parseMarkdownCodeFence = (content?: string): { language: string; code: string } | null => {
@@ -38,7 +39,7 @@ const parseMarkdownCodeFence = (content?: string): { language: string; code: str
   };
 };
 
-export function DocsBlockViewer({ block, domain }: DocsBlockViewerProps) {
+export function DocsBlockViewer({ block, domain, version }: DocsBlockViewerProps) {
   if (block.module === "api" || block.module === "docs_1") {
     let data = block.apiData;
     if (!data && block.content && block.content.startsWith("{")) {
@@ -54,7 +55,7 @@ export function DocsBlockViewer({ block, domain }: DocsBlockViewerProps) {
     if (data) {
       return (
         <DocsBlock module="api">
-          <ApiBlock apiData={data} domain={domain} editable={false} />
+          <ApiBlock apiData={data} domain={domain} version={version} editable={false} />
         </DocsBlock>
       );
     }

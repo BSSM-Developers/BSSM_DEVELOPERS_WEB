@@ -1,7 +1,7 @@
 "use client";
 
 import styled from "@emotion/styled";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { SidebarItem } from "@/components/ui/sidebarItem/SidebarItem";
 import type { SidebarNode } from "@/components/ui/sidebarItem/types";
@@ -268,6 +268,7 @@ export function DocsSidebar({
     targetId: string | null;
   }>({ open: false, anchor: null, mode: "sibling", targetId: null });
   const [apiMethodOpen, setApiMethodOpen] = useState(false);
+  const apiMouseEnterFiredRef = useRef(false);
 
   const groupedModuleOptions = useMemo(() => {
     const apiOptions = moduleOptions.filter((option) => option.module === "api" && option.method);
@@ -279,9 +280,11 @@ export function DocsSidebar({
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     const viewportPadding = 16;
     const pickerWidth = 140;
-    const menuCount = groupedModuleOptions.plainOptions.length + (groupedModuleOptions.apiOptions.length > 0 ? 1 : 0);
+    const hasApiOptions = groupedModuleOptions.apiOptions.length > 0;
+    const totalPickerWidth = hasApiOptions ? pickerWidth * 2 + 8 : pickerWidth;
+    const menuCount = groupedModuleOptions.plainOptions.length + (hasApiOptions ? 1 : 0);
     const estimatedPickerHeight = Math.min(320, menuCount * 34 + 16);
-    const nextX = Math.min(rect.right + 8, window.innerWidth - pickerWidth - viewportPadding);
+    const nextX = Math.min(rect.right + 8, window.innerWidth - totalPickerWidth - viewportPadding);
     const maxY = window.innerHeight - estimatedPickerHeight - viewportPadding;
     const nextY = Math.min(rect.top, maxY);
     setApiMethodOpen(false);
@@ -492,7 +495,7 @@ export function DocsSidebar({
             ))}
           </SortableContext>
           {editable && (
-            <AddButton onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
+            <AddButton data-tour="docs-add" onClick={(e) => openPicker(e, "sibling", effectiveItems[effectiveItems.length - 1]?.id ?? null)}>
               +
             </AddButton>
           )}
@@ -538,8 +541,17 @@ export function DocsSidebar({
               ))}
               {groupedModuleOptions.apiOptions.length > 0 && (
                 <PickerItem
-                  onMouseEnter={() => setApiMethodOpen(true)}
-                  onClick={() => setApiMethodOpen((prev) => !prev)}
+                  onMouseEnter={() => {
+                    apiMouseEnterFiredRef.current = true;
+                    setApiMethodOpen(true);
+                  }}
+                  onClick={() => {
+                    if (apiMouseEnterFiredRef.current) {
+                      apiMouseEnterFiredRef.current = false;
+                      return;
+                    }
+                    setApiMethodOpen((prev) => !prev);
+                  }}
                 >
                   <PickerItemContent>
                     API

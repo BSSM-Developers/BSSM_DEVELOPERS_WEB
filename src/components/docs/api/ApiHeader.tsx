@@ -8,6 +8,7 @@ type VerificationState = 'idle' | 'success' | 'fail';
 interface ApiHeaderProps {
   title: string;
   description?: string;
+  version?: string;
   domain?: string;
   method: HttpMethod;
   endpoint: string;
@@ -22,6 +23,7 @@ const METHODS: HttpMethod[] = ["GET", "POST", "PUT", "DELETE", "PATCH"];
 export function ApiHeader({
   title,
   description = "",
+  version,
   domain,
   method,
   endpoint,
@@ -145,7 +147,10 @@ export function ApiHeader({
   return (
     <HeaderSection>
       <TitleSection>
-        <MainTitle>{title}</MainTitle>
+        <TitleRow>
+          <MainTitle>{title}</MainTitle>
+          {version && <VersionBadge>{version}</VersionBadge>}
+        </TitleRow>
         {description && <Subtitle>{description}</Subtitle>}
       </TitleSection>
 
@@ -384,7 +389,7 @@ const EndpointSection = styled.div`
     min-height: 42px;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 767px) {
     flex-direction: column;
     align-items: stretch;
     padding: 12px;
@@ -424,6 +429,26 @@ const WarningText = styled.div`
   margin-top: -8px;
 `;
 
+const TitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const VersionBadge = styled.span`
+  font-family: "Spoqa Han Sans Neo", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6B7684;
+  background: #F2F4F6;
+  border-radius: 6px;
+  padding: 4px 10px;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 4px;
+`;
+
 const VerifyButton = styled.button<{ state: VerificationState }>`
   background: ${({ state }) =>
     state === 'success' ? '#0CA678' :
@@ -450,7 +475,7 @@ const VerifyButton = styled.button<{ state: VerificationState }>`
         state === 'fail' ? '#E03131' : '#1a3a68'};
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 767px) {
     width: 100%;
     height: 36px;
     font-size: 14px;

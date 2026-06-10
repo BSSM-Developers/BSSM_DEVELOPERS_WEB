@@ -14,8 +14,10 @@ const GITHUB_INSTALL_URL_KEY = "github_install_url";
 // MAB A/B 테스트: GitHub 연동 버튼 문구 (control vs test)
 // flagKey "github-connect-cta", 전환 이벤트 "github_connect_clicked"(handleConnect에서 track)
 const GITHUB_CTA_FLAG = "github-connect-cta";
-// GitHub App 설치 페이지 (고정). connect 콜백의 installUrl이 없을 때 폴백으로 사용.
+// GitHub App 설치 페이지. connect 콜백의 installUrl이 없을 때 폴백으로 사용.
+// 환경별로 앱이 다르므로 env로 주입(prod: bssm-developers-api-maker / dev: -dev). 미설정 시 dev 앱으로 폴백.
 const GITHUB_APP_INSTALL_URL =
+  process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL ??
   "https://github.com/apps/bssm-developers-api-maker-dev/installations/select_target";
 
 export default function GitHubPage() {

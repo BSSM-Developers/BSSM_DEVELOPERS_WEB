@@ -5,6 +5,8 @@ import { DocsHeader } from "@/components/docs/DocsHeader";
 import { DocsBlockViewer } from "@/components/docs/DocsBlockViewer";
 import { loadGuideDetail } from "../data";
 import { GuideDevEditor } from "./GuideDevEditor";
+import { GuideOrderEditor } from "./GuideOrderEditor";
+import { loadGuideSummaries } from "../data";
 import { createPageMetadata } from "@/lib/seo";
 import styles from "./page.module.css";
 
@@ -39,7 +41,7 @@ export async function generateMetadata({ params }: GuideDetailPageProps): Promis
 export default async function GuideDetailPage({ params, searchParams }: GuideDetailPageProps) {
   const { slug } = await params;
   const { mode } = await searchParams;
-  const guide = await loadGuideDetail(slug);
+  const [guide, allGuides] = await Promise.all([loadGuideDetail(slug), loadGuideSummaries()]);
   const isDevMode = process.env.NODE_ENV !== "production";
   const isEditMode = isDevMode && mode === "edit";
 
@@ -51,7 +53,8 @@ export default async function GuideDetailPage({ params, searchParams }: GuideDet
     <div className={styles.page}>
       <DocsHeader title={guide.title} breadcrumb={["가이드"]} />
       {isDevMode && !isEditMode ? (
-        <div className={styles.devToolbar}>
+        <div className={styles.devToolbar} style={{ gap: "8px" }}>
+          <GuideOrderEditor guides={allGuides} />
           <Link href="/guide/new" className={styles.devButton}>
             새 가이드
           </Link>

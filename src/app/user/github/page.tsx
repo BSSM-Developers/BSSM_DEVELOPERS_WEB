@@ -20,6 +20,14 @@ const GITHUB_APP_INSTALL_URL =
   process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL ??
   "https://github.com/apps/bssm-developers-api-maker-dev/installations/select_target";
 
+// 백엔드가 내려준 installUrl이 깨진 경우(앱 슬러그가 null/undefined/빈값) 무효 처리한다.
+// 예: https://github.com/apps/null/installations/new → 폴백(GITHUB_APP_INSTALL_URL) 사용.
+const isValidInstallUrl = (url: string | null | undefined): url is string => {
+  if (!url) return false;
+  const slug = url.match(/^https:\/\/github\.com\/apps\/([^/]+)/)?.[1]?.toLowerCase();
+  return !!slug && slug !== "null" && slug !== "undefined";
+};
+
 export default function GitHubPage() {
   const { data: connection, isLoading } = useGitHubConnectionQuery();
 
@@ -36,11 +44,13 @@ export default function GitHubPage() {
     { defaultVariant: "control", stickyLock: true }
   );
 
-  // 콜백에서 저장해둔 installUrl 읽기
+  // 콜백에서 저장해둔 installUrl 읽기 (깨진 값이면 무시·제거하고 폴백 사용)
   useEffect(() => {
     const stored = sessionStorage.getItem(GITHUB_INSTALL_URL_KEY);
-    if (stored) {
+    if (isValidInstallUrl(stored)) {
       setInstallUrl(stored);
+    } else if (stored) {
+      sessionStorage.removeItem(GITHUB_INSTALL_URL_KEY);
     }
   }, []);
 
@@ -58,8 +68,8 @@ export default function GitHubPage() {
   };
 
   const handleInstallApp = () => {
-    // 콜백에서 받은 installUrl 우선, 없으면 고정 설치 URL로 폴백
-    const target = installUrl ?? GITHUB_APP_INSTALL_URL;
+    // 콜백에서 받은 installUrl 우선, 없거나 깨졌으면 폴백(env) 사용
+    const target = isValidInstallUrl(installUrl) ? installUrl : GITHUB_APP_INSTALL_URL;
     track("github_app_install_clicked");
     window.open(target, "_blank", "noopener,noreferrer");
   };

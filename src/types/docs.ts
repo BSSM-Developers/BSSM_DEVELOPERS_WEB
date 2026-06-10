@@ -4,6 +4,7 @@ export type DocsModule =
   | "image"
   | "headline_1"
   | "headline_2"
+  | "headline_3"
   | "list"
   | "api"
   | "big_space"

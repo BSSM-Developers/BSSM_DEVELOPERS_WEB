@@ -12,6 +12,7 @@ export function DocsBlockRender({ blocks } : { blocks : DocsBlockType[]} ){
         switch(module){
           case "headline_1":
           case "headline_2":
+          case "headline_3":
           case "docs_1":
             return(
               <DocsBlock key={i} module={module}>

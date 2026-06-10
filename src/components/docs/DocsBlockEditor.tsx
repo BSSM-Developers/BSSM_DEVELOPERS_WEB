@@ -837,7 +837,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                 />
               </JsonCodeEditor>
             ) : (
-              <div style={{ position: 'relative', minHeight: '120px' }}>
+              <div style={{ position: 'relative' }}>
                 <pre
                   aria-hidden="true"
                   style={{
@@ -863,7 +863,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                 />
                 <TextareaAutosize
                   value={value}
-                  minRows={5}
+                  minRows={1}
                   onChange={(e) => {
                     setValue(e.target.value);
                     onChange(index, { ...block, content: e.target.value });

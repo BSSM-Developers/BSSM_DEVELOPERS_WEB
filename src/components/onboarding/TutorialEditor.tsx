@@ -26,6 +26,8 @@ export function TutorialEditor() {
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<Mode>("list");
   const [steps, setSteps] = useState<TutorialStep[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // 작성 중 임시 스텝
   const [draftSelector, setDraftSelector] = useState<string | null>(null);
@@ -60,10 +62,10 @@ export function TutorialEditor() {
     };
 
     const onClick = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
       const el = document.elementFromPoint(e.clientX, e.clientY);
       if (!el || isEditorEl(el)) return;
+      e.preventDefault();
+      e.stopPropagation();
       const sel = buildSelector(el);
       if (!sel || !isUnique(sel)) {
         alert(
@@ -106,6 +108,16 @@ export function TutorialEditor() {
 
   const removeStep = (i: number) => {
     persist(steps.filter((_, idx) => idx !== i));
+  };
+
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const next = [...steps];
+    const [removed] = next.splice(dragIndex, 1);
+    next.splice(targetIndex, 0, removed);
+    persist(next);
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const resetAll = () => {
@@ -165,7 +177,20 @@ export function TutorialEditor() {
             <List>
               {steps.length === 0 && <Empty>이 페이지에 튜토리얼이 없습니다.</Empty>}
               {steps.map((s, i) => (
-                <Item key={i}>
+                <Item
+                  key={i}
+                  draggable
+                  onDragStart={() => setDragIndex(i)}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+                  onDrop={() => handleDrop(i)}
+                  onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                  style={{
+                    opacity: dragIndex === i ? 0.4 : 1,
+                    borderColor: dragOverIndex === i && dragIndex !== i ? "#16335C" : undefined,
+                    borderWidth: dragOverIndex === i && dragIndex !== i ? 2 : undefined,
+                  }}
+                >
+                  <DragHandle title="드래그로 순서 변경">⠿</DragHandle>
                   <ItemNum>{i + 1}</ItemNum>
                   <ItemBody>
                     <ItemTitle>{s.title}</ItemTitle>
@@ -285,6 +310,15 @@ const ItemSel = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+`;
+
+const DragHandle = styled.span`
+  color: #b0b8c1;
+  font-size: 14px;
+  cursor: grab;
+  flex-shrink: 0;
+  user-select: none;
+  &:active { cursor: grabbing; }
 `;
 
 const Del = styled.button`

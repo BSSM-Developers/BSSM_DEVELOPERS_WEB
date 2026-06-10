@@ -100,7 +100,6 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     { id: 'text', label: '텍스트', icon: 'T', module: 'docs_1' },
     { id: 'headline_1', label: '제목 1', icon: 'H1', module: 'headline_1' },
     { id: 'headline_2', label: '제목 2', icon: 'H2', module: 'headline_2' },
-    { id: 'headline_3', label: '제목 3', icon: 'H3', module: 'headline_3' },
     { id: 'list', label: '리스트', icon: '•', module: 'list' },
     { id: 'code', label: '코드 블록', icon: '</>', module: 'code' },
     { id: 'image', label: '이미지', icon: 'IMG', module: 'image' },
@@ -217,9 +216,8 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
   const detectModuleType = (
     text: string
   ): { module: DocsBlockType["module"]; content: string; imageSrc?: string; language?: string } | null => {
-    if (/^###\s/.test(text)) return { module: "headline_3", content: text.replace(/^###\s*/, "") };
-    if (/^##\s/.test(text)) return { module: "headline_2", content: text.replace(/^##\s*/, "") };
     if (/^#\s/.test(text)) return { module: "headline_1", content: text.replace(/^#\s*/, "") };
+    if (/^##\s/.test(text)) return { module: "headline_2", content: text.replace(/^##\s*/, "") };
     if (/^-\s/.test(text)) return { module: "list", content: text.replace(/^-\s*/, "") };
 
     const closedFenceMatch = text.match(/^```([a-zA-Z0-9_-]*)\n([\s\S]*?)\n```$/);
@@ -253,7 +251,6 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
       block.module === "docs_1" ||
       block.module === "headline_1" ||
       block.module === "headline_2" ||
-      block.module === "headline_3" ||
       block.module === "list";
 
     if (isTextLikeModule) {

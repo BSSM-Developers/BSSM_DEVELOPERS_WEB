@@ -28,20 +28,20 @@ export function convertMarkdown(content: string): DocsBlock[] {
       continue;
     }
 
-    if (/^#{3,}\s/.test(trimmed)) {
+    if (/^#{1,2}\s/.test(trimmed)) {
       flushList();
       blocks.push({
-        module: "headline_3",
-        content: trimmed.replace(/^#{3,}\s*/, "").trim(),
+        module: "headline_1",
+        content: trimmed.replace(/^#{1,2}\s*/, "").trim(),
       });
       continue;
     }
 
-    if (/^#{1,2}\s/.test(trimmed)) {
+    if (/^#{3,4}\s/.test(trimmed)) {
       flushList();
       blocks.push({
-        module: trimmed.startsWith("## ") ? "headline_2" : "headline_1",
-        content: trimmed.replace(/^#{1,2}\s*/, "").trim(),
+        module: "headline_2",
+        content: trimmed.replace(/^#{3,4}\s*/, "").trim(),
       });
       continue;
     }

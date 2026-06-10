@@ -95,8 +95,6 @@ function blockToMarkdown(block: DocsBlock): string | null {
       return block.content ? `# ${block.content}` : null;
     case "headline_2":
       return block.content ? `## ${block.content}` : null;
-    case "headline_3":
-      return block.content ? `### ${block.content}` : null;
     case "api":
     case "docs_1": {
       const api = resolveApiData(block);

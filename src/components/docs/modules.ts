@@ -10,10 +10,6 @@ export const docsModules = {
     ${applyTypography(theme, "Headline_2")}
     color: ${theme.colors.grey[900]};
   `,
-  headline_3: (theme: Theme) => css`
-    ${applyTypography(theme, "Headline_3")}
-    color: ${theme.colors.grey[900]};
-  `,
 
   docs_1: (theme: Theme) => css`
     ${applyTypography(theme, "Docs_1")}

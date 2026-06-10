@@ -121,6 +121,14 @@ export function TutorialEditor() {
     setDragOverIndex(null);
   };
 
+  const moveStep = (from: number, to: number) => {
+    if (to < 0 || to >= steps.length) return;
+    const next = [...steps];
+    const [removed] = next.splice(from, 1);
+    next.splice(to, 0, removed);
+    persist(next);
+  };
+
   const resetAll = () => {
     if (!confirm("이 페이지 튜토리얼을 코드 기본값으로 되돌릴까요? (오버라이드 삭제)")) return;
     resetPath(pathKey);
@@ -202,6 +210,10 @@ export function TutorialEditor() {
                     <ItemTitle>{s.title}</ItemTitle>
                     <ItemSel>{s.selector}</ItemSel>
                   </ItemBody>
+                  <MoveButtons>
+                    <MoveBtn onClick={() => moveStep(i, i - 1)} disabled={i === 0} title="위로">▲</MoveBtn>
+                    <MoveBtn onClick={() => moveStep(i, i + 1)} disabled={i === steps.length - 1} title="아래로">▼</MoveBtn>
+                  </MoveButtons>
                   <Del onClick={() => removeStep(i)}>삭제</Del>
                 </Item>
               ))}
@@ -328,6 +340,26 @@ const DragHandle = styled.span`
   flex-shrink: 0;
   user-select: none;
   &:active { cursor: grabbing; }
+`;
+
+const MoveButtons = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+`;
+
+const MoveBtn = styled.button`
+  background: none;
+  border: none;
+  color: #8b95a1;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  &:hover:not(:disabled) { color: ${NAVY}; background: #f2f4f6; }
+  &:disabled { opacity: 0.25; cursor: not-allowed; }
 `;
 
 const Del = styled.button`

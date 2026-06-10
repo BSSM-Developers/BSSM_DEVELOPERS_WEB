@@ -11,6 +11,7 @@ import {
   resetPath,
   normalizePath,
 } from "@/lib/tutorialStore";
+import { clearAllSeen } from "@/lib/onboarding";
 import { getRegistrySteps } from "@/lib/tutorialRegistry";
 import { buildSelector, isUnique } from "@/lib/domSelector";
 
@@ -131,6 +132,11 @@ export function TutorialEditor() {
     alert("스텝 JSON을 클립보드에 복사했습니다. 코드의 fallback steps에 붙여넣을 수 있어요.");
   };
 
+  const replayTutorial = () => {
+    clearAllSeen();
+    window.location.href = window.location.pathname;
+  };
+
   return createPortal(
     <>
       {/* picking 중 대상 하이라이트 미리보기 */}
@@ -206,6 +212,9 @@ export function TutorialEditor() {
             <Row>
               <Ghost onClick={copyJson} disabled={steps.length === 0}>JSON 복사</Ghost>
               <Ghost onClick={resetAll}>초기화</Ghost>
+            </Row>
+            <Row>
+              <Replay onClick={replayTutorial} disabled={steps.length === 0}>▶ 재현</Replay>
             </Row>
           </>
         )}
@@ -347,6 +356,21 @@ const Primary = styled.button`
   font-weight: 700;
   cursor: pointer;
   font-family: ${FONT};
+`;
+
+const Replay = styled.button`
+  flex: 1;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: ${FONT};
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: #c8e6c9; }
 `;
 
 const Ghost = styled.button`

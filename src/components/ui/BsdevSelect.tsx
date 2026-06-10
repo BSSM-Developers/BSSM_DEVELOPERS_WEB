@@ -19,6 +19,7 @@ interface BsdevSelectProps {
   leftSlot?: React.ReactNode; // 좌측 고정 칩(예: 계정 아바타)
   searchable?: boolean; // 옵션 검색창 표시 (기본: 옵션 8개 이상이면 자동)
   searchPlaceholder?: string;
+  footer?: React.ReactNode; // 팝오버 하단 고정 슬롯
 }
 
 /**
@@ -36,6 +37,7 @@ export function BsdevSelect({
   leftSlot,
   searchable,
   searchPlaceholder = "검색...",
+  footer,
 }: BsdevSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -132,6 +134,12 @@ export function BsdevSelect({
               </OptionRow>
             );
           })}
+          {footer && (
+            <>
+              <FooterDivider />
+              <FooterSlot>{footer}</FooterSlot>
+            </>
+          )}
         </Popover>
       )}
     </Root>
@@ -323,4 +331,14 @@ const EmptyRow = styled.div`
   color: #8b95a1;
   font-size: 14px;
   font-family: ${FONT};
+`;
+
+const FooterDivider = styled.div`
+  height: 1px;
+  background: #f0f2f4;
+  margin: 4px 0;
+`;
+
+const FooterSlot = styled.div`
+  padding: 4px 2px 2px;
 `;

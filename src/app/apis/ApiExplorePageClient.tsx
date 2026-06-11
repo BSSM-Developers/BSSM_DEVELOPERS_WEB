@@ -11,7 +11,7 @@ import { BsdevLoader } from "@/components/common/BsdevLoader";
 import { type ApiItem } from "./mockData";
 import { docsKeys, useDocsListQuery, useDocsPopularListQuery } from "@/app/docs/queries";
 import { media } from "@/lib/themeHelper";
-import { docsApi, type DocsItem, type SidebarBlock } from "@/app/docs/api";
+import { docsApi, type DocsItem, type SidebarBlock, type ServerStatusFilter } from "@/app/docs/api";
 
 const findFirstPageMappedId = (blocks: SidebarBlock[]): string | null => {
   for (const block of blocks) {
@@ -51,8 +51,9 @@ export default function ApiExplorePageClient() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"ALL" | "ORIGINAL" | "CUSTOM">("ALL");
   const [sortType, setSortType] = useState<"LATEST" | "POPULAR">("LATEST");
+  const [serverStatus, setServerStatus] = useState<ServerStatusFilter>("RUNNING");
 
-  const { data: docsData, isLoading } = useDocsListQuery();
+  const { data: docsData, isLoading } = useDocsListQuery({ serverStatus });
   const { data: popularDocsData, isLoading: isPopularLoading } = useDocsPopularListQuery({ size: 20 });
 
   const realOriginalApis: ApiItem[] = useMemo(() => {
@@ -176,8 +177,10 @@ export default function ApiExplorePageClient() {
               onSearch={setSearchQuery}
               onFilterChange={setFilterType}
               onSortChange={setSortType}
+              onServerStatusChange={setServerStatus}
               activeFilter={filterType}
               activeSort={sortType}
+              activeServerStatus={serverStatus}
             />
           </SearchSection>
 

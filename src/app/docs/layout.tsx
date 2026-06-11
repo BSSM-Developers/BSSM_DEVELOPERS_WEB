@@ -74,7 +74,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isRegisterPage = pathname === "/docs/register";
   const isEditPage = pathname?.includes("/edit");
   const shouldFetchLayoutData = !isRegisterPage && !isEditPage;
-  const { data: docsListData } = useDocsListQuery(shouldFetchLayoutData);
+  const { data: docsListData } = useDocsListQuery({}, shouldFetchLayoutData);
   const { data: sidebarData } = useDocsSidebarQuery(shouldFetchLayoutData ? slug || "" : "");
 
   const [sidebarItems, setSidebarItems] = useState<SidebarNode[]>([]);

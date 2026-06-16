@@ -138,6 +138,38 @@ const persistImageBlocks = async (blocks: DocsBlock[]): Promise<DocsBlock[]> => 
   return nextBlocks;
 };
 
+export async function PATCH(request: NextRequest) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ message: "DEV 모드에서만 사용할 수 있습니다." }, { status: 403 });
+  }
+
+  let ids: string[] | null = null;
+  try {
+    const body = (await request.json()) as unknown;
+    if (isRecord(body) && Array.isArray(body.ids) && body.ids.every((v: unknown) => typeof v === "string")) {
+      ids = body.ids as string[];
+    }
+  } catch {
+    ids = null;
+  }
+
+  if (!ids) {
+    return NextResponse.json({ message: "요청 형식이 올바르지 않습니다." }, { status: 400 });
+  }
+
+  try {
+    const index = await readJson<{ items: GuideIndexItem[] }>(guideIndexPath);
+    const items = Array.isArray(index.items) ? [...index.items] : [];
+    const idSet = new Set(ids);
+    const reordered = ids.map((id) => items.find((item) => item.id === id)).filter((item): item is GuideIndexItem => item != null);
+    const missing = items.filter((item) => !idSet.has(item.id));
+    await saveJson(guideIndexPath, { items: [...reordered, ...missing] });
+    return NextResponse.json({ message: "ok" });
+  } catch {
+    return NextResponse.json({ message: "순서 저장에 실패했습니다." }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ message: "DEV 모드에서만 사용할 수 있습니다." }, { status: 403 });

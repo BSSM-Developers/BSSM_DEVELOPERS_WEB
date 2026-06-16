@@ -11,6 +11,7 @@ import {
   resetPath,
   normalizePath,
 } from "@/lib/tutorialStore";
+import { clearAllSeen } from "@/lib/onboarding";
 import { getRegistrySteps } from "@/lib/tutorialRegistry";
 import { buildSelector, isUnique } from "@/lib/domSelector";
 
@@ -26,6 +27,8 @@ export function TutorialEditor() {
   const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<Mode>("list");
   const [steps, setSteps] = useState<TutorialStep[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   // 작성 중 임시 스텝
   const [draftSelector, setDraftSelector] = useState<string | null>(null);
@@ -60,10 +63,10 @@ export function TutorialEditor() {
     };
 
     const onClick = (e: MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
       const el = document.elementFromPoint(e.clientX, e.clientY);
       if (!el || isEditorEl(el)) return;
+      e.preventDefault();
+      e.stopPropagation();
       const sel = buildSelector(el);
       if (!sel || !isUnique(sel)) {
         alert(
@@ -108,6 +111,24 @@ export function TutorialEditor() {
     persist(steps.filter((_, idx) => idx !== i));
   };
 
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) return;
+    const next = [...steps];
+    const [removed] = next.splice(dragIndex, 1);
+    next.splice(targetIndex, 0, removed);
+    persist(next);
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const moveStep = (from: number, to: number) => {
+    if (to < 0 || to >= steps.length) return;
+    const next = [...steps];
+    const [removed] = next.splice(from, 1);
+    next.splice(to, 0, removed);
+    persist(next);
+  };
+
   const resetAll = () => {
     if (!confirm("이 페이지 튜토리얼을 코드 기본값으로 되돌릴까요? (오버라이드 삭제)")) return;
     resetPath(pathKey);
@@ -117,6 +138,11 @@ export function TutorialEditor() {
   const copyJson = () => {
     navigator.clipboard?.writeText(JSON.stringify(steps, null, 2));
     alert("스텝 JSON을 클립보드에 복사했습니다. 코드의 fallback steps에 붙여넣을 수 있어요.");
+  };
+
+  const replayTutorial = () => {
+    clearAllSeen();
+    window.location.href = window.location.pathname;
   };
 
   return createPortal(
@@ -165,12 +191,29 @@ export function TutorialEditor() {
             <List>
               {steps.length === 0 && <Empty>이 페이지에 튜토리얼이 없습니다.</Empty>}
               {steps.map((s, i) => (
-                <Item key={i}>
+                <Item
+                  key={i}
+                  draggable
+                  onDragStart={() => setDragIndex(i)}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i); }}
+                  onDrop={() => handleDrop(i)}
+                  onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
+                  style={{
+                    opacity: dragIndex === i ? 0.4 : 1,
+                    borderColor: dragOverIndex === i && dragIndex !== i ? "#16335C" : undefined,
+                    borderWidth: dragOverIndex === i && dragIndex !== i ? 2 : undefined,
+                  }}
+                >
+                  <DragHandle title="드래그로 순서 변경">⠿</DragHandle>
                   <ItemNum>{i + 1}</ItemNum>
                   <ItemBody>
                     <ItemTitle>{s.title}</ItemTitle>
                     <ItemSel>{s.selector}</ItemSel>
                   </ItemBody>
+                  <MoveButtons>
+                    <MoveBtn onClick={() => moveStep(i, i - 1)} disabled={i === 0} title="위로">▲</MoveBtn>
+                    <MoveBtn onClick={() => moveStep(i, i + 1)} disabled={i === steps.length - 1} title="아래로">▼</MoveBtn>
+                  </MoveButtons>
                   <Del onClick={() => removeStep(i)}>삭제</Del>
                 </Item>
               ))}
@@ -181,6 +224,9 @@ export function TutorialEditor() {
             <Row>
               <Ghost onClick={copyJson} disabled={steps.length === 0}>JSON 복사</Ghost>
               <Ghost onClick={resetAll}>초기화</Ghost>
+            </Row>
+            <Row>
+              <Replay onClick={replayTutorial} disabled={steps.length === 0}>▶ 재현</Replay>
             </Row>
           </>
         )}
@@ -287,6 +333,35 @@ const ItemSel = styled.div`
   white-space: nowrap;
 `;
 
+const DragHandle = styled.span`
+  color: #b0b8c1;
+  font-size: 14px;
+  cursor: grab;
+  flex-shrink: 0;
+  user-select: none;
+  &:active { cursor: grabbing; }
+`;
+
+const MoveButtons = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+`;
+
+const MoveBtn = styled.button`
+  background: none;
+  border: none;
+  color: #8b95a1;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 1px 3px;
+  border-radius: 3px;
+  &:hover:not(:disabled) { color: ${NAVY}; background: #f2f4f6; }
+  &:disabled { opacity: 0.25; cursor: not-allowed; }
+`;
+
 const Del = styled.button`
   background: none;
   border: none;
@@ -313,6 +388,21 @@ const Primary = styled.button`
   font-weight: 700;
   cursor: pointer;
   font-family: ${FONT};
+`;
+
+const Replay = styled.button`
+  flex: 1;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: ${FONT};
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: #c8e6c9; }
 `;
 
 const Ghost = styled.button`

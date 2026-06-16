@@ -42,6 +42,17 @@ export const isTutorialSeen = (
   }
 };
 
+/** 모든 사용자의 onboarding 기록 삭제 (dev 재현용) */
+export const clearAllSeen = (): void => {
+  if (typeof window === "undefined") return;
+  try {
+    const keys = Object.keys(localStorage).filter((k) => k.startsWith(`${PREFIX}_`));
+    keys.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    /* ignore */
+  }
+};
+
 /** 이 튜토리얼을 봤다고 기록 */
 export const markTutorialSeen = (
   userId: string | number | null | undefined,

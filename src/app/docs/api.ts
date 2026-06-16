@@ -31,7 +31,10 @@ export interface DocsItem {
   repo_full_name?: string; // snake_case 호환
   branch?: string;
   type?: string;
+  serverStatus?: "RUNNING" | "STOP" | null;
 }
+
+export type ServerStatusFilter = "RUNNING" | "STOP" | null;
 
 export interface DocsListResponse {
   message: string;
@@ -149,8 +152,10 @@ interface DocsPopularQueryParams extends DocsCursorQueryParams {
 }
 
 export const docsApi = {
-  getList: async () => {
-    return fetchClient.get<DocsListResponse>("/docs", { skipAuth: true });
+  getList: async ({ serverStatus }: { serverStatus?: ServerStatusFilter } = {}) => {
+    const params: Record<string, string> = {};
+    if (serverStatus) params.serverStatus = serverStatus;
+    return fetchClient.get<DocsListResponse>("/docs", { params, skipAuth: true });
   },
   getMyList: async ({ type, cursor, size = 20 }: DocsCursorQueryParams = {}) => {
     const params: Record<string, string> = {};

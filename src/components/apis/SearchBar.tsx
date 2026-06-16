@@ -4,12 +4,16 @@ import styled from "@emotion/styled";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 
+import type { ServerStatusFilter } from "@/app/docs/api";
+
 interface SearchBarProps {
   onSearch?: (query: string) => void;
   onFilterChange?: (filter: "ALL" | "ORIGINAL" | "CUSTOM") => void;
   onSortChange?: (sort: "LATEST" | "POPULAR") => void;
+  onServerStatusChange?: (status: ServerStatusFilter) => void;
   activeFilter?: "ALL" | "ORIGINAL" | "CUSTOM";
   activeSort?: "LATEST" | "POPULAR";
+  activeServerStatus?: ServerStatusFilter;
   allowSortWhenAll?: boolean;
 }
 
@@ -17,8 +21,10 @@ export function SearchBar({
   onSearch,
   onFilterChange,
   onSortChange,
+  onServerStatusChange,
   activeFilter = "ALL",
   activeSort = "LATEST",
+  activeServerStatus = "RUNNING",
   allowSortWhenAll = false,
 }: SearchBarProps) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -85,6 +91,32 @@ export function SearchBar({
                   onClick={() => handleFilterClick("CUSTOM")}
                 >
                   API 폴더집
+                </ToggleButton>
+              </ToggleGroup>
+            </PopupSection>
+
+            <Divider />
+
+            <PopupSection>
+              <SectionTitle>서버 상태</SectionTitle>
+              <ToggleGroup>
+                <ToggleButton
+                  active={activeServerStatus === "RUNNING"}
+                  onClick={() => onServerStatusChange?.(activeServerStatus === "RUNNING" ? null : "RUNNING")}
+                >
+                  🟢 실행 중
+                </ToggleButton>
+                <ToggleButton
+                  active={activeServerStatus === "STOP"}
+                  onClick={() => onServerStatusChange?.(activeServerStatus === "STOP" ? null : "STOP")}
+                >
+                  🔴 중지
+                </ToggleButton>
+                <ToggleButton
+                  active={activeServerStatus === null}
+                  onClick={() => onServerStatusChange?.(null)}
+                >
+                  전체
                 </ToggleButton>
               </ToggleGroup>
             </PopupSection>

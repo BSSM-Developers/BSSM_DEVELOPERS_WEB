@@ -28,7 +28,7 @@ interface DocsBlockEditorProps {
   domain?: string;
 }
 
-type CodeLanguage = "javascript" | "python" | "json";
+type CodeLanguage = "javascript" | "python" | "json" | "bash";
 
 export const DocsBlockEditor = memo(function DocsBlockEditor({
   block,
@@ -108,6 +108,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     { value: "javascript", label: "JavaScript" },
     { value: "json", label: "JSON" },
     { value: "python", label: "Python" },
+    { value: "bash", label: "Bash" },
   ];
 
   const filteredOptions = MENU_OPTIONS.filter(opt =>
@@ -196,6 +197,9 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     if (normalized === "js" || normalized === "jsx" || normalized === "ts" || normalized === "tsx" || normalized === "javascript") {
       return "javascript";
     }
+    if (normalized === "bash" || normalized === "sh" || normalized === "shell" || normalized === "zsh") {
+      return "bash";
+    }
     return "javascript";
   };
 
@@ -204,7 +208,9 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
     ? "Python"
     : selectedCodeLanguage === "json"
       ? "JSON"
-      : "JavaScript";
+      : selectedCodeLanguage === "bash"
+        ? "Bash"
+        : "JavaScript";
   const jsonEditorExtensions = useMemo(() => [json()], []);
 
   const detectModuleType = (
@@ -828,7 +834,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                 />
               </JsonCodeEditor>
             ) : (
-              <div style={{ position: 'relative', minHeight: '120px' }}>
+              <div style={{ position: 'relative' }}>
                 <pre
                   aria-hidden="true"
                   style={{
@@ -854,7 +860,7 @@ export const DocsBlockEditor = memo(function DocsBlockEditor({
                 />
                 <TextareaAutosize
                   value={value}
-                  minRows={5}
+                  minRows={1}
                   onChange={(e) => {
                     setValue(e.target.value);
                     onChange(index, { ...block, content: e.target.value });

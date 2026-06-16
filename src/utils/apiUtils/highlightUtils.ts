@@ -76,6 +76,11 @@ export function highlightCode(code: string, language: string): string {
       if (match.startsWith('#')) return addToken(match, 'punctuation');
       return addToken(match, 'string');
     });
+  } else if (lang === 'bash' || lang === 'sh' || lang === 'shell' || lang === 'zsh') {
+    escaped = escaped.replace(/#.*$|'[^']*'|"[^"]*"/gm, (match) => {
+      if (match.startsWith('#')) return addToken(match, 'punctuation');
+      return addToken(match, 'string');
+    });
   }
 
   if (lang === 'javascript' || lang === 'js') {
@@ -87,6 +92,12 @@ export function highlightCode(code: string, language: string): string {
     escaped = escaped
       .replace(/\b(def|return|if|else|elif|for|while|import|from|as|try|except|class|with|is|in|not|and|or|lambda|None|True|False)\b/g, wrapColor('$1', 'keyword'))
       .replace(/\b(print|len|range|str|int|float|list|dict|set|type|open)\b/g, wrapColor('$1', 'function'));
+  } else if (lang === 'bash' || lang === 'sh' || lang === 'shell' || lang === 'zsh') {
+    escaped = escaped
+      .replace(/\$\{?[\w@#?*!-]+\}?/g, wrapColor('$&', 'variable'))
+      .replace(/\b(if|then|else|elif|fi|for|while|do|done|case|esac|in|function|return|export|local|readonly|unset|shift|exit|break|continue|source)\b/g, wrapColor('$1', 'keyword'))
+      .replace(/\b(echo|printf|cd|ls|mkdir|rm|cp|mv|cat|grep|sed|awk|find|chmod|chown|curl|wget|git|npm|yarn|pnpm|docker|sudo|ssh|scp|tar|zip|unzip)\b/g, wrapColor('$1', 'function'))
+      .replace(/(^\s*\$\s)/gm, wrapColor('$1', 'special'));
   }
 
   tokens.forEach((token, i) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import styled from "@emotion/styled";
 import { DocsHeader } from "@/components/docs/DocsHeader";
 import { applyTypography } from "@/lib/themeHelper";
@@ -10,28 +10,19 @@ import { useGitHubConnectionQuery } from "./queries";
 import { track } from "@/lib/analytics";
 import { useVariantValue } from "@mab-kit/react";
 
-const GITHUB_INSTALL_URL_KEY = "github_install_url";
 // MAB A/B 테스트: GitHub 연동 버튼 문구 (control vs test)
 // flagKey "github-connect-cta", 전환 이벤트 "github_connect_clicked"(handleConnect에서 track)
 const GITHUB_CTA_FLAG = "github-connect-cta";
-// GitHub App 설치 페이지. connect 콜백의 installUrl이 없을 때 폴백으로 사용.
-// 환경별로 앱이 다르므로 env로 주입(prod: bssm-developers-api-maker / dev: -dev). 미설정 시 dev 앱으로 폴백.
+// GitHub App 설치 페이지(정적). 환경별로 앱이 다르므로 env로 주입.
+//   prod: bssm-developers-api-maker / dev·local: bssm-developers-api-maker-dev (미설정 시 폴백)
+// 백엔드가 주는 installUrl은 환경에 따라 localhost로 튕기는 등 신뢰할 수 없어 사용하지 않는다.
 const GITHUB_APP_INSTALL_URL =
   process.env.NEXT_PUBLIC_GITHUB_APP_INSTALL_URL ??
   "https://github.com/apps/bssm-developers-api-maker-dev/installations/select_target";
 
-// 백엔드가 내려준 installUrl이 깨진 경우(앱 슬러그가 null/undefined/빈값) 무효 처리한다.
-// 예: https://github.com/apps/null/installations/new → 폴백(GITHUB_APP_INSTALL_URL) 사용.
-const isValidInstallUrl = (url: string | null | undefined): url is string => {
-  if (!url) return false;
-  const slug = url.match(/^https:\/\/github\.com\/apps\/([^/]+)/)?.[1]?.toLowerCase();
-  return !!slug && slug !== "null" && slug !== "undefined";
-};
-
 export default function GitHubPage() {
   const { data: connection, isLoading } = useGitHubConnectionQuery();
 
-  const [installUrl, setInstallUrl] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
   // MAB 변형: 연동 버튼 문구 (control = 기존, test = 가치 강조). stickyLock으로 경계 이동 완화.
@@ -43,16 +34,6 @@ export default function GitHubPage() {
     },
     { defaultVariant: "control", stickyLock: true }
   );
-
-  // 콜백에서 저장해둔 installUrl 읽기 (깨진 값이면 무시·제거하고 폴백 사용)
-  useEffect(() => {
-    const stored = sessionStorage.getItem(GITHUB_INSTALL_URL_KEY);
-    if (isValidInstallUrl(stored)) {
-      setInstallUrl(stored);
-    } else if (stored) {
-      sessionStorage.removeItem(GITHUB_INSTALL_URL_KEY);
-    }
-  }, []);
 
   const handleConnect = async () => {
     try {
@@ -68,8 +49,8 @@ export default function GitHubPage() {
   };
 
   const handleInstallApp = () => {
-    // 콜백에서 받은 installUrl 우선, 없거나 깨졌으면 폴백(env) 사용
-    const target = isValidInstallUrl(installUrl) ? installUrl : GITHUB_APP_INSTALL_URL;
+    // 항상 정적 env 설치 링크를 사용 (백엔드 installUrl 미사용)
+    const target = GITHUB_APP_INSTALL_URL;
     track("github_app_install_clicked");
     window.open(target, "_blank", "noopener,noreferrer");
   };

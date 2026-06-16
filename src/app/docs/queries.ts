@@ -1,12 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { docsApi } from "./api";
+import { docsApi, type ServerStatusFilter } from "./api";
 
 const DEFAULT_STALE_TIME = 60 * 1000;
 const DEFAULT_GC_TIME = 10 * 60 * 1000;
 
 export const docsKeys = {
   all: ["docs"] as const,
-  list: () => [...docsKeys.all, "list"] as const,
+  list: (serverStatus?: ServerStatusFilter) => [...docsKeys.all, "list", serverStatus ?? "ALL"] as const,
   myList: (type?: string, cursor?: string, size?: number) =>
     [...docsKeys.all, "my-list", type, cursor, size] as const,
   popularList: (type?: string, cursor?: string, size?: number, tokenCount?: number) =>
@@ -19,10 +19,13 @@ export const docsKeys = {
     [...docsKeys.all, "page", id, mappedId] as const,
 };
 
-export function useDocsListQuery(enabled: boolean = true) {
+export function useDocsListQuery(
+  params: { serverStatus?: ServerStatusFilter } = {},
+  enabled: boolean = true
+) {
   return useQuery({
-    queryKey: docsKeys.list(),
-    queryFn: () => docsApi.getList(),
+    queryKey: docsKeys.list(params.serverStatus),
+    queryFn: () => docsApi.getList(params),
     enabled,
     staleTime: DEFAULT_STALE_TIME,
     gcTime: DEFAULT_GC_TIME,

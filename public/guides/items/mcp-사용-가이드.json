@@ -1,0 +1,200 @@
+{
+  "id": "guide-1781099564769",
+  "slug": "mcp-사용-가이드",
+  "title": "MCP 사용 가이드",
+  "blocks": [
+    {
+      "id": "new-guide-1",
+      "module": "headline_1",
+      "content": "MCP 사용 가이드"
+    },
+    {
+      "id": "3434c1e3-2bc4-414d-b87b-2f3233fa0029",
+      "module": "docs_1",
+      "content": "본 가이드에서는 AI 에이전트가 BSSM Developers 서비스의 API를 직접 호출할 수 있게 해주는 MCP 서버에 관해 다루고 있습니다."
+    },
+    {
+      "id": "5147879c-1d23-472f-9904-09d15e5d63ce",
+      "module": "docs_1",
+      "content": "잘 읽어주세요 :)"
+    },
+    {
+      "id": "830f739b-afe6-40b8-a849-b5579555e41e",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "f1ef9a92-09c1-4d58-9cc4-8553b412494d",
+      "module": "headline_2",
+      "content": "MCP가 뭔가요?"
+    },
+    {
+      "id": "3e790392-c17d-47c1-8eb4-dfc38a6f1715",
+      "module": "docs_1",
+      "content": "MCP(Model Context Protocol)는 AI 에이전트가 외부 도구나 서비스를 직접 사용할 수 있게 해주는 표준 프로토콜이에요."
+    },
+    {
+      "id": "21445932-660e-4168-b01a-40a2d2a1a275",
+      "module": "docs_1",
+      "content": "BSSM Developers MCP를 설치하면 Claude 같은 AI에게 자연어로 요청하는 것만으로 BSSM Developers에 등록된 API를 호출할 수 있어요."
+    },
+    {
+      "id": "2ea05d39-63e4-4dec-87f8-a91d801800cf",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "df5f99fa-85d2-47a8-be37-ba5ee23c0116",
+      "module": "headline_2",
+      "content": "시작하기 전에"
+    },
+    {
+      "id": "d325f3f4-1deb-4e48-b12c-7e9d1190e6cf",
+      "module": "docs_1",
+      "content": "MCP를 사용하려면 API 토큰이 필요해요."
+    },
+    {
+      "id": "7b00cc8c-90be-4375-ad09-0d592e67b402",
+      "module": "docs_1",
+      "content": "API 토큰 발급 방법은 API 사용 가이드에서 확인해주세요!"
+    },
+    {
+      "id": "d5df696f-ec9b-45b9-bb93-8f1d03bc56ef",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "31c8c354-0e2f-4383-a20d-31f76e465470",
+      "module": "headline_2",
+      "content": "설치"
+    },
+    {
+      "id": "a6ca3a8f-b7d1-4bda-b45c-d626baf39720",
+      "module": "docs_1",
+      "content": "터미널에서 아래 명령어를 실행하세요."
+    },
+    {
+      "id": "530158eb-e614-42e8-91cb-6c04d8af63c7",
+      "module": "code",
+      "content": "curl -fsSL https://raw.githubusercontent.com/BSSM-Developers/BSSM_DEVELOPERS_MCP/main/install.sh | sh",
+      "language": "bash"
+    },
+    {
+      "id": "cc3fdca9-2a4d-4193-a7bf-b5c445a963e6",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1781102037578-st1dqwmk.png",
+      "imageWidth": 688
+    },
+    {
+      "id": "e0b74c78-d360-4a8b-a902-46fcf873a4a7",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "7ec2b3d7-e99e-42f6-953c-70fe60a1629f",
+      "module": "headline_2",
+      "content": "프로젝트별 셋업"
+    },
+    {
+      "id": "7a14adae-77c9-46d2-ab3d-beacba84efc7",
+      "module": "docs_1",
+      "content": "MCP는 프로젝트마다 등록해야 해요. "
+    },
+    {
+      "id": "ea7b0643-b1d5-4235-9682-040d4788f2d1",
+      "module": "docs_1",
+      "content": "사용할 프로젝트 디렉토리로 이동한 뒤 실행하세요."
+    },
+    {
+      "id": "8852a305-e485-412e-9ab3-6d99172feb6f",
+      "module": "code",
+      "content": "bssm-dev-mcp-setup",
+      "language": "bash"
+    },
+    {
+      "id": "92c1605f-f2a0-486e-a404-ed4fc374d560",
+      "module": "docs_1",
+      "content": "실행하면 순서대로 입력을 요청해요."
+    },
+    {
+      "id": "76d74a58-8ae0-4f2b-a239-957a98409cc6",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1781102037578-lw4pr7li.png",
+      "imageWidth": 692
+    },
+    {
+      "id": "f4f8bc4c-1013-4839-bb8c-1b58a404bc66",
+      "module": "image",
+      "content": "",
+      "imageSrc": "/guides/uploads/img-1781102037579-ojx8nftt.png",
+      "imageWidth": 692
+    },
+    {
+      "id": "210ea1da-31a4-4472-8fc5-bd13465ef3cd",
+      "module": "headline_2",
+      "content": "사용 방법"
+    },
+    {
+      "id": "9416fce5-3b8c-4e9e-a49e-bd506a76f878",
+      "module": "docs_1",
+      "content": "설치가 완료됐다면 AI에게 자연어로 요청하는 것만으로 API를 호출할 수 있어요."
+    },
+    {
+      "id": "a0f02aed-351e-4682-9659-ad1dd361d920",
+      "module": "docs_1",
+      "content": "사용 가능한 API를 확인해 보세요! (지금 사용할 수 있는 API 목록을 알려줘)"
+    },
+    {
+      "id": "dd5d1127-bfab-4f34-a7b8-f4025363d41d",
+      "module": "docs_1",
+      "content": "AI가 토큰에 등록된 API 목록과 각 API의 설명을 정리해서 알려줘요."
+    },
+    {
+      "id": "37727879-432b-4fda-a976-ec7203409412",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "bd03842c-0613-4913-901c-6a194a4f5376",
+      "module": "headline_2",
+      "content": "주의사항"
+    },
+    {
+      "id": "55a668cf-006d-49e0-b7dd-280bd28a2688",
+      "module": "docs_1",
+      "content": "등록된 API 외의 경로나 사용 신청 승인 상태가 아닌 API는 호출이 거부돼요."
+    },
+    {
+      "id": "eb1b3fb5-4b6e-417d-bf75-9d0a87784bb1",
+      "module": "docs_1",
+      "content": "AI가 요청을 거부할 경우, BSSM Developers에서 해당 API의 등록 상태를 확인해보세요."
+    },
+    {
+      "id": "8caea6cf-68cf-4676-a417-16b16f489a2a",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "d0187c6f-4b8b-4afb-88d7-324e8b550585",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "cde44625-eb96-480e-a171-81fb802a99b4",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "48ce7127-ec5a-4d67-ae6a-b6f3a4c67dfa",
+      "module": "docs_1",
+      "content": ""
+    },
+    {
+      "id": "ceea4a6e-d626-4392-bc01-d1f2280954d0",
+      "module": "docs_1",
+      "content": ""
+    }
+  ]
+}

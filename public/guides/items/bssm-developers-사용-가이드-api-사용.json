@@ -1,17 +1,17 @@
 {
   "id": "guide-1773896505008",
   "slug": "bssm-developers-사용-가이드-api-사용",
-  "title": "BSSM Developers 사용 가이드 - API 사용",
+  "title": "API 사용 가이드",
   "blocks": [
     {
       "id": "new-guide-1",
       "module": "headline_1",
-      "content": "BSSM Developers 사용 가이드 - API 사용"
+      "content": "API 사용 가이드"
     },
     {
       "id": "14cb39b3-a140-448e-8f9a-51895781a544",
       "module": "docs_1",
-      "content": "본 가이드에서는 BSSM Developers 서비스에서 API 사용에 관해 다루고 있습니다."
+      "content": "본 가이드에서는 BSSM Developers 서비스의 API 사용에 관해 다루고 있습니다."
     },
     {
       "id": "8f024354-1338-45c2-8b4d-3fef8e4bce3d",
@@ -62,7 +62,7 @@
       "id": "0388e55e-b73f-482a-927f-3a87632acd2d",
       "module": "image",
       "content": "",
-      "imageSrc": "/guides/uploads/img-1773907340666-mzsn8njg.png"
+      "imageSrc": "/guides/uploads/img-1781099462467-fjbdj9ez.png"
     },
     {
       "id": "a1cce154-0673-422e-97ee-05348e4d156e",
@@ -98,14 +98,14 @@
       "id": "eb466daa-c253-4aa8-ad2e-dae8ee26cd72",
       "module": "image",
       "content": "",
-      "imageSrc": "/guides/uploads/img-1773907340667-7w7gk1ek.png",
+      "imageSrc": "/guides/uploads/img-1781099462468-tt57zdmu.png",
       "imageWidth": 1118
     },
     {
       "id": "d9715bdd-28bd-490f-8cec-3581618f0700",
       "module": "image",
       "content": "",
-      "imageSrc": "/guides/uploads/img-1773907340667-hvtzor7u.png",
+      "imageSrc": "/guides/uploads/img-1781099462468-fdemw5ln.png",
       "imageWidth": 1080
     },
     {
@@ -132,7 +132,7 @@
       "id": "91fbac75-7c0c-4189-84ba-ccd3ab7a3114",
       "module": "image",
       "content": "",
-      "imageSrc": "/guides/uploads/img-1773907340668-elc74maj.png"
+      "imageSrc": "/guides/uploads/img-1781099462468-76qk451n.png"
     },
     {
       "id": "64c02cf8-711d-42ea-bf88-edbd0bf7716c",
@@ -193,7 +193,7 @@
       "id": "8bed52c5-ab82-4956-9af1-15ecffc1f2ec",
       "module": "image",
       "content": "",
-      "imageSrc": "/guides/uploads/img-1773907340668-vnq6rm6g.png"
+      "imageSrc": "/guides/uploads/img-1781099462468-c0v9y1ri.png"
     },
     {
       "id": "c42de47b-0258-4b84-b13b-d1051575082d",
@@ -204,7 +204,7 @@
       "id": "01836b41-5aa2-4845-92eb-f886a965790a",
       "module": "image",
       "content": "",
-      "imageSrc": "/guides/uploads/img-1773907340668-ltqf5i44.png"
+      "imageSrc": "/guides/uploads/img-1781099462469-0g3r7wmr.png"
     },
     {
       "id": "b81ee7a9-3520-4656-81b1-73d5ead162cd",
@@ -225,12 +225,7 @@
       "id": "aba45189-dea1-4332-8dce-f6e175f5f6c9",
       "module": "image",
       "content": "",
-      "imageSrc": "/guides/uploads/img-1773907340670-agzkox0j.png"
-    },
-    {
-      "id": "4890e929-7466-43a4-8f38-35dd7bcd1b9b",
-      "module": "docs_1",
-      "content": "API를 등록한 사람이 API 사용 신청을 승인하면 API를 사용할 수 있게 돼요."
+      "imageSrc": "/guides/uploads/img-1781099462469-nm9tgffk.png"
     },
     {
       "id": "bc228329-a26a-4edd-824c-b9f26df8c5aa",
